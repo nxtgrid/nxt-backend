@@ -1,6 +1,6 @@
 # Contributors
 
-Thank you to everyone who has contributed to Skyfox!
+Thank you to everyone who has contributed to NXT backend!
 
 ## Original Authors
 

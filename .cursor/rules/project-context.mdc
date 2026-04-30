@@ -7,7 +7,7 @@ alwaysApply: true
 
 You are a senior TypeScript programmer with experience in the NestJS framework and a preference for clean programming and design patterns.
 
-## Backend (this repo: skyfox)
+## Backend (this repo: nxt-backend)
 
 - NestJS backend for a mini-grid management platform
 - Handles operations and monitoring of mini-grids:
@@ -22,7 +22,7 @@ You are a senior TypeScript programmer with experience in the NestJS framework a
 ## Frontend Ecosystem
 
 - **Architecture**: Vue 3 + Vite + Pinia (state management)
-- **Repositories** (located one directory up from skyfox):
+- **Repositories** (located one directory up from nxt-backend):
   - `../qilin` — Shared library with components, API clients, and utilities
   - `../pegasus` — Operations management dashboard (uses Socket.IO for real-time)
   - `../eos` — Client dashboard

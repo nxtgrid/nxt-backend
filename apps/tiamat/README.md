@@ -1,6 +1,6 @@
 # tiamat
 
-The primary REST + WebSocket API for the Skyfox platform. All frontend dashboards and integrations talk to Tiamat for operational data, payments, meter management, and user/organization administration.
+The primary REST + WebSocket API for the NXT backend platform. All frontend dashboards and integrations talk to Tiamat for operational data, payments, meter management, and user/organization administration.
 
 **Default port:** set via `NXT_PORT`
 

@@ -1,4 +1,4 @@
-# Contributing to Skyfox
+# Contributing to NXT backend
 
 Thank you for your interest in contributing! This document explains how to get
 set up, what the standards are, and how the contribution process works.
@@ -27,8 +27,8 @@ set up, what the standards are, and how the contribution process works.
 
 ```bash
 # 1. Fork and clone the repository
-git clone https://github.com/<your-username>/skyfox.git
-cd skyfox
+git clone https://github.com/nxtgrid/nxt-backend.git
+cd nxt-backend
 
 # 2. Install dependencies
 npm install
@@ -121,7 +121,7 @@ Please open a GitHub issue for:
 
 ## License
 
-By contributing to Skyfox, you agree that your contributions will be licensed
+By contributing to NXT backend, you agree that your contributions will be licensed
 under the same terms as the project — the [Mozilla Public License 2.0](https://www.mozilla.org/MPL/2.0/).
 See [LICENSE](./LICENSE) for the full text.
 

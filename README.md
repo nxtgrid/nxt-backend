@@ -1,6 +1,6 @@
-# Skyfox
+# NXT backend
 
-**Skyfox** is an open-source backend platform for managing off-grid and mini-grid electricity systems. It handles payment processing, remote monitoring of production and distribution infrastructure, and remote interaction with smart prepaid electricity meters.
+**NXT backend** is an open-source backend platform for managing off-grid and mini-grid electricity systems. It handles payment processing, remote monitoring of production and distribution infrastructure, and remote interaction with smart prepaid electricity meters.
 
 The platform is designed for organizations that operate mini-grids in emerging markets — enabling them to manage customers, meters, grids, payouts, and real-time energy data from a single system.
 
@@ -25,10 +25,10 @@ The platform is designed for organizations that operate mini-grids in emerging m
 
 ## Architecture
 
-Skyfox is structured as an **Nx monorepo** containing multiple NestJS backend applications and shared libraries. Each application has a distinct responsibility:
+NXT backend is structured as an **Nx monorepo** containing multiple NestJS backend applications and shared libraries. Each application has a distinct responsibility:
 
 ```
-skyfox/
+nxt-backend/
 ├── apps/
 │   ├── tiamat/   # Main API — operations, payments, meters, users
 │   ├── talos/    # Meter provisioning and hardware registration
@@ -262,10 +262,10 @@ Alternatively, check Activity Monitor (macOS) or Task Manager (Windows) for a li
 
 ## License
 
-Skyfox is licensed under the [Mozilla Public License 2.0](https://www.mozilla.org/MPL/2.0/). See [LICENSE](./LICENSE) for the full text.
+NXT backend is licensed under the [Mozilla Public License 2.0](https://www.mozilla.org/MPL/2.0/). See [LICENSE](./LICENSE) for the full text.
 
 ---
 
 ## Authors
 
-Skyfox was created by **Bobby Bol** and **Tommaso Girotto**. See [AUTHORS.md](./AUTHORS.md) for details.
+NXT backend was created by **Bobby Bol** and **Tommaso Girotto**. See [AUTHORS.md](./AUTHORS.md) for details.
