@@ -1,0 +1,10 @@
+---
+description: How the AI agent should operate during coding sessions
+alwaysApply: true
+---
+
+# Agent Behavior
+
+- Always create a plan before acting, and list actions in to-dos if more than one
+- Always address the to-dos one by one, stopping between points to await code review and acceptance
+- Never jump to the next point of the to-dos until prompted to do so

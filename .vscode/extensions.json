@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "tombonnike.vscode-status-bar-format-toggle",
+    "firsttris.vscode-jest-runner"
+  ]
+}

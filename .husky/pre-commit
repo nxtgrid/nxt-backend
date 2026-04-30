@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npx lint-staged && npx tsc -p tsconfig.base.json --noEmit --allowSyntheticDefaultImports
+# && npx nx run-many --parallel --target=test

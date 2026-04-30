@@ -1,0 +1,14 @@
+---
+description: Points AI to Architecture Decision Records for project context
+alwaysApply: true
+---
+
+# Architecture Decision Records
+
+Architectural decisions and their rationale are documented in `docs/architecture/` as numbered ADR files (e.g., `001-push-pull-pattern-divergence.md`).
+
+When working on architectural changes, refactors, or adding new protocols/adapters:
+
+1. Read relevant ADRs in `docs/architecture/` for context on prior decisions
+2. Reference ADR recommendations when proposing solutions
+3. When a new architectural decision is made, create a new numbered ADR

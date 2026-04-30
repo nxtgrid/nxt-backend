@@ -1,0 +1,65 @@
+{
+  "name": "timeseries",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/timeseries/src",
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "libs/timeseries/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "libs/timeseries/jest.config.ts"
+      }
+    },
+    "show-migrations": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "libs/timeseries",
+        "commands": [
+          "ts-node --project tsconfig.json -r tsconfig-paths/register --transpile-only ../../node_modules/.bin/typeorm -d ormconfig.ts migration:show"
+        ]
+      }
+    },
+    "create-new-empty-migration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "libs/timeseries",
+        "commands": [
+          "ts-node -r tsconfig-paths/register --transpile-only ../../node_modules/.bin/typeorm migration:create ./migration/{args.name}"
+        ]
+      }
+    },
+    "generate-migration-from-schema": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "libs/timeseries",
+        "commands": [
+          "ts-node -r tsconfig-paths/register --transpile-only ../../node_modules/.bin/typeorm -d ormconfig.ts migration:generate ./migration/{args.name}"
+        ]
+      }
+    },
+    "run-migrations": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "libs/timeseries",
+        "commands": [
+          "ts-node --project tsconfig.json -r tsconfig-paths/register --transpile-only ../../node_modules/.bin/typeorm -d ormconfig.ts migration:run"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

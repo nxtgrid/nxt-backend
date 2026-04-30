@@ -1,0 +1,17 @@
+{
+  "editor.tabSize": 2,
+  "search.exclude": {
+    "package-lock.json": true,
+    "libs/*/migration": true,
+    "supabase/migrations": true
+  },
+  "eslint.format.enable": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "deno.enable": false,
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
+}

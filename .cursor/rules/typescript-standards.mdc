@@ -1,0 +1,50 @@
+---
+description: TypeScript coding standards, naming conventions, and design principles
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+Generate code, corrections, and refactorings that comply with the following principles and nomenclature.
+
+## Basic Principles
+
+- Use English for all code and documentation
+- Always declare the type of each variable and function (parameters and return value)
+  - Avoid using `any`. Create necessary types
+- Use JSDoc to document public classes and methods
+
+## Nomenclature
+
+- **PascalCase** for classes
+- **camelCase** for variables, functions, and methods
+- **kebab-case** for file and directory names
+- **UPPERCASE** for environment variables
+- **SCREAMING_SNAKE_CASE** for constants. Avoid magic numbers
+- **Verb prefixes** for booleans: `isLoading`, `hasError`, `canDelete`
+- Use complete words instead of abbreviations, except:
+  - Standard abbreviations: API, URL, etc.
+  - Well-known abbreviations: `err`, `ctx`, `req`, `res`, `next`
+
+## Functions and Methods
+
+- Prefer short functions with a single purpose
+- Avoid nesting blocks via early checks/returns and extraction to utility functions
+  - We have an Nx library called `helpers` for shared utility functions
+- Use default parameter values instead of null/undefined checks
+- Reduce function parameters using RO-RO (Receive Object, Return Object)
+  - Declare necessary types for input arguments and output
+- Prefer a functional programming style
+- Aim for a single level of abstraction
+
+## Data
+
+- Encapsulate data in composite types — don't abuse primitives
+- Prefer immutability: `readonly` for data that doesn't change, `as const` for literals
+
+## Classes
+
+- Follow SOLID principles
+- Prefer composition over inheritance
+- Declare interfaces to define contracts

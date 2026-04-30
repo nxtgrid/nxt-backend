@@ -1,0 +1,10 @@
+---
+description: Available CLI commands for linting and type checking
+alwaysApply: true
+---
+
+# Commands
+
+- **Type checking:** `npm run check-types`
+- **Linting:** `npm run eslint`
+- **Both (lint + type check):** `npm run lint`

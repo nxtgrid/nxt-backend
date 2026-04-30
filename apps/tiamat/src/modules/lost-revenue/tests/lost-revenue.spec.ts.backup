@@ -1,0 +1,134 @@
+import { Test } from '@nestjs/testing';
+import moment from 'moment';
+
+import { CustomLogger } from '@core/modules/logger/logger.service';
+import { LostRevenueService } from '../lost-revenue.service';
+import { MetersService } from '@core/modules/meters/meters.service';
+import { Meter } from '@core/modules/meters/entities/meter.entity';
+import { MeterType } from '@core/types/meter-type';
+import { IssueStatus } from '@core/types/issue-status';
+import { IssueType } from '@core/types/issue-type';
+import { GridsService } from '@core/modules/grids/grids.service';
+
+import { mockMeters } from './mockDataGenerator';
+
+describe('LostRevenueService', () => {
+  let lostRevenueService: LostRevenueService;
+  // let metersService: jest.Mocked<MetersService>;
+  // let gridsService: jest.Mocked<GridsService>;
+  // let logger: jest.Mocked<CustomLogger>;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        LostRevenueService,
+        {
+          provide: 'timescaleDataSource',
+          useValue: {
+            query: jest.fn(),
+          },
+        },
+        {
+          provide: MetersService,
+          useValue: {
+            findByGridIdAndIsUnassigned: jest.fn(),
+          },
+        },
+        {
+          provide: GridsService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: CustomLogger,
+          useValue: {
+            setContext: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    lostRevenueService = module.get(LostRevenueService);
+    // metersService = module.get(MetersService);
+    // gridsService = module.get(GridsService);
+    // logger = module.get(CustomLogger);
+  });
+
+  describe('isMeterLosingMoney', () => {
+    it('should return false if meter has no issue', () => {
+      const meter = {
+        last_encountered_issue: null,
+      } as Meter;
+
+      expect(lostRevenueService.isMeterLosingMoney(meter)).toBe(false);
+    });
+
+    it('should return false if meter has an issue that is not NO_CONSUMPTION or NO_CREDIT', () => {
+      const meter = {
+        last_encountered_issue: {
+          issue_type: IssueType.LOW_VOLTAGE,
+        },
+      } as Meter;
+
+      expect(lostRevenueService.isMeterLosingMoney(meter)).toBe(false);
+    });
+
+    it('should return false if a meter has an issue that is NO_CONSUMPTION or NO_CREDIT, but is closed and was closed last month', () => {
+      const dateLastMonth = moment().subtract(1, 'months').endOf('month');
+
+      const meter = {
+        last_encountered_issue: {
+          issue_type: IssueType.NO_CONSUMPTION,
+          issue_status: IssueStatus.CLOSED,
+          created_at: dateLastMonth.toDate(),
+          closed_at: dateLastMonth.add(2, 'days').toDate(),
+        },
+      } as Meter;
+
+      expect(lostRevenueService.isMeterLosingMoney(meter)).toBe(false);
+    });
+
+    it('should return true if meter has an issue that is NO_CONSUMPTION or NO_CREDIT, and is open', () => {
+      const meter = {
+        last_encountered_issue: {
+          issue_type: IssueType.NO_CONSUMPTION,
+          issue_status: IssueStatus.OPEN,
+        },
+      } as Meter;
+
+      expect(lostRevenueService.isMeterLosingMoney(meter)).toBe(true);
+    });
+
+    it('should return false if meter has a closed issue that is NO_CONSUMPTION or NO_CREDIT which was closed this month', () => {
+      const meter = {
+        last_encountered_issue: {
+          issue_type: IssueType.NO_CONSUMPTION,
+          issue_status: IssueStatus.CLOSED,
+          created_at: moment().startOf('month').toDate(),
+          closed_at: moment().startOf('month').add(2, 'days').toDate(),
+        },
+      } as Meter;
+
+      expect(lostRevenueService.isMeterLosingMoney(meter)).toBe(true);
+    });
+  });
+
+  describe('groupMetersByPerformance', () => {
+    it('should group meters by performance', async () => {
+      const meters = mockMeters as unknown as Meter[];
+
+      const result = await lostRevenueService.groupMetersByPerformance(meters);
+
+      expect(result).toHaveProperty('metersLosingMoneyByType');
+      expect(result).toHaveProperty('metersMakingMoneyByType');
+
+      expect(result.metersLosingMoneyByType[MeterType.FS]).toHaveLength(3);
+      expect(result.metersLosingMoneyByType[MeterType.HPS]).toHaveLength(1);
+
+      expect(result.metersMakingMoneyByType[MeterType.FS]).toHaveLength(1);
+      expect(result.metersMakingMoneyByType[MeterType.HPS]).toHaveLength(1);
+
+    });
+  });
+});

@@ -1,0 +1,77 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": [
+      "es2024",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "multer",
+      "express",
+      "node",
+      "jest"
+    ],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@core": [
+        "libs/core/src"
+      ],
+      "@core/*": [
+        "libs/core/src/*"
+      ],
+      "@helpers": [
+        "libs/helpers/src"
+      ],
+      "@helpers/*": [
+        "libs/helpers/src/*"
+      ],
+      "@tiamat": [
+        "apps/tiamat/src"
+      ],
+      "@tiamat/*": [
+        "apps/tiamat/src/*"
+      ],
+      "@yeti": [
+        "apps/yeti/src"
+      ],
+      "@yeti/*": [
+        "apps/yeti/src/*"
+      ],
+      "@loch": [
+        "apps/loch/src"
+      ],
+      "@loch/*": [
+        "apps/loch/src/*"
+      ],
+      "@talos": [
+        "apps/talos/src"
+      ],
+      "@talos/*": [
+        "apps/talos/src/*"
+      ],
+      "@timeseries": [
+        "libs/timeseries/src"
+      ],
+      "@timeseries/*": [
+        "libs/timeseries/src/*"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "tmp",
+    "supabase"
+  ]
+}

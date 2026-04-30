@@ -1,0 +1,71 @@
+name: Deploy to DigitalOcean App Platform
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  deploy-to-do:
+    name: Deploy App to DigitalOcean
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Wait for Supabase Branch Setup to Complete
+      # - name: Wait for Supabase Branch Setup
+      #   id: wait_supabase
+      #   run: |
+      #     echo "Checking Supabase branch status..."
+      #     for i in {1..20}; do
+      #       STATUS=$(curl -s -H "Authorization: Bearer ${{ secrets.SUPABASE_API_KEY }}" \
+      #                     "https://api.supabase.io/projects/YOUR_PROJECT_ID/branches" \
+      #                     | jq -r '.branches[] | select(.name == "pr-${{ github.event.number }}") | .status')
+            
+      #       echo "Current status: $STATUS"
+      #       if [[ "$STATUS" == "ready" ]]; then
+      #         echo "Supabase branch is ready."
+      #         exit 0
+      #       fi
+      #       echo "Waiting for branch setup to complete..."
+      #       sleep 30
+      #     done
+      #     echo "Supabase branch setup timed out."
+      #     exit 1
+
+      # # Deploy App to DigitalOcean
+      # - name: Deploy to DigitalOcean
+      #   id: deploy_app
+      #   run: |
+      #     echo "Deploying new app to DigitalOcean..."
+      #     APP_SPEC=$(jq -n \
+      #       --arg appName "pr-${{ github.event.number }}-app" \
+      #       --arg branchUrl "https://${{ github.event.number }}-branch.supabase.co" \
+      #       '{
+      #         name: $appName,
+      #         region: "nyc3", # Change to your preferred region
+      #         services: [
+      #           {
+      #             name: "web",
+      #             github: {
+      #               repo: "your-github-org-or-user/your-repo-name",
+      #               branch: "${{ github.head_ref }}",
+      #               deploy_on_push: false
+      #             },
+      #             envs: [
+      #               { key: "SUPABASE_URL", value: $branchUrl },
+      #               { key: "SUPABASE_ANON_KEY", value: "your-anon-key" }
+      #             ]
+      #           }
+      #         ]
+      #       }')
+
+      #     echo "$APP_SPEC" > app_spec.json
+
+      #     curl -X POST \
+      #       -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_API_KEY }}" \
+      #       -H "Content-Type: application/json" \
+      #       -d @app_spec.json \
+      #       "https://api.digitalocean.com/v2/apps"

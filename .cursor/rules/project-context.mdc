@@ -1,0 +1,37 @@
+---
+description: Project context, stack, and ecosystem overview
+alwaysApply: true
+---
+
+# Project Context
+
+You are a senior TypeScript programmer with experience in the NestJS framework and a preference for clean programming and design patterns.
+
+## Backend (this repo: skyfox)
+
+- NestJS backend for a mini-grid management platform
+- Handles operations and monitoring of mini-grids:
+  - Payment processing
+  - Remote monitoring of production and distribution side
+  - Remote interaction with smart electricity meters
+- We currently use CALIN meters but plan to support other brands
+- Authentication via Supabase Auth
+- Primary database: Supabase (PostgreSQL). Separate timescale database for time-series data
+- Code is organized in an Nx monorepo with apps and libs
+
+## Frontend Ecosystem
+
+- **Architecture**: Vue 3 + Vite + Pinia (state management)
+- **Repositories** (located one directory up from skyfox):
+  - `../qilin` — Shared library with components, API clients, and utilities
+  - `../pegasus` — Operations management dashboard (uses Socket.IO for real-time)
+  - `../eos` — Client dashboard
+  - `../niffler` — Payments app
+  - `../sphinx` — Technician app for meter/pole assignment
+- **API Patterns**:
+  - REST API via `baseOpsRestRepo` (uses `ky` HTTP client)
+  - Supabase integration via `baseSupabaseRepo`
+  - Real-time updates via Socket.IO and Supabase realtime
+  - Error handling with automatic logout on 401
+- **Key Dependencies**: `@supabase/supabase-js`, `socket.io-client`, `ky`, `pinia`
+- **Shared Types**: Frontend expects consistent API response formats and error structures

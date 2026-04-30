@@ -1,0 +1,73 @@
+{
+  "name": "yeti",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/yeti/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "sourceMap": true,
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/yeti",
+        "main": "apps/yeti/src/main.ts",
+        "tsConfig": "apps/yeti/tsconfig.app.json",
+        "isolatedConfig": true,
+        "webpackConfig": "apps/yeti/webpack.config.js",
+        "assets": [
+          {
+            "glob": "**/*.sql",
+            "input": "apps/yeti/src/queries/",
+            "output": "queries/"
+          }
+        ]
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "yeti:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "yeti:build:development"
+        },
+        "production": {
+          "buildTarget": "yeti:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/yeti/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/yeti/jest.config.ts",
+        "coverage": true
+      }
+    }
+  },
+  "tags": []
+}

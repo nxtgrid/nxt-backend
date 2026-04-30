@@ -1,0 +1,73 @@
+{
+  "name": "loch",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/loch/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "sourceMap": true,
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/loch",
+        "main": "apps/loch/src/main.ts",
+        "tsConfig": "apps/loch/tsconfig.app.json",
+        "isolatedConfig": true,
+        "webpackConfig": "apps/loch/webpack.config.js",
+        "assets": [
+          {
+            "glob": "**/*.sql",
+            "input": "apps/loch/src/queries/",
+            "output": "queries/"
+          }
+        ]
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "loch:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "loch:build:development"
+        },
+        "production": {
+          "buildTarget": "loch:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "apps/loch/**/*.ts"
+        ]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/loch/jest.config.ts",
+        "coverage": true
+      }
+    }
+  },
+  "tags": []
+}
