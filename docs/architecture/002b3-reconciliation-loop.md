@@ -1,7 +1,9 @@
-# ADR-003: State Reconciliation Loop (Watchdog 2.0) and Verification
+# ADR-002b3: State Reconciliation Loop (Watchdog 2.0) and Verification
 
 **Date:** 2026-05-07
 **Status:** Proposed
+**Crossroads:** [ADR-002](./002-crossroads-meter-state-management.md)
+**Previous in path:** [ADR-002b2](./002b2-interaction-coalescing.md)
 
 ## Context
 LoRaWAN communications are lossy and high-latency. A command may be successfully executed by a meter, but the acknowledgment (ACK) may fail to reach the server (a "Ghost Success"). Conversely, manual changes or localized hardware resets can cause the meter to drift from its "Desired State." Previous attempts at a watchdog failed due to a lack of integration with the command flow.

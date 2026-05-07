@@ -1,7 +1,9 @@
-# ADR-002: Implementation of Declarative Device Shadows for State Management
+# ADR-002b1: Implementation of Declarative Device Shadows for State Management
 
 **Date:** 2026-05-07
 **Status:** Proposed
+**Crossroads:** [ADR-002](./002-crossroads-meter-state-management.md)
+**Next in path:** [ADR-002b2](./002b2-interaction-coalescing.md)
 
 ## Context
 The current system manages meter states (e.g., relay status, power limits) directly within the main `meters` table. Intent and actual state are stored as individual columns (e.g., `is_on` vs `should_be_on`). As the platform scales, this "broad table" approach is becoming difficult to maintain. Furthermore, there is no centralized mechanism to reconcile the difference between intent and reality, leading to out-of-sync meters and a lack of clear visibility into "in-flight" changes.

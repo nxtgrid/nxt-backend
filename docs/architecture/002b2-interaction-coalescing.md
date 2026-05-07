@@ -1,7 +1,10 @@
-# ADR-003: Interaction Coalescing and Batch Redundancy Elimination
+# ADR-002b2: Interaction Coalescing and Batch Redundancy Elimination
 
 **Date:** 2026-05-07
 **Status:** Proposed
+**Crossroads:** [ADR-002](./002-crossroads-meter-state-management.md)
+**Previous in path:** [ADR-002b1](./002b1-device-shadows.md)
+**Next in path:** [ADR-002b3](./002b3-reconciliation-loop.md)
 
 ## Context
 "Batch" operations (e.g., turning off 600 meters) currently create 600 individual `meter-interactions`. If multiple batches are scheduled consecutively or if communications are down, these commands pile up. This creates "buffer bloat," consumes database resources, and risks flooding the LoRa network with redundant or contradictory commands once connectivity is restored.
