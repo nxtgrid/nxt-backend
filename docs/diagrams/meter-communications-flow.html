@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meter Command Flow</title>
+  <style>
+    :root {
+      --bg:          #141414;
+      --bg-elevated: #1c1c1c;
+      --bg-card:     #1e1e1e;
+      --border:      rgba(228,228,228,0.13);
+      --border-faint:rgba(228,228,228,0.08);
+      --text:        rgba(228,228,228,0.92);
+      --text-2:      rgba(228,228,228,0.55);
+      --text-3:      rgba(228,228,228,0.37);
+      --text-4:      rgba(228,228,228,0.26);
+      --fill-1:      rgba(228,228,228,0.19);
+      --fill-2:      rgba(228,228,228,0.12);
+      --fill-3:      rgba(228,228,228,0.07);
+      --accent:      #599CE7;
+      --band-msg:    rgba(228,228,228,0.07);
+      --band-hw:     rgba(228,228,228,0.045);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── page shell ── */
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 40px 32px 64px;
+    }
+
+    /* ── zoom toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .toolbar button {
+      background: var(--fill-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 4px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      line-height: 1.6;
+    }
+    .toolbar button:hover { background: var(--fill-1); }
+    .toolbar .zoom-label {
+      font-size: 12px;
+      color: var(--text-3);
+      min-width: 42px;
+      text-align: center;
+    }
+
+    /* ── header ── */
+    h1 {
+      font-size: 24px;
+      font-weight: 590;
+      line-height: 1.25;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: var(--text-2);
+      margin-bottom: 32px;
+      max-width: 680px;
+    }
+
+    /* ── diagram ── */
+    .diagram-wrap {
+      overflow: auto;
+      border: 1px solid var(--border-faint);
+      border-radius: 8px;
+      background: var(--bg-elevated);
+      margin-bottom: 40px;
+    }
+    .diagram-inner {
+      transform-origin: top left;
+      /* width/height driven by JS zoom */
+    }
+    svg {
+      display: block;
+    }
+
+    /* ── divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border-faint);
+      margin: 40px 0;
+    }
+
+    /* ── concepts grid ── */
+    h2 {
+      font-size: 18px;
+      font-weight: 590;
+      margin-bottom: 16px;
+    }
+    .concepts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) { .concepts { grid-template-columns: 1fr; } }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .card-header {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-2);
+      background: var(--fill-3);
+    }
+    .card-body {
+      padding: 14px;
+    }
+    .card-body p {
+      color: var(--text-2);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .card-body ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-body li {
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+    .card-body li b {
+      color: var(--text);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Meter Command Flow</h1>
+  <p class="subtitle">
+    From a button click in the app, down to the physical smart meter and back —
+    gatekeeper checks, protocol adapters, push vs pull responses, and follow-on side-effects.
+  </p>
+
+  <div class="toolbar">
+    <button onclick="zoom(-0.1)">−</button>
+    <span class="zoom-label" id="zoom-label">100%</span>
+    <button onclick="zoom(+0.1)">+</button>
+    <button onclick="resetZoom()">Reset</button>
+  </div>
+
+  <div class="diagram-wrap" id="diagram-wrap">
+    <div class="diagram-inner" id="diagram-inner">
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SVG flow diagram  (920 × 940 viewBox)
+           ═══════════════════════════════════════════════════════════════ -->
+      <svg viewBox="0 0 920 940" width="920" height="940"
+           xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- main arrowhead -->
+          <marker id="am" markerWidth="8" markerHeight="8"
+                  refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.20)"/>
+          </marker>
+          <!-- faint arrowhead for branch -->
+          <marker id="amf" markerWidth="8" markerHeight="8"
+                  refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.08)"/>
+          </marker>
+        </defs>
+
+        <!-- ── layer bands ── -->
+        <!-- Device messaging -->
+        <rect x="0" y="470" width="920" height="234" fill="var(--band-msg)"/>
+        <!-- Hardware -->
+        <rect x="0" y="678" width="920" height="262" fill="var(--band-hw)"/>
+
+        <!-- ── band labels ── -->
+        <text x="457" y="614" text-anchor="middle"
+              fill="var(--text-4)" font-size="9" font-weight="700"
+              letter-spacing="2" font-family="system-ui,sans-serif">
+          DEVICE MESSAGING
+        </text>
+        <text x="457" y="784" text-anchor="middle"
+              fill="var(--text-4)" font-size="9" font-weight="700"
+              letter-spacing="2" font-family="system-ui,sans-serif">
+          HARDWARE
+        </text>
+
+        <!-- ── column labels ── -->
+        <text x="155" y="28" text-anchor="middle"
+              fill="var(--text-3)" font-size="10" font-weight="700"
+              letter-spacing="2.5" font-family="system-ui,sans-serif">
+          OUTGOING
+        </text>
+        <text x="760" y="28" text-anchor="middle"
+              fill="var(--text-3)" font-size="10" font-weight="700"
+              letter-spacing="2.5" font-family="system-ui,sans-serif">
+          INCOMING
+        </text>
+
+        <!-- ══════════════════════════════════════════════
+             Down arrows (left column)
+             ══════════════════════════════════════════════ -->
+        <!-- 1→2 user→api -->
+        <line x1="155" y1="88"  x2="155" y2="132" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 2→3 api→create -->
+        <line x1="155" y1="191" x2="155" y2="245" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 3→4 create→gate -->
+        <line x1="155" y1="304" x2="155" y2="361" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 4→5 gate→queue -->
+        <line x1="155" y1="420" x2="155" y2="477" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 5→6 queue→encode -->
+        <line x1="155" y1="536" x2="155" y2="581" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 6→7 encode→netout -->
+        <line x1="155" y1="640" x2="155" y2="685" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+
+        <!-- ── diagonal: left NS → device ── -->
+        <line x1="252" y1="726" x2="340" y2="806"
+              stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+
+        <!-- ── diagonal: device → right NS ── -->
+        <line x1="574" y1="806" x2="663" y2="726"
+              stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+
+        <!-- ══════════════════════════════════════════════
+             Up arrows (right column)
+             ══════════════════════════════════════════════ -->
+        <!-- 8→9 netin→pushpull -->
+        <line x1="760" y1="692" x2="760" y2="647" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 9→10 pushpull→decode -->
+        <line x1="760" y1="588" x2="760" y2="543" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 10→11 decode→process -->
+        <line x1="760" y1="484" x2="760" y2="421" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 11→12 process→update -->
+        <line x1="760" y1="368" x2="760" y2="305" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 12→13 update→effects -->
+        <line x1="760" y1="252" x2="760" y2="192" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+        <!-- 13→14 effects→userin -->
+        <line x1="760" y1="139" x2="760" y2="093" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#am)"/>
+
+        <!-- ── gatekeeper blocked branch ── -->
+        <line x1="252" y1="394" x2="328" y2="394"
+              stroke="rgba(228,228,228,0.08)" stroke-width="1.5"
+              stroke-dasharray="5,4" marker-end="url(#amf)"/>
+
+        <!-- blocked node -->
+        <rect x="347" y="372" width="220" height="44" rx="7"
+              fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"/>
+        <text x="457" y="388" text-anchor="middle"
+              fill="rgba(228,228,228,0.55)" font-size="12" font-weight="600"
+              font-family="system-ui,sans-serif">Request blocked</text>
+        <text x="457" y="405" text-anchor="middle"
+              fill="rgba(228,228,228,0.37)" font-size="10"
+              font-family="system-ui,sans-serif">DEFERRED · SUSPENDED · ABORTED</text>
+
+        <!-- ── step numbers (left) ── -->
+        <text x="48" y="64"  text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">1</text>
+        <text x="48" y="169" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">2</text>
+        <text x="48" y="282" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">3</text>
+        <text x="48" y="398" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">4</text>
+        <text x="48" y="514" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">5</text>
+        <text x="48" y="618" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">6</text>
+        <text x="48" y="722" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">7</text>
+
+        <!-- ── step numbers (right) ── -->
+        <text x="867" y="722" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">8</text>
+        <text x="867" y="618" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">9</text>
+        <text x="867" y="514" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">10</text>
+        <text x="867" y="398" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">11</text>
+        <text x="867" y="282" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">12</text>
+        <text x="867" y="169" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">13</text>
+        <text x="867" y="064" text-anchor="middle" fill="var(--text-4)" font-size="12" font-weight="700" font-family="system-ui,sans-serif">14</text>
+
+        <!-- ══════════════════════════════════════════════
+             LEFT NODES (outgoing)
+             ══════════════════════════════════════════════ -->
+
+        <!-- 1. App User -->
+        <rect x="60" y="34" width="190" height="52" rx="7"
+              fill="var(--fill-2)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="155" y="54" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">App User</text>
+        <text x="155" y="71" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Clicks 'Send Command'</text>
+
+        <!-- 2. REST API -->
+        <rect x="60" y="139" width="190" height="52" rx="7"
+              fill="var(--fill-3)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+        <text x="155" y="159" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">REST API</text>
+        <text x="155" y="176" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Receives the request</text>
+
+        <!-- 3. Create record -->
+        <rect x="60" y="252" width="190" height="52" rx="7"
+              fill="var(--fill-3)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+        <text x="155" y="272" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Create record</text>
+        <text x="155" y="289" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Interaction saved to database</text>
+
+        <!-- 4. Gatekeeper -->
+        <rect x="60" y="368" width="190" height="52" rx="7"
+              fill="var(--fill-3)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+        <text x="155" y="388" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Gatekeeper</text>
+        <text x="155" y="405" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Can this be sent right now?</text>
+
+        <!-- 5. Queue message -->
+        <rect x="60" y="484" width="190" height="52" rx="7"
+              fill="var(--fill-1)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+        <text x="155" y="504" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Queue message</text>
+        <text x="155" y="521" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Stored in Redis</text>
+
+        <!-- 6. Encode & dispatch -->
+        <rect x="60" y="588" width="190" height="52" rx="7"
+              fill="var(--fill-1)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+        <text x="155" y="608" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Encode &amp; dispatch</text>
+        <text x="155" y="625" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">LoRaWAN · Calin API v1 · v2</text>
+
+        <!-- 7. Network server (left) -->
+        <rect x="60" y="692" width="190" height="52" rx="7"
+              fill="var(--fill-2)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+        <text x="155" y="712" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Network server</text>
+        <text x="155" y="729" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">ChirpStack or Calin API</text>
+
+        <!-- ══════════════════════════════════════════════
+             DEVICE (bottom center)
+             ══════════════════════════════════════════════ -->
+        <rect x="345" y="812" width="224" height="60" rx="7"
+              fill="var(--fill-2)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="457" y="836" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Smart electricity meter</text>
+        <text x="457" y="853" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Physical hardware on the pole</text>
+
+        <!-- ══════════════════════════════════════════════
+             RIGHT NODES (incoming)
+             ══════════════════════════════════════════════ -->
+
+        <!-- 8. Network server (right) -->
+        <rect x="665" y="692" width="190" height="52" rx="7"
+              fill="var(--fill-2)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+        <text x="760" y="712" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Network server</text>
+        <text x="760" y="729" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Receives meter response</text>
+
+        <!-- 9. Push or pull -->
+        <rect x="665" y="588" width="190" height="52" rx="7"
+              fill="var(--fill-1)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+        <text x="760" y="608" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Push or pull</text>
+        <text x="760" y="625" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Webhook · polling every 5s</text>
+
+        <!-- 10. Decode response -->
+        <rect x="665" y="484" width="190" height="52" rx="7"
+              fill="var(--fill-1)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+        <text x="760" y="504" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Decode response</text>
+        <text x="760" y="521" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Via protocol adapter / codec</text>
+
+        <!-- 11. Process & correlate -->
+        <rect x="665" y="368" width="190" height="52" rx="7"
+              fill="var(--fill-3)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+        <text x="760" y="388" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Process &amp; correlate</text>
+        <text x="760" y="405" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Match response to sent request</text>
+
+        <!-- 12. Update record -->
+        <rect x="665" y="252" width="190" height="52" rx="7"
+              fill="var(--fill-3)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+        <text x="760" y="272" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">Update record</text>
+        <text x="760" y="289" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Write result to database</text>
+
+        <!-- 13. After-effects -->
+        <rect x="665" y="139" width="190" height="52" rx="7"
+              fill="var(--fill-3)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+        <text x="760" y="159" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">After-effects</text>
+        <text x="760" y="176" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Orders · commissioning · more</text>
+
+        <!-- 14. App User (right) -->
+        <rect x="665" y="34" width="190" height="52" rx="7"
+              fill="var(--fill-2)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="760" y="54" text-anchor="middle"
+              fill="var(--text)" font-size="12" font-weight="600" font-family="system-ui,sans-serif">App User</text>
+        <text x="760" y="71" text-anchor="middle"
+              fill="var(--text-2)" font-size="10" font-family="system-ui,sans-serif">Sees real-time update</text>
+
+      </svg>
+    </div><!-- /diagram-inner -->
+  </div><!-- /diagram-wrap -->
+
+  <hr/>
+
+  <h2>Key Concepts</h2>
+  <div class="concepts">
+
+    <div class="card">
+      <div class="card-header">Gatekeeper (step 4)</div>
+      <div class="card-body">
+        <p>Before queueing a command, the system checks whether the meter and grid are in a state that allows the command to go through.</p>
+        <ul>
+          <li><b>QUEUED</b> — all clear, command is dispatched to the device</li>
+          <li><b>DEFERRED</b> — meter is mid-commissioning; command waits and resumes automatically</li>
+          <li><b>SUSPENDED</b> — grid or gateway temporarily offline; retries when restored</li>
+          <li><b>ABORTED</b> — meter unreachable for too long; command is permanently cancelled</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Adapters &amp; Codecs (steps 6 &amp; 10)</div>
+      <div class="card-body">
+        <p>Meters use different physical and API protocols. An adapter layer handles encoding outgoing commands and decoding incoming responses for each.</p>
+        <ul>
+          <li><b>LoRaWAN (CALIN)</b> — low-power radio via ChirpStack network server; binary encoded payloads</li>
+          <li><b>Calin API v1</b> — HTTP API through a gateway device (DCU); task-based</li>
+          <li><b>Calin API v2</b> — updated HTTP API with a richer response structure</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Push vs Pull (step 9)</div>
+      <div class="card-body">
+        <p>Responses come back from meters in two different ways, depending on which communication protocol the meter uses.</p>
+        <ul>
+          <li><b>Push (LoRaWAN)</b> — ChirpStack posts a webhook when the meter replies; near-instant</li>
+          <li><b>Pull (Calin API)</b> — a background job polls the API every 5 seconds to check if the task completed</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">After-Effects (step 13)</div>
+      <div class="card-body">
+        <p>When a command completes (or fails definitively), a chain of follow-on actions runs automatically.</p>
+        <ul>
+          <li>Update the meter's last-known state (credit, power limit, RSSI, etc.)</li>
+          <li>Advance or fail an active commissioning flow</li>
+          <li>Notify linked orders or batch commands of their progress</li>
+          <li>Trigger follow-up reads (e.g. read credit balance after a top-up)</li>
+          <li>Push a real-time update to the user's dashboard via WebSocket</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /concepts -->
+</div><!-- /page -->
+
+<script>
+  let scale = 1.0;
+  const inner = document.getElementById('diagram-inner');
+  const label = document.getElementById('zoom-label');
+  const svg   = inner.querySelector('svg');
+
+  function applyZoom() {
+    const w = Math.round(920 * scale);
+    const h = Math.round(940 * scale);
+    svg.setAttribute('width',  w);
+    svg.setAttribute('height', h);
+    label.textContent = Math.round(scale * 100) + '%';
+  }
+
+  function zoom(delta) {
+    scale = Math.min(3, Math.max(0.3, scale + delta));
+    applyZoom();
+  }
+
+  function resetZoom() {
+    scale = 1.0;
+    applyZoom();
+  }
+
+  // also support Ctrl/Cmd + scroll
+  document.getElementById('diagram-wrap').addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      zoom(e.deltaY < 0 ? 0.1 : -0.1);
+    }
+  }, { passive: false });
+</script>
+</body>
+</html>

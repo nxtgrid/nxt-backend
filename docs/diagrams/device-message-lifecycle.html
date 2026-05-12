@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device Message Lifecycle</title>
+  <style>
+    :root {
+      --bg:          #141414;
+      --bg-elevated: #1c1c1c;
+      --bg-card:     #1e1e1e;
+      --bg-chrome:   #141414;
+      --border:      rgba(228,228,228,0.20);
+      --border-2:    rgba(228,228,228,0.12);
+      --border-3:    rgba(228,228,228,0.08);
+      --text:        rgba(228,228,228,0.92);
+      --text-2:      rgba(228,228,228,0.55);
+      --text-3:      rgba(228,228,228,0.37);
+      --text-4:      rgba(228,228,228,0.26);
+      --fill-1:      rgba(228,228,228,0.19);
+      --fill-2:      rgba(228,228,228,0.12);
+      --fill-3:      rgba(228,228,228,0.07);
+      --accent:      #599CE7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .page { max-width: 1000px; margin: 0 auto; padding: 40px 32px 72px; }
+
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+    .toolbar button {
+      background: var(--fill-2); border: 1px solid var(--border-2);
+      color: var(--text); border-radius: 5px; padding: 4px 12px;
+      font-size: 13px; cursor: pointer; line-height: 1.6;
+    }
+    .toolbar button:hover { background: var(--fill-1); }
+    .toolbar .lbl { font-size: 12px; color: var(--text-3); min-width: 40px; text-align: center; }
+
+    h1 { font-size: 24px; font-weight: 590; margin-bottom: 8px; }
+    h2 { font-size: 18px; font-weight: 590; margin: 36px 0 6px; }
+    .sub { color: var(--text-2); font-size: 13px; margin-bottom: 16px; max-width: 760px; }
+
+    .diagram-wrap {
+      overflow: auto; border: 1px solid var(--border-3); border-radius: 8px;
+      background: var(--bg-elevated); margin-bottom: 4px;
+    }
+    svg { display: block; }
+
+    hr { border: none; border-top: 1px solid var(--border-3); margin: 36px 0; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .card { border: 1px solid var(--border-2); border-radius: 7px; overflow: hidden; }
+    .card-hd {
+      font-size: 12px; font-weight: 600; padding: 7px 14px;
+      border-bottom: 1px solid var(--border-2); color: var(--text-2);
+      background: var(--fill-3);
+    }
+    .card-bd { padding: 14px; }
+    .card-bd p { color: var(--text-2); font-size: 13px; margin-bottom: 10px; }
+    .card-bd ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .card-bd li { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+    .card-bd li b { color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Device Message Lifecycle</h1>
+  <p class="sub">
+    How a device message moves through the Redis queue system — from initial enqueue to
+    delivery confirmation or permanent failure. Two sections: the full state machine, then
+    a side-by-side deep dive of the push (LoRaWAN) and pull (Calin API) paths.
+  </p>
+
+  <div class="toolbar">
+    <button onclick="zoom1(-0.15)">−</button>
+    <span class="lbl" id="lbl1">100%</span>
+    <button onclick="zoom1(+0.15)">+</button>
+    <button onclick="reset1()">Reset</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 1 — State Machine
+       ══════════════════════════════════════════════════════════════ -->
+  <h2>Queue State Machine</h2>
+  <p class="sub">Seven delivery statuses and how messages transition between them.</p>
+
+  <div class="diagram-wrap" id="w1">
+    <svg id="svg1" viewBox="0 0 960 292" width="960" height="292"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="sm" markerWidth="8" markerHeight="8" refX="7" refY="4"
+                orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.20)"/>
+        </marker>
+        <marker id="smf" markerWidth="8" markerHeight="8" refX="7" refY="4"
+                orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.08)"/>
+        </marker>
+      </defs>
+
+      <!-- main path arrows -->
+      <line x1="162" y1="80" x2="182" y2="80" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#sm)"/>
+      <line x1="336" y1="80" x2="374" y2="80" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#sm)"/>
+      <line x1="530" y1="80" x2="570" y2="80" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#sm)"/>
+      <line x1="724" y1="80" x2="782" y2="80" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#sm)"/>
+
+      <!-- arrow labels -->
+      <text x="172" y="69" text-anchor="middle" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">dispatch</text>
+      <text x="355" y="69" text-anchor="middle" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">NS accepted · 20s</text>
+      <text x="550" y="69" text-anchor="middle" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">push: tx-ack</text>
+      <text x="753" y="69" text-anchor="middle" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">ACK + uplink</text>
+
+      <!-- pull direct arc -->
+      <path d="M 530,100 C 582,152 800,152 782,100" fill="none"
+            stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#smf)"/>
+      <text x="656" y="166" text-anchor="middle" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">
+        pull: task complete (skips SENT_TO_DEVICE)
+      </text>
+
+      <!-- failure arrows → TO_RETRY -->
+      <line x1="256" y1="103" x2="330" y2="170" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" marker-end="url(#smf)"/>
+      <text x="270" y="146" text-anchor="start" fill="rgba(228,228,228,0.26)" font-size="9" font-family="system-ui,sans-serif">timeout 20s</text>
+
+      <line x1="450" y1="103" x2="400" y2="170" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" marker-end="url(#smf)"/>
+      <text x="392" y="135" text-anchor="end" fill="rgba(228,228,228,0.26)" font-size="9" font-family="system-ui,sans-serif">push: 15min</text>
+      <text x="392" y="147" text-anchor="end" fill="rgba(228,228,228,0.26)" font-size="9" font-family="system-ui,sans-serif">pull: 48h</text>
+
+      <line x1="644" y1="103" x2="482" y2="170" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" marker-end="url(#smf)"/>
+      <text x="590" y="128" text-anchor="end" fill="rgba(228,228,228,0.26)" font-size="9" font-family="system-ui,sans-serif">12s / bad ACK</text>
+
+      <!-- TO_RETRY → DELIVERY_FAILED -->
+      <line x1="478" y1="196" x2="582" y2="196" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" marker-end="url(#smf)"/>
+      <text x="530" y="188" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="9" font-family="system-ui,sans-serif">
+        after 11 retries or skipRetry
+      </text>
+
+      <!-- retry back-arc -->
+      <path d="M 352,219 C 352,260 84,260 84,103" fill="none"
+            stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#smf)"/>
+      <text x="208" y="257" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="9" font-family="system-ui,sans-serif">
+        re-enqueued after backoff  (2s → doubles → max 1h, +50% jitter)
+      </text>
+
+      <!-- MAIN PATH NODES -->
+      <!-- QUEUED -->
+      <rect x="6" y="57" width="156" height="46" rx="6" fill="var(--fill-3)" stroke="var(--border-2)" stroke-width="1.5"/>
+      <text x="84" y="75" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">QUEUED</text>
+      <text x="84" y="91" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">initial queue</text>
+
+      <!-- SENT_TO_NS -->
+      <rect x="180" y="57" width="156" height="46" rx="6" fill="var(--fill-2)" stroke="var(--border-2)" stroke-width="1.5"/>
+      <text x="258" y="75" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">SENT_TO_NS</text>
+      <text x="258" y="91" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">queue_in_flight_to_ns</text>
+
+      <!-- DELIVERED_TO_NS -->
+      <rect x="374" y="57" width="156" height="46" rx="6" fill="var(--fill-1)" stroke="var(--border)" stroke-width="1.5"/>
+      <text x="452" y="75" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">DELIVERED_TO_NS</text>
+      <text x="452" y="91" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">GW queue (push) · awaiting_task (pull)</text>
+
+      <!-- SENT_TO_DEVICE -->
+      <rect x="568" y="57" width="156" height="46" rx="6" fill="var(--fill-1)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="646" y="73" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">SENT_TO_DEVICE</text>
+      <text x="646" y="87" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">queue_in_flight_to_device</text>
+      <text x="646" y="99" text-anchor="middle" fill="var(--text-3)" font-size="8" font-family="system-ui,sans-serif">PUSH ONLY</text>
+
+      <!-- DELIVERY_SUCCESSFUL -->
+      <rect x="780" y="57" width="156" height="46" rx="6" fill="var(--fill-2)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="858" y="75" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">DELIVERY_SUCCESSFUL</text>
+      <text x="858" y="91" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">cleaned up from Redis</text>
+
+      <!-- TO_RETRY -->
+      <rect x="324" y="173" width="156" height="46" rx="6" fill="var(--fill-3)" stroke="var(--border-2)" stroke-width="1.5"/>
+      <text x="402" y="191" text-anchor="middle" fill="var(--text-2)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">TO_RETRY</text>
+      <text x="402" y="207" text-anchor="middle" fill="var(--text-3)" font-size="9" font-family="system-ui,sans-serif">queue_awaiting_retry</text>
+
+      <!-- DELIVERY_FAILED -->
+      <rect x="582" y="173" width="156" height="46" rx="6" fill="var(--bg-chrome)" stroke="var(--border-3)" stroke-width="1.5"/>
+      <text x="660" y="191" text-anchor="middle" fill="var(--text-2)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">DELIVERY_FAILED</text>
+      <text x="660" y="207" text-anchor="middle" fill="var(--text-3)" font-size="9" font-family="system-ui,sans-serif">terminal · published to subscribers</text>
+
+    </svg>
+  </div>
+
+  <hr/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 2 — Push vs Pull
+       ══════════════════════════════════════════════════════════════ -->
+  <h2>Push vs Pull — Detailed Paths</h2>
+  <p class="sub">
+    The divergence happens after the network server confirms receipt.
+    LoRaWAN relies on ChirpStack webhooks; Calin API uses a polling loop with a stored task ID.
+  </p>
+
+  <div class="toolbar">
+    <button onclick="zoom2(-0.15)">−</button>
+    <span class="lbl" id="lbl2">100%</span>
+    <button onclick="zoom2(+0.15)">+</button>
+    <button onclick="reset2()">Reset</button>
+  </div>
+
+  <div class="diagram-wrap" id="w2">
+    <svg id="svg2" viewBox="0 0 960 522" width="960" height="522"
+         xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="pm" markerWidth="8" markerHeight="8" refX="7" refY="4"
+                orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.20)"/>
+        </marker>
+        <marker id="pmf" markerWidth="8" markerHeight="8" refX="7" refY="4"
+                orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.08)"/>
+        </marker>
+      </defs>
+
+      <!-- column headers -->
+      <text x="240" y="22" text-anchor="middle" fill="var(--text-3)" font-size="10" font-weight="700" letter-spacing="2" font-family="system-ui,sans-serif">PUSH  —  LoRaWAN</text>
+      <text x="720" y="22" text-anchor="middle" fill="var(--text-3)" font-size="10" font-weight="700" letter-spacing="2" font-family="system-ui,sans-serif">PULL  —  Calin API</text>
+
+      <!-- centre divider -->
+      <line x1="480" y1="30" x2="480" y2="510" stroke="var(--border-3)" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- initial queue key labels -->
+      <text x="240" y="58" text-anchor="middle" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">queue:lorawan_network:{grid_id}</text>
+      <text x="720" y="58" text-anchor="middle" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">queue:gateway:{gateway_id}</text>
+
+      <!-- ════ PUSH (cx=240) ════ -->
+
+      <!-- 1. Enqueued -->
+      <rect x="138" y="63" width="204" height="42" rx="6" fill="var(--fill-1)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="240" y="81" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">Enqueued</text>
+      <text x="240" y="96" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">priority-sorted Redis sorted set</text>
+
+      <line x1="240" y1="105" x2="240" y2="132" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="250" y="124" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">flood-prevention lock (2s)</text>
+
+      <!-- 2. queue_in_flight_to_ns -->
+      <rect x="138" y="131" width="204" height="42" rx="6" fill="var(--fill-3)" stroke="var(--border-2)" stroke-width="1.5"/>
+      <text x="240" y="149" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">queue_in_flight_to_ns</text>
+      <text x="240" y="164" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">SENT_TO_NS  ·  20s timeout</text>
+
+      <line x1="240" y1="173" x2="240" y2="198" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="250" y="191" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">ChirpStack enqueueDeviceRequest</text>
+
+      <!-- 3. queue_in_flight_to_gw -->
+      <rect x="138" y="197" width="204" height="44" rx="6" fill="var(--fill-1)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="240" y="215" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">queue_in_flight_to_gw</text>
+      <text x="240" y="230" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">DELIVERED_TO_NS  ·  15min timeout</text>
+
+      <text x="354" y="214" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">reaper checks ChirpStack remote queue;</text>
+      <text x="354" y="226" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">extends timeout if item still present</text>
+
+      <line x1="240" y1="241" x2="240" y2="270" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="250" y="262" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">webhook: downlink tx-ack (downlinkId present)</text>
+
+      <!-- 4. queue_in_flight_to_device -->
+      <rect x="138" y="269" width="204" height="44" rx="6" fill="var(--fill-1)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="240" y="287" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">queue_in_flight_to_device</text>
+      <text x="240" y="302" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">SENT_TO_DEVICE  ·  12s timeout</text>
+
+      <line x1="240" y1="313" x2="240" y2="342" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="250" y="334" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">webhook: ACK event + uplink event</text>
+
+      <!-- 5. Correlation -->
+      <rect x="138" y="341" width="204" height="44" rx="6" fill="var(--fill-1)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="240" y="359" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">ACK / Uplink Correlation</text>
+      <text x="240" y="374" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">10s window  ·  keyed by deduplicationId</text>
+
+      <line x1="240" y1="385" x2="240" y2="416" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="250" y="407" text-anchor="start" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">both events paired → result resolved</text>
+
+      <!-- 6. DELIVERY_SUCCESSFUL (push) -->
+      <rect x="138" y="415" width="204" height="44" rx="6" fill="var(--fill-2)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="240" y="433" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">DELIVERY_SUCCESSFUL</text>
+      <text x="240" y="448" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">message cleaned up from Redis</text>
+
+      <!-- ════ PULL (cx=720) ════ -->
+
+      <!-- 1. Enqueued -->
+      <rect x="618" y="63" width="204" height="42" rx="6" fill="var(--fill-2)" stroke="var(--border)" stroke-width="1.5"/>
+      <text x="720" y="81" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">Enqueued</text>
+      <text x="720" y="96" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">priority-sorted Redis sorted set</text>
+
+      <line x1="720" y1="105" x2="720" y2="132" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="610" y="124" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">max 5 concurrent per gateway</text>
+
+      <!-- 2. queue_in_flight_to_ns -->
+      <rect x="618" y="131" width="204" height="42" rx="6" fill="var(--fill-3)" stroke="var(--border-2)" stroke-width="1.5"/>
+      <text x="720" y="149" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">queue_in_flight_to_ns</text>
+      <text x="720" y="164" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">SENT_TO_NS  ·  20s timeout</text>
+
+      <line x1="720" y1="173" x2="720" y2="198" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="610" y="191" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">Calin API creates task → returns task ID</text>
+
+      <!-- 3. queue_awaiting_task -->
+      <rect x="618" y="197" width="204" height="44" rx="6" fill="var(--fill-2)" stroke="var(--border)" stroke-width="1.5"/>
+      <text x="720" y="215" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">queue_awaiting_task:{V1|V2}</text>
+      <text x="720" y="230" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">DELIVERED_TO_NS  ·  task_id stored</text>
+
+      <!-- self-loop: polling -->
+      <path d="M 826,220 C 872,202 872,238 826,220" fill="none"
+            stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#pmf)"/>
+      <text x="610" y="212" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">cron sweep every 5s;</text>
+      <text x="610" y="224" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">per-msg delay: 10s → 15s → 20s → 30s</text>
+      <text x="610" y="236" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">(increases with message age)</text>
+
+      <line x1="720" y1="241" x2="720" y2="282" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="610" y="268" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">adapter fetches task status from API</text>
+
+      <!-- 4. Task response -->
+      <rect x="618" y="281" width="204" height="50" rx="6" fill="var(--fill-2)" stroke="var(--border)" stroke-width="1.5"/>
+      <text x="720" y="301" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">Task Response</text>
+      <text x="720" y="316" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">null → still pending  |  success  |  failure</text>
+      <text x="720" y="328" text-anchor="middle" fill="var(--text-3)" font-size="8" font-family="system-ui,sans-serif">V1: Status field  ·  V2: status code 0/1/2/3</text>
+
+      <!-- pending loop back -->
+      <path d="M 618,306 C 570,306 570,220 616,220" fill="none"
+            stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#pmf)"/>
+      <text x="560" y="265" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">null: re-score</text>
+      <text x="560" y="277" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">for next poll</text>
+
+      <line x1="720" y1="331" x2="720" y2="394" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#pm)"/>
+      <text x="610" y="374" text-anchor="end" fill="var(--text-4)" font-size="9" font-family="system-ui,sans-serif">EXECUTION_SUCCESS or EXECUTION_FAILURE</text>
+
+      <!-- max-age note -->
+      <text x="610" y="408" text-anchor="end" fill="rgba(228,228,228,0.20)" font-size="9" font-family="system-ui,sans-serif">if age &gt; 48h → DELIVERY_FAILED</text>
+      <text x="610" y="420" text-anchor="end" fill="rgba(228,228,228,0.20)" font-size="9" font-family="system-ui,sans-serif">permanent failure, no retry</text>
+
+      <!-- 5. DELIVERY_SUCCESSFUL (pull) -->
+      <rect x="618" y="393" width="204" height="56" rx="6" fill="var(--fill-2)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="720" y="413" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="system-ui,sans-serif">DELIVERY_SUCCESSFUL</text>
+      <text x="720" y="428" text-anchor="middle" fill="var(--text-2)" font-size="9" font-family="system-ui,sans-serif">execution ok or failed</text>
+      <text x="720" y="441" text-anchor="middle" fill="var(--text-3)" font-size="8" font-family="system-ui,sans-serif">max 48h · then DELIVERY_FAILED (no retry)</text>
+
+    </svg>
+  </div>
+
+  <hr/>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION 3 — Detail cards
+       ══════════════════════════════════════════════════════════════ -->
+  <h2>Reaper, Retry &amp; Timeouts</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-hd">Reaper Cron</div>
+      <div class="card-bd">
+        <p>Runs every 2 seconds in production. In each pass:</p>
+        <ul>
+          <li>Expires timed-out messages in <b>queue_in_flight_to_ns</b> (20s)</li>
+          <li>Scans push queues for GW (15min) and device (12s) timeouts; extends GW if still on ChirpStack</li>
+          <li>Scans pull queues for max-age violations (48h) → permanent failure</li>
+          <li>Releases messages in <b>queue_awaiting_retry</b> whose backoff has elapsed</li>
+          <li>Triggers a new distribute-to-NS cycle</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">Retry Mechanics</div>
+      <div class="card-bd">
+        <p>Most failures go through <b>retryOrFail</b> before reaching DELIVERY_FAILED.</p>
+        <ul>
+          <li><b>Max retries:</b> 11 (12 total attempts)</li>
+          <li><b>Backoff:</b> 2s base, doubles each retry, capped at 1 hour</li>
+          <li><b>Jitter:</b> 0–50% random offset added to reduce thundering herd</li>
+          <li><b>skipRetry:</b> bad token, device not in ChirpStack, unsupported command → immediate final failure</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">Timeout Reference</div>
+      <div class="card-bd">
+        <ul>
+          <li><b>NS accept:</b> 20s — both push and pull</li>
+          <li><b>GW delivery (push):</b> 15 min — extendable if still on ChirpStack queue</li>
+          <li><b>Device response (push):</b> 12s after tx-ack</li>
+          <li><b>Correlation window:</b> 10s — ACK and uplink must arrive within 10s of each other</li>
+          <li><b>Max age (pull):</b> 48h — permanent failure, no retry</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  function makeZoomer(svgId, lblId) {
+    let scale = 1.0;
+    const svg = document.getElementById(svgId);
+    const lbl = document.getElementById(lblId);
+    const vbW = parseFloat(svg.getAttribute('viewBox').split(' ')[2]);
+    const vbH = parseFloat(svg.getAttribute('viewBox').split(' ')[3]);
+    function apply() {
+      svg.setAttribute('width',  Math.round(vbW * scale));
+      svg.setAttribute('height', Math.round(vbH * scale));
+      lbl.textContent = Math.round(scale * 100) + '%';
+    }
+    return {
+      zoom(d) { scale = Math.min(3, Math.max(0.3, scale + d)); apply(); },
+      reset()  { scale = 1.0; apply(); },
+    };
+  }
+
+  const z1 = makeZoomer('svg1', 'lbl1');
+  const z2 = makeZoomer('svg2', 'lbl2');
+
+  function zoom1(d)  { z1.zoom(d); }
+  function reset1()  { z1.reset(); }
+  function zoom2(d)  { z2.zoom(d); }
+  function reset2()  { z2.reset(); }
+
+  ['w1','w2'].forEach((id, i) => {
+    document.getElementById(id).addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        (i === 0 ? z1 : z2).zoom(e.deltaY < 0 ? 0.15 : -0.15);
+      }
+    }, { passive: false });
+  });
+</script>
+</body>
+</html>

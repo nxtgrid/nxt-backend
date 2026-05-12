@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>After-Effects Cascade</title>
+  <style>
+    :root {
+      --bg:          #141414;
+      --bg-elevated: #1c1c1c;
+      --bg-card:     #1e1e1e;
+      --bg-chrome:   #141414;
+      --border:      rgba(228,228,228,0.20);
+      --border-2:    rgba(228,228,228,0.12);
+      --border-3:    rgba(228,228,228,0.08);
+      --text:        rgba(228,228,228,0.92);
+      --text-2:      rgba(228,228,228,0.55);
+      --text-3:      rgba(228,228,228,0.37);
+      --text-4:      rgba(228,228,228,0.26);
+      --fill-1:      rgba(228,228,228,0.19);
+      --fill-2:      rgba(228,228,228,0.12);
+      --fill-3:      rgba(228,228,228,0.07);
+      --accent:      #599CE7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .page { max-width: 1020px; margin: 0 auto; padding: 40px 32px 72px; }
+
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .toolbar button {
+      background: var(--fill-2); border: 1px solid var(--border-2);
+      color: var(--text); border-radius: 5px; padding: 4px 12px;
+      font-size: 13px; cursor: pointer; line-height: 1.6;
+    }
+    .toolbar button:hover { background: var(--fill-1); }
+    .toolbar .lbl { font-size: 12px; color: var(--text-3); min-width: 40px; text-align: center; }
+
+    h1 { font-size: 24px; font-weight: 590; margin-bottom: 8px; }
+    h2 { font-size: 18px; font-weight: 590; margin: 36px 0 6px; }
+    .sub { color: var(--text-2); font-size: 13px; margin-bottom: 20px; max-width: 800px; }
+
+    .diagram-wrap {
+      overflow: auto; border: 1px solid var(--border-3); border-radius: 8px;
+      background: var(--bg-elevated); margin-bottom: 4px;
+    }
+    svg { display: block; }
+
+    hr { border: none; border-top: 1px solid var(--border-3); margin: 36px 0; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    .card { border: 1px solid var(--border-2); border-radius: 7px; overflow: hidden; }
+    .card-hd {
+      font-size: 12px; font-weight: 600; padding: 7px 14px;
+      border-bottom: 1px solid var(--border-2); color: var(--text-2);
+      background: var(--fill-3);
+    }
+    .card-bd { padding: 14px; }
+    .card-bd p { color: var(--text-2); font-size: 12px; margin-bottom: 10px; line-height: 1.6; }
+    .card-bd ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .card-bd li { font-size: 12px; color: var(--text-2); line-height: 1.6; }
+    .card-bd li b { color: var(--text); font-weight: 600; }
+    .card-bd .note { font-size: 11px; color: var(--text-3); margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>After-Effects Cascade</h1>
+  <p class="sub">
+    Everything that runs automatically when a meter interaction reaches a final status —
+    ordered sequence, conditional branches, follow-up interactions, and the abort cascade.
+  </p>
+
+  <h2>The blastoff Sequence</h2>
+  <p class="sub">
+    Eight steps run in code order after the interaction row is persisted. Steps 5–7 are
+    fired asynchronously (not awaited). Step 8 is always last.
+  </p>
+
+  <div class="toolbar" id="tb1">
+    <button onclick="zoom('d1','in')">+ Zoom in</button>
+    <button onclick="zoom('d1','out')">− Zoom out</button>
+    <button onclick="zoom('d1','reset')">Reset</button>
+    <span class="lbl" id="lbl1">100%</span>
+  </div>
+
+  <div class="diagram-wrap" id="d1">
+    <svg id="svg1" viewBox="0 0 960 740" width="960" height="740" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ae" markerWidth="8" markerHeight="8" refX="7" refY="4"
+          orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.20)"/>
+        </marker>
+        <marker id="aef" markerWidth="8" markerHeight="8" refX="7" refY="4"
+          orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.08)"/>
+        </marker>
+      </defs>
+
+      <!-- dashed spine -->
+      <line x1="185" y1="20" x2="185" y2="714" stroke="rgba(228,228,228,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- step arrows -->
+      <line x1="185" y1="81"  x2="185" y2="128" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+      <line x1="185" y1="183" x2="185" y2="230" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+      <line x1="185" y1="285" x2="185" y2="332" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+      <line x1="185" y1="387" x2="185" y2="426" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+      <line x1="185" y1="481" x2="185" y2="492" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+      <line x1="185" y1="547" x2="185" y2="558" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+      <line x1="185" y1="613" x2="185" y2="648" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#ae)"/>
+
+      <!-- ── Step 1: Load interaction + meter ── -->
+      <rect x="63" y="32" width="244" height="48" rx="6"
+        fill="rgba(228,228,228,0.07)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+      <text x="185" y="50" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Load interaction + meter</text>
+      <text x="185" y="66" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">Single DB query with nested meter tree</text>
+
+      <!-- ── Step 2: Build meter update ── -->
+      <rect x="63" y="134" width="244" height="48" rx="6"
+        fill="rgba(228,228,228,0.07)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+      <text x="185" y="152" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Build meter update</text>
+      <text x="185" y="168" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">Type-specific fields + LoRaWAN device info</text>
+
+      <!-- ── Step 3: Auto-close open issue ── -->
+      <rect x="63" y="236" width="244" height="48" rx="6"
+        fill="rgba(228,228,228,0.07)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+      <text x="185" y="254" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Auto-close open issue</text>
+      <text x="185" y="270" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">If issue type matches closing criteria</text>
+
+      <!-- ── Step 4: Write meter to database ── -->
+      <rect x="63" y="338" width="244" height="48" rx="6"
+        fill="rgba(228,228,228,0.07)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+      <text x="185" y="356" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Write meter to database</text>
+      <text x="185" y="372" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">UPDATE meters SET ...</text>
+
+      <!-- ── Step 5: Telegram notification (conditional) ── -->
+      <rect x="63" y="432" width="244" height="48" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <text x="185" y="450" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Telegram notification</text>
+      <text x="185" y="466" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">if order_id · terminal status only</text>
+
+      <!-- ── Step 6: Recalculate batch progress (conditional) ── -->
+      <rect x="63" y="498" width="244" height="48" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <text x="185" y="516" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Recalculate batch progress</text>
+      <text x="185" y="532" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">if batch_execution_id · throttled 5s</text>
+
+      <!-- ── Step 7: Commissioning flow (conditional) ── -->
+      <rect x="63" y="564" width="244" height="48" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" stroke-dasharray="6,4"/>
+      <text x="185" y="582" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Commissioning flow</text>
+      <text x="185" y="598" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">advance active or resume paused</text>
+
+      <!-- ── Step 8: Emit WebSocket UPDATE (final) ── -->
+      <rect x="63" y="654" width="244" height="48" rx="6"
+        fill="rgba(228,228,228,0.12)" stroke="#599CE7" stroke-width="1.5"/>
+      <text x="185" y="672" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Emit WebSocket UPDATE</text>
+      <text x="185" y="688" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">meter-interaction event · grid room</text>
+
+      <!-- step numbers -->
+      <text x="49" y="61"  text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">1</text>
+      <text x="49" y="163" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">2</text>
+      <text x="49" y="265" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">3</text>
+      <text x="49" y="367" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">4</text>
+      <text x="49" y="461" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">5</text>
+      <text x="49" y="527" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">6</text>
+      <text x="49" y="593" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">7</text>
+      <text x="49" y="683" text-anchor="middle" fill="rgba(228,228,228,0.26)" font-size="13" font-weight="700" font-family="system-ui,sans-serif">8</text>
+
+      <!-- async bracket (beside steps 5–7) -->
+      <text x="55" y="412" text-anchor="end" fill="rgba(228,228,228,0.08)"
+        font-size="9" font-family="system-ui,sans-serif">async /</text>
+      <text x="55" y="424" text-anchor="end" fill="rgba(228,228,228,0.08)"
+        font-size="9" font-family="system-ui,sans-serif">no await</text>
+      <line x1="54" y1="406" x2="54" y2="610"
+        stroke="rgba(228,228,228,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- ══ right annotations ══ -->
+
+      <!-- Step 1 connector + labels -->
+      <line x1="309" y1="56" x2="326" y2="56" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"
+        stroke-dasharray="5,4" marker-end="url(#aef)"/>
+      <text x="334" y="50" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        Loads: type, status, result_value, order_id, batch_execution_id,
+      </text>
+      <text x="334" y="62" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        meter_commissioning, full meter + dcu + grid + last_commissioning
+      </text>
+
+      <!-- Step 2 connector + field update labels -->
+      <line x1="309" y1="158" x2="326" y2="158" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"
+        stroke-dasharray="5,4" marker-end="url(#aef)"/>
+      <text x="334" y="144" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        updateMeterByInteraction (SUCCESSFUL only):  TURN_ON/OFF → is_on  ·  SET/READ_POWER_LIMIT → power_limit
+      </text>
+      <text x="334" y="156" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        READ_CREDIT → credit + is_on  ·  READ_REPORT → same + analytics POST (prod only)  ·  READ_VERSION → version
+      </text>
+      <text x="334" y="168" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        updateMeterByDeviceInfo (LoRaWAN only):  RSSI/SNR → connection_metrics, possible dcu_id reassignment
+      </text>
+
+      <!-- Step 2: follow-up box -->
+      <rect x="334" y="178" width="614" height="60" rx="5"
+        fill="rgba(228,228,228,0.19)" stroke="rgba(228,228,228,0.12)" stroke-width="1"/>
+      <text x="344" y="193" fill="rgba(228,228,228,0.55)" font-size="9" font-weight="600" font-family="system-ui,sans-serif">
+        Follow-up interactions (async, not awaited)
+      </text>
+      <text x="344" y="207" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        TOP_UP success     →  creates READ_CREDIT  (skipped if part of commissioning)
+      </text>
+      <text x="344" y="219" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        CLEAR_CREDIT success  →  creates READ_CREDIT  (skipped if part of commissioning)
+      </text>
+      <text x="344" y="231" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        SET_POWER_LIMIT fail (CALIN_V1 only)  →  creates READ_POWER_LIMIT
+      </text>
+      <!-- loop-back note -->
+      <text x="910" y="207" text-anchor="end" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">↺ each new</text>
+      <text x="910" y="219" text-anchor="end" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">interaction</text>
+      <text x="910" y="231" text-anchor="end" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">re-enters at</text>
+      <text x="910" y="243" text-anchor="end" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">step 1</text>
+
+      <!-- Step 3 connector + issue labels -->
+      <line x1="309" y1="260" x2="326" y2="260" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"
+        stroke-dasharray="5,4" marker-end="url(#aef)"/>
+      <text x="334" y="252" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        NO_COMMUNICATION       → closes when any interaction succeeds (last_seen_at is set)
+      </text>
+      <text x="334" y="264" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        NO_CREDIT              → closes when resulting credit balance &gt; 0
+      </text>
+      <text x="334" y="276" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        UNEXPECTED_POWER_LIMIT → closes when power_limit equals power_limit_should_be
+      </text>
+
+      <!-- Step 5 note -->
+      <text x="321" y="464" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">
+        POST to FlowXO webhook · only for SUCCESSFUL or FAILED status
+      </text>
+
+      <!-- Step 6 note -->
+      <text x="321" y="530" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">
+        recalculates pending / processing / successful / failed counts on the batch_execution row
+      </text>
+
+      <!-- Step 7 connector + commissioning labels -->
+      <line x1="309" y1="588" x2="326" y2="588" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"
+        stroke-dasharray="5,4" marker-end="url(#aef)"/>
+      <text x="334" y="580" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        interaction has meter_commissioning_id  →  advanceActiveCommissioningFlow (update status, trigger next, fail siblings on error)
+      </text>
+      <text x="334" y="594" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        no commissioning + last_commissioning = PENDING + this SUCCESSFUL  →  resumeInactiveCommissioningFlow
+      </text>
+
+      <!-- Step 8 note -->
+      <text x="321" y="682" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">
+        socket.io room: gridId  ·  event: 'meter-interaction'  ·  operation: 'UPDATE'  ·  skipped if skipWebsocketEmission flag set
+      </text>
+    </svg>
+  </div>
+
+  <hr/>
+
+  <h2>Follow-up Interactions &amp; Abort Cascade</h2>
+  <p class="sub">
+    Two patterns that extend beyond a single interaction lifecycle.
+  </p>
+
+  <div class="toolbar" id="tb2">
+    <button onclick="zoom('d2','in')">+ Zoom in</button>
+    <button onclick="zoom('d2','out')">− Zoom out</button>
+    <button onclick="zoom('d2','reset')">Reset</button>
+    <span class="lbl" id="lbl2">100%</span>
+  </div>
+
+  <div class="diagram-wrap" id="d2">
+    <svg id="svg2" viewBox="0 0 960 220" width="960" height="220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="be" markerWidth="8" markerHeight="8" refX="7" refY="4"
+          orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.20)"/>
+        </marker>
+        <marker id="bef" markerWidth="8" markerHeight="8" refX="7" refY="4"
+          orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L8,4 L0,8 Z" fill="rgba(228,228,228,0.08)"/>
+        </marker>
+      </defs>
+
+      <!-- divider -->
+      <line x1="480" y1="8" x2="480" y2="212" stroke="rgba(228,228,228,0.08)" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- column labels -->
+      <text x="240" y="18" text-anchor="middle" fill="rgba(228,228,228,0.26)"
+        font-size="9" font-weight="700" letter-spacing="2" font-family="system-ui,sans-serif">FOLLOW-UP INTERACTIONS</text>
+      <text x="720" y="18" text-anchor="middle" fill="rgba(228,228,228,0.26)"
+        font-size="9" font-weight="700" letter-spacing="2" font-family="system-ui,sans-serif">ABORT CASCADE</text>
+
+      <!-- ── left: follow-up rows ── -->
+
+      <!-- Row 1: TOP_UP / CLEAR_CREDIT -->
+      <rect x="14" y="56" width="188" height="44" rx="6"
+        fill="rgba(228,228,228,0.19)" stroke="rgba(228,228,228,0.20)" stroke-width="1.5"/>
+      <text x="108" y="72" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">TOP_UP or CLEAR_CREDIT</text>
+      <text x="108" y="88" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">status: SUCCESSFUL</text>
+      <!-- arrow to READ_CREDIT -->
+      <line x1="204" y1="78" x2="232" y2="78" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#be)"/>
+      <!-- READ_CREDIT node -->
+      <rect x="240" y="56" width="156" height="44" rx="6"
+        fill="rgba(228,228,228,0.07)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+      <text x="318" y="72" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">READ_CREDIT created</text>
+      <text x="318" y="88" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">_createOneForMeter()</text>
+      <!-- diagonal to merge point -->
+      <line x1="397" y1="78" x2="440" y2="103" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#be)"/>
+
+      <!-- Row 2: SET_POWER_LIMIT fail -->
+      <rect x="14" y="130" width="188" height="44" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"/>
+      <text x="108" y="146" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">SET_POWER_LIMIT</text>
+      <text x="108" y="162" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">FAILED · CALIN_V1 only</text>
+      <!-- arrow to READ_POWER_LIMIT -->
+      <line x1="204" y1="152" x2="232" y2="152" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#be)"/>
+      <!-- READ_POWER_LIMIT node -->
+      <rect x="240" y="130" width="156" height="44" rx="6"
+        fill="rgba(228,228,228,0.07)" stroke="rgba(228,228,228,0.12)" stroke-width="1.5"/>
+      <text x="318" y="146" text-anchor="middle" fill="rgba(228,228,228,0.92)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">READ_POWER_LIMIT created</text>
+      <text x="318" y="162" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="9" font-family="system-ui,sans-serif">_createOneForMeter()</text>
+      <!-- diagonal to merge point -->
+      <line x1="397" y1="152" x2="440" y2="127" stroke="rgba(228,228,228,0.20)" stroke-width="1.5" marker-end="url(#be)"/>
+
+      <!-- merge note -->
+      <text x="447" y="109" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">enters</text>
+      <text x="447" y="121" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">full pipeline</text>
+      <text x="447" y="133" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">+ blastoff at</text>
+      <text x="447" y="145" fill="rgba(228,228,228,0.37)" font-size="9" font-family="system-ui,sans-serif">completion</text>
+
+      <!-- ── right: onAbort cascade ── -->
+
+      <!-- Entry node -->
+      <rect x="609" y="36" width="218" height="44" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"/>
+      <text x="718" y="52" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Interaction status → ABORTED</text>
+      <text x="718" y="68" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">from gatekeeper or reconciliation</text>
+
+      <!-- condition note -->
+      <text x="614" y="90" fill="rgba(228,228,228,0.08)" font-size="9" font-family="system-ui,sans-serif">
+        if meter_commissioning_id present:
+      </text>
+
+      <!-- fork arrows -->
+      <path d="M 648,80 L 628,140" fill="none" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" marker-end="url(#bef)"/>
+      <path d="M 788,80 L 808,140" fill="none" stroke="rgba(228,228,228,0.08)" stroke-width="1.5" marker-end="url(#bef)"/>
+
+      <!-- Pending siblings node -->
+      <rect x="535" y="146" width="202" height="44" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"/>
+      <text x="636" y="162" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Pending siblings → ABORTED</text>
+      <text x="636" y="178" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">QUEUED · SUSPENDED · DEFERRED</text>
+
+      <!-- Commissioning FAILED node -->
+      <rect x="707" y="146" width="202" height="44" rx="6"
+        fill="#141414" stroke="rgba(228,228,228,0.08)" stroke-width="1.5"/>
+      <text x="808" y="162" text-anchor="middle" fill="rgba(228,228,228,0.55)"
+        font-size="11" font-weight="600" font-family="system-ui,sans-serif">Commissioning → FAILED</text>
+      <text x="808" y="178" text-anchor="middle" fill="rgba(228,228,228,0.37)"
+        font-size="9" font-family="system-ui,sans-serif">meter_commissionings row</text>
+    </svg>
+  </div>
+
+  <hr/>
+
+  <h2>Key Concepts</h2>
+
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-hd">Meter fields by interaction type</div>
+      <div class="card-bd">
+        <ul>
+          <li><b>TURN_ON / TURN_OFF</b> → is_on, is_on_updated_at</li>
+          <li><b>SET / READ_POWER_LIMIT</b> → power_limit, power_limit_updated_at</li>
+          <li><b>READ_CREDIT</b> → kwh_credit_available, is_on, optionally balance_in_local_currency</li>
+          <li><b>READ_REPORT</b> → same as READ_CREDIT + analytics POST to Yeti API (production only)</li>
+          <li><b>READ_VERSION</b> → version</li>
+          <li><b>TOP_UP / CLEAR_CREDIT</b> → no direct field update; triggers READ_CREDIT follow-up</li>
+        </ul>
+        <p class="note">All successful interactions also set last_seen_at on the meter.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">Issue auto-closing</div>
+      <div class="card-bd">
+        <p>The meter's open issue (if any) is evaluated before the DB write and may be closed
+        automatically based on the new meter state.</p>
+        <ul>
+          <li><b>NO_COMMUNICATION</b> — closed when any interaction succeeds and last_seen_at is set</li>
+          <li><b>NO_CREDIT</b> — closed when resulting credit balance is &gt; 0</li>
+          <li><b>UNEXPECTED_POWER_LIMIT</b> — closed when power_limit now equals power_limit_should_be</li>
+        </ul>
+        <p class="note">UNEXPECTED_METER_STATUS is never auto-closed by this service.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">Commissioning: advance vs resume</div>
+      <div class="card-bd">
+        <p>Two distinct code paths, selected based on whether the interaction itself belongs
+        to a commissioning flow.</p>
+        <ul>
+          <li><b>advanceActive</b> — interaction has a meter_commissioning_id. Updates commissioning
+          status (PENDING → PROCESSING → SUCCESSFUL), triggers the next deferred command,
+          or marks FAILED and aborts siblings on error.</li>
+          <li><b>resumeInactive</b> — a normal command succeeds while the meter's
+          last_commissioning is still PENDING. Unpauses deferred commissioning commands.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  const scales = { d1: 1, d2: 1 };
+  const svgs = { d1: document.getElementById('svg1'), d2: document.getElementById('svg2') };
+  const lbls = { d1: document.getElementById('lbl1'), d2: document.getElementById('lbl2') };
+  const nativeW = { d1: 960, d2: 960 };
+  const nativeH = { d1: 740, d2: 220 };
+
+  function applyScale(id) {
+    const s = scales[id];
+    svgs[id].setAttribute('width',  Math.round(nativeW[id] * s));
+    svgs[id].setAttribute('height', Math.round(nativeH[id] * s));
+    lbls[id].textContent = Math.round(s * 100) + '%';
+  }
+
+  function zoom(id, dir) {
+    const steps = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+    let i = steps.findIndex(v => Math.abs(v - scales[id]) < 0.01);
+    if (i === -1) i = steps.indexOf(1);
+    if (dir === 'in')    i = Math.min(i + 1, steps.length - 1);
+    else if (dir === 'out') i = Math.max(i - 1, 0);
+    else { i = steps.indexOf(1); }
+    scales[id] = steps[i];
+    applyScale(id);
+  }
+
+  ['d1', 'd2'].forEach(id => {
+    document.getElementById(id).addEventListener('wheel', e => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      zoom(id, e.deltaY < 0 ? 'in' : 'out');
+    }, { passive: false });
+  });
+</script>
+</body>
+</html>
