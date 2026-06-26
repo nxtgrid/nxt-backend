@@ -57,7 +57,7 @@ onto **thin runtime hosts** (horizontal/operational). Capabilities expose **port
 - **(1) Energy Production Monitoring:** mppts + mppt/grid snapshots, victron, solcast & forecasts,
   grid-diagnostics/digital-twin, device-data-sink, zerotier.
 - **(2) Smart Metering & Distribution:** meters, meter-interactions/installs/commissionings,
-  hardware imports/installs, connections, customers, directives & batches,
+  directive-batches (bulk meter-interactions), hardware imports/installs, connections, customers,
   device-messages, calin adapter, chirpstack/LoRaWAN, ussd-sessions.
 - **(3) Payments & Revenue:** orders, wallets, payouts, transactions, spending, loans, banks,
   flutterwave adapter, revenue/lost-revenue.
@@ -96,9 +96,15 @@ are a niche secondary feature for specific deployments, not part of the baseline
   scaling, failure isolation, incompatible execution model) — never by code tidiness. Capability flags
   are the on/off axis; hosts are the where-it-runs axis; the two are orthogonal.
 
-### 9. Schema stays whole
-With one canonical migration set, disabling a capability gates **code/runtime, not tables**. Unused
+### 9. Schema stays whole (for live capabilities)
+With one canonical migration set, disabling a *live* capability gates **code/runtime, not tables**; its
 tables remain inert. No modular/per-capability migrations.
+
+This does **not** apply to **deprecated** schema. Legacy objects superseded by current mechanisms — e.g.
+the old `directives` / `lorawan-directives` meter-command tables and their enums, replaced by
+`meter-interactions`, retained only because historical `orders` still reference them — are **excluded
+from the fresh OSS baseline** and phased out of existing deployments. The distinction is: *inert because
+a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseline). See ADR-008.
 
 ## Consequences
 
@@ -125,6 +131,8 @@ tables remain inert. No modular/per-capability migrations.
   caching, per-host build & deploy, replacing the DigitalOcean-coupled stub workflow.
 - **ADR-007 — Configuration & wiring mechanism:** config file format, conditional NestJS dynamic-module
   loading per capability, boot-time validation of flags/providers.
+- **ADR-008 — Open-source migration strategy:** re-scaffold + incremental module import; database
+  baseline/squash; deprecated-table (e.g. `directives` / `lorawan-directives`) phase-out; parity + cutover.
 - **Per-organization provider overrides** (generalizing ADR-003) as an optional payments feature.
 - **Dual-ORM consolidation** (TypeORM → Supabase client) as it interacts with capability extraction.
 
