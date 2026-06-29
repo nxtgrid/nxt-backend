@@ -45,6 +45,9 @@ reserved for artifacts with a genuinely independent release cadence.
 - The Supabase CLI / type generator version is pinned.
 - Company-specific schema objects (e.g. `grafana_readonly`, `make_readonly` roles) are parameterized
   or moved out of base migrations.
+- Migrations remain canonical *in the repo*, but **application is operator-controlled, never a side
+  effect of `git push`** by default. Deployment governance (and the rejected separate-migrations-repo
+  option) is decided in ADR-009.
 
 ### 4. Modular monolith with capability-based, ports-and-adapters architecture
 A lean, always-on **platform core** plus **capability modules** (vertical/functional domains) wired
@@ -133,6 +136,8 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
   loading per capability, boot-time validation of flags/providers.
 - **ADR-008 — Open-source migration strategy:** re-scaffold + incremental module import; database
   baseline/squash; deprecated-table (e.g. `directives` / `lorawan-directives`) phase-out; parity + cutover.
+- **ADR-009 — Database migration deployment & governance:** operator-controlled (non-push-triggered)
+  migration application; keep migrations in the monorepo; separate-migrations-repo rejected.
 - **Per-organization provider overrides** (generalizing ADR-003) as an optional payments feature.
 - **Dual-ORM consolidation** (TypeORM → Supabase client) as it interacts with capability extraction.
 

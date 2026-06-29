@@ -63,4 +63,6 @@ Is the current monorepo tooling the right long-term choice, and how do we build/
 - Concrete caching strategy (remote cache backend) and `affected` wiring.
 - Per-host Docker build matrix and deployment that is cloud-agnostic by default.
 - Replacement for the stubbed `deploy-to-do.yml`, including the migrations + type-drift CI gates.
+- Implement the **schema CI lane** and the **opt-in, operator-controlled migration apply pipeline**
+  specified in **ADR-009** (drift check, migration lint, `db diff` preview; no push-triggered prod apply).
 - Resolution of the lingering-`nx`-process / high-CPU known issue.
