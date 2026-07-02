@@ -1,6 +1,7 @@
 # Device-Messaging Service Extraction — Engineering Plan
 
 **Decision:** ADR-010 (`docs/architecture/010-device-messaging-service-extraction.md`)
+**Plan number:** 001
 **Created:** 2026-07-02
 **Status:** Not started
 

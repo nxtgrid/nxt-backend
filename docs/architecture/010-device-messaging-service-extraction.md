@@ -1,7 +1,7 @@
 # ADR-010: Device-Messaging Service Extraction
 
 **Date:** 2026-07-02
-**Status:** Accepted — execution tracked in `docs/plans/device-messaging-service-extraction.md`
+**Status:** Accepted — execution tracked in `docs/plans/001-device-messaging-service-extraction.md`
 
 ---
 
@@ -140,4 +140,4 @@ demand. v1 ships as a single-replica service with this constraint documented.
 - **ADR-004** — capability modularization; repo split criteria (decision 2).
 - **ADR-007** — configuration and wiring mechanism.
 - **ADR-008** — incremental import strategy and two-pass principle.
-- **Execution plan** — `docs/plans/device-messaging-service-extraction.md`
+- **Execution plan** — `docs/plans/001-device-messaging-service-extraction.md`
