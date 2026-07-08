@@ -1,3 +1,15 @@
+## Legacy Reference Tree
+
+This folder is a frozen, read-only reference of the pre-migration codebase that existed before the
+open-source re-scaffold began.
+
+- It is not built, installed, or run.
+- It is excluded from the active workspace, CI, and toolchains.
+- Files in this folder are never edited.
+- Files are deleted from this folder one by one only after they are fully superseded in the new
+  workspace.
+- To observe legacy behavior live, use the private company repository.
+
 # NXT backend
 
 **NXT backend** is an open-source backend platform for managing off-grid and mini-grid electricity systems. It handles payment processing, remote monitoring of production and distribution infrastructure, and remote interaction with smart prepaid electricity meters.

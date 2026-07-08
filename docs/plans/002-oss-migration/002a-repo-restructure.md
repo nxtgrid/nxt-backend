@@ -104,7 +104,7 @@ returns only the intended root survivors (`docs/`, `.github/`, `.gitignore`, `.c
 
 ## Task 2 — Follow-up commit: freeze notice
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** Task 1
 
 Content changes go in a **separate commit** after the move:
@@ -175,3 +175,4 @@ pushed. Update the roadmap sub-plan index: 002a → Completed; 002b and 002c unb
 
 - `2026-07-08 — [task 1] — Root `.editorconfig` exists in the live tree and remains at repo root; inventory table updated before the move.`
 - `2026-07-08 — [task 1] — Move executed as a pure rename-only staged change set; local untracked Supabase artifacts were cleaned outside the move commit.`
+- `2026-07-08 — [task 2] — Added `legacy/README.md` freeze notice and extended `.gitignore` to cover `legacy/supabase/.temp` and `.branches`, the only ignore rules broken by the move.`
