@@ -4,7 +4,7 @@
 **Decisions:** ADR-008 (re-scaffold strategy); Step-0 mechanics decided with maintainer 2026-07-08
 (see roadmap decisions log)
 **Created:** 2026-07-08
-**Status:** In progress
+**Status:** Completed
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
 advising, or the agent may execute under maintainer review. Ask which mode applies before
 starting a task; see "Division of labor" in the parent plan.
@@ -147,7 +147,7 @@ phases of the migration (see "Accepted transitional state").
 
 ## Task 4 — Verification
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** Tasks 1–3
 
 1. **History-follow spot check** on at least two deep files, e.g.:
@@ -177,3 +177,5 @@ pushed. Update the roadmap sub-plan index: 002a → Completed; 002b and 002c unb
 - `2026-07-08 — [task 1] — Move executed as a pure rename-only staged change set; local untracked Supabase artifacts were cleaned outside the move commit.`
 - `2026-07-08 — [task 2] — Added `legacy/README.md` freeze notice and extended `.gitignore` to cover `legacy/supabase/.temp` and `.branches`, the only ignore rules broken by the move.`
 - `2026-07-08 — [task 3] — Deleted stale root artifacts (`dist/`, `.nx/`, `.DS_Store`, `.snaplet/`); `node_modules/` was already absent and `core.hooksPath` was already unset in this clone.`
+- `2026-07-08 — [task 4] — History-follow checks passed for `legacy/apps/tiamat/src/main.ts` and `legacy/libs/core/src/types/supabase-types.ts`.`
+- `2026-07-08 — [task 4] — No root survivor outside `docs/` and `legacy/` referenced the old root paths except `.vscode/settings.json` search excludes for `libs/*/migration` and `supabase/migrations`; harmless for Step 0 and deferred to 002c path-specific cleanup.`

@@ -156,9 +156,9 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 
 | ID | Title | Scope | Status |
 |---|---|---|---|
-| 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | In progress — Task 1 completed |
-| 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | Authored — not started |
-| 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | Authored — not started |
+| 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | Completed |
+| 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | Authored — unblocked |
+| 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | Authored — unblocked |
 | 002d | Platform core import | Move platform-core modules into the new workspace (two passes) | Just-in-time — not yet authored |
 | 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
