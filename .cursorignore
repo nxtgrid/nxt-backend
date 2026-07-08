@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+tmp/
+out-tsc/
+
+# Tooling caches
+.nx/cache/
+.nx/workspace-data/
+.cache/
+.sass-cache/
+typings/
+
+# Logs and runtime artifacts
+*.log
+connect.lock
+libpeerconnection.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+!supabase/.env.example
+
+# Supabase local state
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.c9/
+.settings/
+.project
+.classpath
+*.launch
+*.sublime-workspace

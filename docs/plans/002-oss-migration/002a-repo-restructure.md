@@ -46,7 +46,7 @@ Snapshot taken 2026-07-08. Verify against reality before executing (`ls -A`, `gi
 | `.gitignore`, `.github/` (rest, if any) | yes | stay at root |
 | `README.md` | yes | → `legacy/` (a new root README is authored in a later phase — or this one is copied back and updated; `main` keeps the original meanwhile) |
 | `docs/`, `AGENTS.md`, `LICENSE`, `AUTHORS.md`, `CONTRIBUTING.md`, `CONTRIBUTORS.md` | yes | stay at root |
-| `.cursor/`, `.vscode/` | yes | stay at root (editor/agent config; path-specific rules reviewed in 002c) |
+| `.cursor/`, `.vscode/`, `.cursorignore` | yes | stay at root (editor/agent config; path-specific rules reviewed in 002c) |
 | `package-lock.json` | no (gitignored) | plain `mv` → `legacy/` (kept for reference; stays ignored) |
 | `dist/`, `.nx/`, `node_modules/`, `.DS_Store`, `.snaplet/` | no | delete (stale local artifacts) |
 
