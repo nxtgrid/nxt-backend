@@ -50,9 +50,6 @@ the scaffold (Track B, 002c) and joins it at the interlock (types + CI drift gua
   --local` → `gen-better-types` → `better-supabase-types` →
   `libs/core/src/types/supabase-types.ts`, plus `.scripts/fix-supabase-json-type.js`. Supabase
   CLI is a devDependency at `^2.54.10` (ADR-006 requires an exact pin — interim rule below).
-- **Edge functions:** `legacy/supabase/functions/` (`customers`, `meter-consumption`,
-  `meter-consumption-2`, `orders`, `_shared`) — code, not schema; out of scope here (they are
-  re-homed during capability imports).
 - **Production project:** ref `axenumkepgnwfmdogkqq` (from the legacy `gen-types-remote`
   script). Production schema is assumed identical to the old chain (roadmap assumption 4 —
   certified in Task 1).
@@ -60,7 +57,6 @@ the scaffold (Track B, 002c) and joins it at the interlock (types + CI drift gua
 ## Non-goals
 
 - **TimescaleDB** — belongs to the Production Monitoring capability import (roadmap assumption 3).
-- **Edge functions** — re-homed during capability imports.
 - **RLS policy redesign** — policies are carried over as-is (or excluded with their tables);
   rethinking authorization is not baseline work.
 - **Migration-apply governance workflow, `squawk` linter, `db diff` PR comment** — deferred

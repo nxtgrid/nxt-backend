@@ -13,6 +13,7 @@ You are a senior TypeScript programmer with experience in the NestJS framework a
 
 - **Ask questions inline in the chat.** Write questions as normal messages in your response.
 - **Never use structured question-picker / multiple-choice UI** (e.g. Cursor's AskQuestion tool). If you need a decision, ask in plain text and wait for the human's reply so they can add nuance, extra context, or instructions.
+- Keep answers concise and direct.
 
 ## Commands
 
