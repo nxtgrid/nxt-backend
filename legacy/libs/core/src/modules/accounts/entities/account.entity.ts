@@ -7,7 +7,6 @@ import { Organization } from '@core/modules/organizations/entities/organization.
 import { Order } from '@core/modules/orders/entities/order.entity';
 import { DirectiveBatch } from '../../directive-batches/entities/directive-batch.entity';
 // import { Audit } from '@core/modules/audits/entities/audit.entity';
-import { Directive } from '@core/modules/directives/entities/directive.entity';
 import { MeteringHardwareInstallSession } from '@core/modules/metering-hardware-install-sessions/entities/metering-hardware-install-session.entity';
 import { ApiKey } from '@core/modules/api-keys/entities/api-key.entity';
 import { Note } from '@core/modules/notes/entities/note.entity';
@@ -61,17 +60,8 @@ export class Account extends CoreEntity {
   @DeleteDateColumn({ type: 'timestamp', precision: 3, nullable: true })
     deleted_at?: Date;
 
-  // @OneToMany(() => Audit, audit => audit.author)
-  //   audits?: Audit[];
-
-  @OneToMany(() => Directive, directive => directive.author)
-    directives?: Directive[];
-
   @OneToMany(() => MeteringHardwareInstallSession, metering_hardware_install_session => metering_hardware_install_session.author)
     metering_hardware_install_sessions?: MeteringHardwareInstallSession[];
-
-  @OneToMany(() => MeterCreditTransfer, meter_credit_transfer => meter_credit_transfer.author)
-    meter_credit_transfers?: MeterCreditTransfer[];
 
   @OneToMany(() => ApiKey, api_key => api_key.account)
     api_keys?: ApiKey[];

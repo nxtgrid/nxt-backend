@@ -129,7 +129,7 @@ phases of the migration (see "Accepted transitional state").
 
 ## Task 3 — Local cleanup (per clone, not committed)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** Task 1
 
 1. Delete stale untracked artifacts at root: `dist/`, `.nx/`, `node_modules/`, `.DS_Store`,
@@ -176,3 +176,4 @@ pushed. Update the roadmap sub-plan index: 002a → Completed; 002b and 002c unb
 - `2026-07-08 — [task 1] — Root `.editorconfig` exists in the live tree and remains at repo root; inventory table updated before the move.`
 - `2026-07-08 — [task 1] — Move executed as a pure rename-only staged change set; local untracked Supabase artifacts were cleaned outside the move commit.`
 - `2026-07-08 — [task 2] — Added `legacy/README.md` freeze notice and extended `.gitignore` to cover `legacy/supabase/.temp` and `.branches`, the only ignore rules broken by the move.`
+- `2026-07-08 — [task 3] — Deleted stale root artifacts (`dist/`, `.nx/`, `.DS_Store`, `.snaplet/`); `node_modules/` was already absent and `core.hooksPath` was already unset in this clone.`

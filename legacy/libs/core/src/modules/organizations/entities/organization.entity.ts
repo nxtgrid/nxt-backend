@@ -53,9 +53,6 @@ export class Organization extends CoreEntity {
   @OneToOne(() => Wallet, wallet => wallet.organization)
     wallet?: Wallet;
 
-  @OneToMany(() => BankAccount, bank_account => bank_account.organization)
-    bank_accounts?: BankAccount[];
-
   // @OneToMany(() => Audit, audit => audit.organization)
   //   audits?: Audit[];
 

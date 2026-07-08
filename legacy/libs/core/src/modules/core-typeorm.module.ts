@@ -21,7 +21,6 @@ import { Member } from './members/entities/member.entity';
 import { UssdSessionHop } from './ussd-session-hops/entities/ussd-session-hop.entity';
 import { UssdSession } from './ussd-sessions/entities/ussd-session.entity';
 import { Wallet } from './wallets/entities/wallet.entity';
-import { Directive } from './directives/entities/directive.entity';
 import { Transaction } from './transactions/entities/transactions.entity';
 import { Connection } from './connections/entities/connection.entity';
 import { MeteringHardwareInstallSession } from './metering-hardware-install-sessions/entities/metering-hardware-install-session.entity';

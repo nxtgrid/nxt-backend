@@ -4,9 +4,7 @@ import { CoreEntity } from '@core/types/core-entity';
 import { Wallet } from '@core/modules/wallets/entities/wallet.entity';
 import { Transaction } from '@core/modules/transactions/entities/transactions.entity';
 import { UssdSession } from '@core/modules/ussd-sessions/entities/ussd-session.entity';
-import { Directive } from '@core/modules/directives/entities/directive.entity';
 import { Account } from '@core/modules/accounts/entities/account.entity';
-import { MeterCreditTransfer } from '@core/modules/meter-credit-transfers/entities/meter-credit-transfer.entity';
 import { Grid } from '@core/modules/grids/entities/grid.entity';
 
 import { AccountTypeEnum, CurrencyEnum, ExternalSystemEnum, MeterTypeEnum, OrderActorTypeEnum, OrderStatusEnum, OrderTypeEnum, PaymentChannelEnum, PaymentMethodEnum } from '@core/types/supabase-types';
@@ -78,13 +76,6 @@ export class Order extends CoreEntity {
   @OneToMany(() => Transaction, transaction => transaction.order)
     transactions?: Transaction[];
 
-  @OneToMany(() => Directive, directive => directive.order)
-    directives?: Directive[];
-
-  @OneToOne(() => Directive)
-  @JoinColumn({ name: 'directive_id' })
-    directive?: Directive;
-
   @Column('int', { nullable: true })
     directive_id?: number;
 
@@ -94,10 +85,6 @@ export class Order extends CoreEntity {
 
   @Column('int', { nullable: true })
     meter_credit_transfer_id?: number;
-
-  @OneToOne(() => MeterCreditTransfer)
-  @JoinColumn({ name: 'meter_credit_transfer_id' })
-    meter_credit_transfer?: MeterCreditTransfer;
 
   // Historical fields are fields that represent a historical link between two entities.
   // For example, in this case a meter might have been uninstalled from a grid, so by the time

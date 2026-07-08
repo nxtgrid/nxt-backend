@@ -1,14 +1,10 @@
 import { CoreEntity } from '@core/types/core-entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
-import { Directive } from '@core/modules/directives/entities/directive.entity';
 import { MeteringHardwareInstallSession } from '@core/modules/metering-hardware-install-sessions/entities/metering-hardware-install-session.entity';
 import { MeterCommissioningStatusEnum } from '@core/types/supabase-types';
 
 @Entity('meter_commissionings')
 export class MeterCommissioning extends CoreEntity {
-  @OneToMany(() => Directive, directive => directive.meter_commissioning)
-    directives: Directive[];
-
   // @Column('enum', { enum: MeterCommissioningStatusEnum, default: MeterCommissioningStatusEnum.PROCESSING })
   @Column({ type: 'varchar' })
     meter_commissioning_status: MeterCommissioningStatusEnum;

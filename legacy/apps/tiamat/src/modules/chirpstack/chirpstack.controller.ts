@@ -17,20 +17,4 @@ export class ChirpstackController {
   calinIncoming(@Body() body: LorawanCalinEvent) {
     return this.deviceMessageIncomingService.handle(body, 'CALIN_LORAWAN');
   }
-
-  // Receives data from Acrel meters in ChirpStack.
-  @Post('acrel')
-  acrel(
-    @Body() body: any,
-  ) {
-    return this.chirpstackService.processIncomingLorawanMessageForAcrelProfile(body);
-  }
-
-  // Receives data from Acrel meters in ChirpStack.
-  @Post('milesight')
-  milesight(
-    @Body() body: any,
-  ) {
-    return this.chirpstackService.processIncomingLorawanMessageForMilesightProfile(body);
-  }
 }

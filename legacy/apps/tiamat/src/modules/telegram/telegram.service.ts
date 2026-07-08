@@ -123,11 +123,13 @@ export class TelegramService {
     const telegramNotification = {
       // This is used as the ID in FlowXO, to identify updates.
       // The 'directive_' prefix is a legacy thing.
+      // @OSS-MIGRATION :: Change to external_id
       directive_id: meterInteraction.id,
 
       // This is used as the main filter value in FlowXO to determine what to do.
       // Hardcode to PENDING because that's what FlowXO expects.
       // That and the 'directive_' prefix are a legacy thing.
+      // @OSS-MIGRATION :: Change to delivery_status
       directive_status: 'PENDING',
 
       grid_name: meter.connection?.customer?.grid?.name,

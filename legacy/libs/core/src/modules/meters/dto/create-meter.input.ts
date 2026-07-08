@@ -1,7 +1,7 @@
 import { Dcu } from '@core/modules/dcus/entities/dcu.entity';
 import { Issue } from '@core/modules/issues/entities/issue.entity';
 import { Connection } from '@core/modules/connections/entities/connection.entity';
-import { CommunicationProtocolEnum, DirectiveSpecialStatusEnum, ExternalSystemEnum, MeterPhaseEnum, MeterTypeEnum } from '@core/types/supabase-types';
+import { CommunicationProtocolEnum, ExternalSystemEnum, MeterPhaseEnum, MeterTypeEnum } from '@core/types/supabase-types';
 
 export class CreateMeterInput {
 
@@ -64,7 +64,6 @@ export class CreateMeterInput {
   is_starred?: boolean;
 
   version?: string;
-  current_special_status?: DirectiveSpecialStatusEnum;
   communication_protocol?: CommunicationProtocolEnum;
 
   is_cabin_meter?: boolean;

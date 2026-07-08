@@ -13,11 +13,6 @@ export class UpsertDirectiveBatchDto {
   @IsIn(Constants.public.Enums.meter_interaction_type_enum)
     task_type: MeterInteractionTypeEnum;
 
-  // @TODO :: Deprecate
-  @IsOptional()
-  @IsIn(Constants.public.Enums.directive_type_enum)
-    directive_type: DirectiveTypeEnum;
-
   @IsIn(Constants.public.Enums.fs_command_type_enum)
     fs_command: FCommandTypeEnum;
 

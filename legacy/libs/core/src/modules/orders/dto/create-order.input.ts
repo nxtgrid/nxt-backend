@@ -2,8 +2,6 @@ import { Account } from '@core/modules/accounts/entities/account.entity';
 import { UssdSession } from '@core/modules/ussd-sessions/entities/ussd-session.entity';
 import { Wallet } from '@core/modules/wallets/entities/wallet.entity';
 import { Connection } from '@core/modules/connections/entities/connection.entity';
-import { Directive } from '@core/modules/directives/entities/directive.entity';
-import { MeterCreditTransfer } from '@core/modules/meter-credit-transfers/entities/meter-credit-transfer.entity';
 import { CurrencyEnum, MeterTypeEnum, OrderActorTypeEnum, OrderStatusEnum, PaymentChannelEnum, PaymentMethodEnum } from '@core/types/supabase-types';
 
 export class CreateOrderInput {
@@ -38,12 +36,6 @@ export class CreateOrderInput {
   payment_method?: PaymentMethodEnum;
 
   payment_channel?: PaymentChannelEnum;
-
-  directive?: Directive;
-
-  directive_id?: number;
-
-  meter_credit_transfer?: MeterCreditTransfer;
 
   meta_sender_type?: OrderActorTypeEnum;
 

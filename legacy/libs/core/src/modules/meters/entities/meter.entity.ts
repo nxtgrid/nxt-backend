@@ -2,7 +2,6 @@ import { Entity, Column, JoinColumn, ManyToOne, OneToMany, Index, OneToOne, Dele
 import { CoreEntity } from '@core/types/core-entity';
 import { Dcu } from '@core/modules/dcus/entities/dcu.entity';
 import { Pole } from '@core/modules/poles/entities/pole.entity';
-import { Directive } from '@core/modules/directives/entities/directive.entity';
 import { UssdSession } from '@core/modules/ussd-sessions/entities/ussd-session.entity';
 import { Connection } from '@core/modules/connections/entities/connection.entity';
 import { Wallet } from '@core/modules/wallets/entities/wallet.entity';
@@ -10,9 +9,8 @@ import { Issue } from '@core/modules/issues/entities/issue.entity';
 // import { Audit } from '@core/modules/audits/entities/audit.entity';
 import { MeteringHardwareInstallSession } from '@core/modules/metering-hardware-install-sessions/entities/metering-hardware-install-session.entity';
 import { Note } from '@core/modules/notes/entities/note.entity';
-import { MeterCreditTransfer } from '@core/modules/meter-credit-transfers/entities/meter-credit-transfer.entity';
 
-import { CommunicationProtocolEnum, DirectiveSpecialStatusEnum, ExternalSystemEnum, MeterPhaseEnum, MeterTypeEnum } from '@core/types/supabase-types';
+import { CommunicationProtocolEnum, ExternalSystemEnum, MeterPhaseEnum, MeterTypeEnum } from '@core/types/supabase-types';
 
 @Entity('meters')
 @Index([ 'external_reference', 'external_system' ], { unique: true }) //there cannot be more than one external reference from the same provider
@@ -102,17 +100,8 @@ export class Meter extends CoreEntity {
   @Column('bool', { default: false })
     is_starred?: boolean;
 
-  @OneToMany(() => Directive, directive => directive.meter)
-    directives?: Directive[];
-
   @OneToMany(() => MeteringHardwareInstallSession, install_session => install_session.meter)
     meter_install_sessions?: MeteringHardwareInstallSession[];
-
-  @OneToMany(() => MeterCreditTransfer, meter_credit_transfer => meter_credit_transfer.sender_meter)
-    sender_meter_credit_transfers?: MeterCreditTransfer[];
-
-  @OneToMany(() => MeterCreditTransfer, meter_credit_transfer => meter_credit_transfer.receiver_meter)
-    receiver_meter_credit_transfers?: MeterCreditTransfer[];
 
   @OneToMany(() => Issue, issue => issue.meter)
     issues?: Issue[];
@@ -207,11 +196,6 @@ export class Meter extends CoreEntity {
   @Column('int', { default: 200 })
     power_limit_hps_mode?: number;
 
-  // @Column('enum', { enum: DirectiveSpecialStatusEnum, nullable: true })
-  @Column({ type: 'varchar' })
-    current_special_status?: DirectiveSpecialStatusEnum;
-
-  // @Column('enum', { enum: CommunicationProtocolEnum, nullable: true })
   @Column({ type: 'varchar' })
     communication_protocol: CommunicationProtocolEnum;
 
