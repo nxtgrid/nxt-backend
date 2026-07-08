@@ -26,7 +26,9 @@ the scaffold (Track B, 002c) and joins it at the interlock (types + CI drift gua
 **Companion artifacts (in this folder):**
 
 - `002b-schema-inventory.md` — working artifact: every schema object, classified (created in
-  Task 2/3).
+  Task 2/3a).
+- `002b-schema-column-adjustments.md` — working artifact: every column on keep tables/views,
+  with keep/drop/rename action (created in Task 3b).
 - `002b-schema-deviation-register.md` — long-lived register of every deviation from the
   original schema. **This register later becomes the spec for the company convergence
   migration at cutover.** Created up-front with candidate entries (see file).
@@ -138,7 +140,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** Not started
+- [ ] **Status:** In progress (batches A–D recorded; Batch F and column review remain)
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -159,9 +161,36 @@ Every non-keep decision and every rename becomes an entry in
 register file already contains candidate entries from the ADRs — confirm, amend, or reject
 each one during classification.
 
-**Done when:** no inventory row has an empty bucket; every keep row has a capability tag;
-the deviation register contains every non-keep decision and rename, each with a cutover
-implication; maintainer has signed off.
+### Task 3a — Object-level batches
+
+Review inventory rows in grouped batches (tables, enums, roles, …). Record bucket +
+capability tag per row. Column drops discovered here are **provisional** until Task 3b.
+
+**Progress:** batches A–D recorded; **F1 (platform core)** and **F2 (production monitoring)** recorded. F3–F6 remain.
+
+### Task 3b — Column review pass (maintainer, after 3a)
+
+**Purpose:** walk **every column on every keep table** (and keep views) and confirm the final
+set of column-level changes before Task 5.
+
+**Companion artifact:** `002b-schema-column-adjustments.md` — one row per column on keep
+tables/views:
+
+`table | column | action (keep / drop / rename) | register § | rationale | notes`
+
+- Seed the file from the reference DB (`information_schema.columns` on keep tables), marking
+  known drops from Task 3a batches and the register **Column adjustments** section.
+- Maintainer reviews table-by-table: add drops, remove drops, flag renames.
+- Each **drop** or **rename** must land in the deviation register **Column adjustments**
+  (with cutover implication) before Task 3 is done.
+- Enum value trimming on **keep** enums is a separate pass at the end of Task 3 (or folded
+  into 3b where an enum-typed column is kept).
+
+**Done when (Task 3 overall):** no inventory row has an empty bucket; every keep row has a
+capability tag; `002b-schema-column-adjustments.md` exists with a final action for every
+column on every keep table/view; the deviation register contains every non-keep decision,
+rename, and confirmed column adjustment, each with a cutover implication; maintainer has
+signed off.
 
 ---
 
@@ -197,6 +226,10 @@ Create the single canonical migration, e.g. `supabase/migrations/<timestamp>_ini
   supabase-managed grants, `SET` chatter). The result must read as an **authored document**,
   not a dump: ordered (extensions → types → tables → constraints → functions → triggers →
   policies → grants), commented per section.
+- **Extensions (register #11):** init migration runs `CREATE EXTENSION IF NOT EXISTS` only for
+  extensions **not** enabled on a fresh Supabase Postgres image (`postgis`, `pg_net`, `pgsodium`,
+  `pgjwt`). Omit platform defaults (`pg_stat_statements`, `pgcrypto`, `supabase_vault`,
+  `uuid-ossp`), `pg_graphql`, and advisor extensions (`hypopg`, `index_advisor`).
 - No company roles, no supabase-managed schema objects, no deprecated/dead objects.
 - Objects referencing excluded objects (e.g. `orders` FKs to `directives`) are adjusted per the
   classification decisions — each adjustment is already in the register from Task 3.
@@ -313,3 +346,10 @@ decisions log.
 - 2026-07-08 — [Task 1] — Linked to production (`axenumkepgnwfmdogkqq`). Canonical `npx supabase@2.54.10 db diff --linked --schema public` failed: shadow-DB init errors on storage-api image (`Migration optimize-existing-functions-again not found` — CLI 2.54.10 vs pulled Docker image mismatch). Ran manual equivalent instead: (1) `db dump --linked -s public` + `-s auth`, (2) applied all 19 legacy migrations to a local Supabase Postgres 15 container, (3) compared live production (`inspect db table-stats --linked`) vs migrations DB. **Result: no substantive drift.** 57/57 `public` tables match by name; 42 enums, 27 functions, 140 indexes, 123 RLS policies match; auth triggers `on_auth_user_created` + `on_auth_user_updated` present on both production and migrations-applied DB. Residual dump-format differences only (quoting, `CREATE OR REPLACE` vs `CREATE`, default rendering). Roadmap assumption 4 certified.
 - 2026-07-08 — [Task 1 tooling] — Root cause of CLI shadow-DB failure: `supabase link` caches production service pins in `legacy/supabase/.temp/` (`storage-version` v1.64.0, `storage-migration` optimize-existing-functions-again) that CLI 2.54.10's bundled storage-api cannot satisfy. Workaround: `rm legacy/supabase/.temp/storage-migration storage-version` before `db diff`/`db start`. Confirmed: `npx supabase@2.54.10 db diff --linked` and `db start` work after cache clear; canonical diff output is 2 cosmetic function-body formatting hunks only. `npx supabase@2.109.1 db diff --linked` works without cache clear. Full `supabase start` still blocked by deleted edge function refs in `config.toml` (`meter-consumption-2`). Task 4 CLI pin candidate: ≥2.62.10 or 2.109.1.
 - 2026-07-08 — [Task 2] — Reference DB via `npx supabase@2.54.10 db start` (local only, no link). Inventory written to `002b-schema-inventory.md`: 191 rows — 57 tables, 4 views, 42 enums, 27 functions, 27 public triggers, 2 auth.users triggers, 17 sequences (nextval-owned), 3 roles, 11 extensions, 0 storage buckets. Owned schema: `public` only.
+- 2026-07-08 — [Task 3 batch A] — Parameterize: 3 roles + 6 Make grid hooks (9 inventory rows). Delivery = separate operator recipes under `docs/database/optional/` (not in `supabase/migrations/`). Grafana/make bundles include their RLS policies. Register #2, #3, #5, #6 confirmed.
+- 2026-07-08 — [Task 3 batch B] — Exclude deprecated directive system (register #1 confirmed): tables `directives`/`lorawan_directives`, view `batch_commands`, 6 enums (incl. `directive_type` + `directive_special_status` after column drops on keep tables), triggers/seq. Keep `directive_batches`/`directive_batch_executions` (rename candidates). Column adjustments §1: drop `orders.directive_id`/`lorawan_directive_id`, `directive_batches.directive_type`, `meters.current_special_status`, view column. Column prune backlog started (§pending).
+- 2026-07-08 — [Task 3 batch C] — Exclude deprecated meter credit transfers (register #7 confirmed): table `meter_credit_transfers`, enum `meter_credit_transfer_status_enum`, sequence `meter_credit_transfers_id_seq`, trigger, function `append_rls_organization_id_by_receiver_meter_id()`. Register #4 narrowed to drop `directive_watchdog_sessions` only (`一demo` has no schema). Column adjustments §2: drop `orders.meter_credit_transfer_id`.
+- 2026-07-08 — [Task 3 batch D] — Drop dead schema (registers #4, #8, #9 confirmed): `directive_watchdog_sessions`, `features`/`member_feature`, `public.migrations` (+ sequences/indexes/policies). No archive at cutover. `energy_cabins` **keep** (1) Production monitoring — pegasus map layer; tagged early outside Batch F.
+- 2026-07-08 — [Task 3 batch F1] — Platform core **keep** (inventory tagged): accounts, orgs, members, agents, api_keys, grids, poles, dcus→gateways, routers, `agents_with_account`, auth triggers/functions, RLS helpers, platform enums. Register **#10** confirmed: full DCU→gateway rename + `route`→`router` trigger typo. Register **#11** confirmed: init migration `CREATE EXTENSION IF NOT EXISTS` only for non-default required (`postgis`, `pg_net`, `pgsodium`, `pgjwt`); omit Supabase defaults (`pg_stat_statements`, `pgcrypto`, `supabase_vault`, `uuid-ossp`), `pg_graphql`, `hypopg`, `index_advisor`. Default set verified against `supabase/postgres` schema-17 (PG17 image; PG15 local stack equivalent). Storage bucket inventory row = placeholder only.
+- 2026-07-08 — [Task 3 batch F2] — Production monitoring **keep**: `mppts`, `solcast_cache`, `energy_cabins`, enums, mppt/cabin triggers, `get_grid_status` (retagged from platform core). Register **#12** confirmed **drop**: `devices`/`device_types`/`device_logs` + function/triggers/sequences (device-data-sink removed from OSS scope). Column adjustments §4: drop `meters.device_id`, view column.
+- 2026-07-08 — [Task 3 plan] — Split Task 3 into **3a** (object batches) and **3b** (column review pass). New companion artifact `002b-schema-column-adjustments.md`: one row per column on keep tables/views; maintainer adds/removes drops before Task 5; confirmed rows sync to register Column adjustments.
