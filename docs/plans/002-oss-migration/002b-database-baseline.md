@@ -76,7 +76,7 @@ dumps compare apples to apples.
 
 ## Task 1 — Certify "production = migrations" (drift check)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete
 - **Depends on:** 002a complete
 - **Executor:** maintainer (requires production credentials)
 
@@ -103,7 +103,7 @@ input to Task 3) before proceeding.
 
 ## Task 2 — Build the reference DB and generate the schema inventory
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete
 - **Depends on:** 002a complete (Task 1 may run in parallel)
 
 Start the legacy chain locally and enumerate everything it creates:
@@ -310,4 +310,6 @@ decisions log.
 
 > Append here as the plan is executed. Format: `YYYY-MM-DD — [task] — note`
 
-_(empty)_
+- 2026-07-08 — [Task 1] — Linked to production (`axenumkepgnwfmdogkqq`). Canonical `npx supabase@2.54.10 db diff --linked --schema public` failed: shadow-DB init errors on storage-api image (`Migration optimize-existing-functions-again not found` — CLI 2.54.10 vs pulled Docker image mismatch). Ran manual equivalent instead: (1) `db dump --linked -s public` + `-s auth`, (2) applied all 19 legacy migrations to a local Supabase Postgres 15 container, (3) compared live production (`inspect db table-stats --linked`) vs migrations DB. **Result: no substantive drift.** 57/57 `public` tables match by name; 42 enums, 27 functions, 140 indexes, 123 RLS policies match; auth triggers `on_auth_user_created` + `on_auth_user_updated` present on both production and migrations-applied DB. Residual dump-format differences only (quoting, `CREATE OR REPLACE` vs `CREATE`, default rendering). Roadmap assumption 4 certified.
+- 2026-07-08 — [Task 1 tooling] — Root cause of CLI shadow-DB failure: `supabase link` caches production service pins in `legacy/supabase/.temp/` (`storage-version` v1.64.0, `storage-migration` optimize-existing-functions-again) that CLI 2.54.10's bundled storage-api cannot satisfy. Workaround: `rm legacy/supabase/.temp/storage-migration storage-version` before `db diff`/`db start`. Confirmed: `npx supabase@2.54.10 db diff --linked` and `db start` work after cache clear; canonical diff output is 2 cosmetic function-body formatting hunks only. `npx supabase@2.109.1 db diff --linked` works without cache clear. Full `supabase start` still blocked by deleted edge function refs in `config.toml` (`meter-consumption-2`). Task 4 CLI pin candidate: ≥2.62.10 or 2.109.1.
+- 2026-07-08 — [Task 2] — Reference DB via `npx supabase@2.54.10 db start` (local only, no link). Inventory written to `002b-schema-inventory.md`: 191 rows — 57 tables, 4 views, 42 enums, 27 functions, 27 public triggers, 2 auth.users triggers, 17 sequences (nextval-owned), 3 roles, 11 extensions, 0 storage buckets. Owned schema: `public` only.
