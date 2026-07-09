@@ -35,10 +35,11 @@ spec for the convergence data migration that brings the company DB in line with 
 | 10 | **Rename — router insert trigger typo:** trigger `append_rls_organization_id_on_route_insert` → `append_rls_organization_id_on_router_insert` on `routers` | Rename | Legacy misname (`route` vs table `routers`); no semantic change | Company DB: `ALTER TRIGGER … RENAME` at cutover (or recreate in place); init migration uses corrected name | confirmed |
 | 11 | **Extensions — init migration adds only non-default required:** omit Supabase platform defaults (`pg_stat_statements`, `pgcrypto`, `supabase_vault`, `uuid-ossp`); omit advisor tooling (`hypopg`, `index_advisor`); omit `pg_graphql` (off by default on new hosted projects). **Include** `IF NOT EXISTS`: `postgis`, `pg_net`, `pgsodium`, `pgjwt` | Omit from init / drop | Supabase fresh image already enables core extensions (verified `supabase/postgres` schema-17); avoid redundant `CREATE EXTENSION` and stale version anxiety; `postgis` required for `geometry` columns | Company DB: no-op if extensions already present; vanilla Postgres adopters follow README extension prerequisites | confirmed |
 | 12 | **Drop — generic device registry (device-data-sink):** tables `devices`, `device_types`, `device_logs`; sequences `devices_id_seq`, `device_types_id_seq`, `device_logs_id_seq`; function `append_rls_organization_id_by_device_id()`; triggers on `devices` / `device_logs`; RLS policies; realtime publication entries | Drop (dead) | Device-data-sink path removed from OSS scope (ADR-004); no active app usage; Grafana read policies only | Drop from company DB; drop `meters.device_id` FK/unique (see column adjustments §4) | confirmed |
-| 13 | **Drop — payouts module:** tables `payouts`, `bank_accounts`; enum `payout_status_enum`; sequences `payouts_id_seq`, `bank_accounts_id_seq`; function `lock_next_order()`; RLS policies on `payouts` / `bank_accounts` | Drop (dead) | Payouts module dropped from OSS scope; `bank_accounts` only used by `payouts`; `lock_next_order` superseded by `lock_next_order_and_wallets` | Drop from company DB; no archive required. Consider dropping `grids.is_automatic_payout_generation_enabled` in Task 3b | confirmed |
-| 14 | **Drop — pd-hero workflow (WIP):** tables `pd_flows`, `pd_flow_templates`, `pd_sections`, `pd_section_templates`, `pd_actions`, `pd_action_templates`, `pd_documents`, `pd_document_templates`, `pd_audits`; enums `pd_action_status_enum`, `pd_action_type_enum`, `pd_document_type_enum`; sequences `pd_flows_id_seq`, `pd_flow_templates_id_seq`, `pd_sections_id_seq`, `pd_section_templates_id_seq`, `pd_actions_id_seq`, `pd_action_templates_id_seq`, `pd_documents_id_seq`, `pd_document_templates_id_seq`, `pd_audits_id_seq`; function `lock_next_pd_action()`; RLS policies on dropped tables | Drop (dead) | pd-hero Make.com/Google workflow under-developed; only `pd_sites` / `pd_site_submissions` kept for site pipeline. Likely replaced by different design | Drop from company DB; no archive required. See column adjustments §5 | confirmed |
-| 15 | **Drop — autopilot execution log:** table `autopilot_executions`, sequence `autopilot_executions_id_seq`; RLS policies | Drop (deferred) | Autopilot deferred from OSS baseline; likely returns as separate microservice with its own persistence | Drop from company DB; no archive required | confirmed |
+| 13 | **Drop — payouts module:** tables `payouts`, `bank_accounts`; enum `payout_status_enum`; sequences `payouts_id_seq`, `bank_accounts_id_seq`; function `lock_next_order()`; RLS policies on `payouts` / `bank_accounts` | Drop (dead) | Payouts module dropped from OSS scope; `bank_accounts` only used by `payouts`; `lock_next_order` superseded by `lock_next_order_and_wallets` | Drop from company DB; drop `grids.is_automatic_payout_generation_enabled` (column adjustments §3) | confirmed |
+| 14 | **Drop — pd-hero workflow (WIP):** tables `pd_flows`, `pd_flow_templates`, `pd_sections`, `pd_section_templates`, `pd_actions`, `pd_action_templates`, `pd_documents`, `pd_document_templates`, `pd_audits`; enums `pd_action_status_enum`, `pd_action_type_enum`, `pd_document_type_enum`; sequences `pd_flows_id_seq`, `pd_flow_templates_id_seq`, `pd_sections_id_seq`, `pd_section_templates_id_seq`, `pd_actions_id_seq`, `pd_action_templates_id_seq`, `pd_documents_id_seq`, `pd_document_templates_id_seq`, `pd_audits_id_seq`; function `lock_next_pd_action()`; RLS policies on dropped tables | Drop (dead) | pd-hero Make.com/Google workflow under-developed; only `pd_sites` / `pd_site_submissions` kept for site pipeline. Likely replaced by different design | Drop from company DB; drop `pd_sites.pd_flow_id`, `organizations.pd_hero_google_drive_folder_id` (column adjustments §5) | confirmed |
+| 15 | **Drop — autopilot execution log:** table `autopilot_executions`, sequence `autopilot_executions_id_seq`; RLS policies | Drop (deferred) | Autopilot deferred from OSS baseline; likely returns as separate microservice with its own persistence | Drop from company DB; drop `grids.telegram_response_path_autopilot` (column adjustments §15) | confirmed |
 | 16 | **Rename — meter task batches:** tables `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions`; sequences `directive_batches_id_seq` → `meter_task_batches_id_seq`, `directive_batch_executions_id_seq` → `meter_task_batch_executions_id_seq`; function `append_rls_organization_id_by_directive_batch_id()` → `append_rls_organization_id_by_meter_task_batch_id()`; triggers `append_rls_organization_id_on_directive_batch_insert` → `append_rls_organization_id_on_meter_task_batch_insert`, `append_rls_organization_id_on_directive_batch_execution_insert` → `append_rls_organization_id_on_meter_task_batch_execution_insert`; FK `meter_interactions.batch_execution_id` → `meter_task_batch_executions` | Rename | Legacy `directive_*` naming from deprecated directive system; live path is meter-interactions / task batches | Company DB: `ALTER TABLE … RENAME` (+ sequence/function/trigger renames); init migration uses new names. See column adjustments §6 | confirmed |
+| 17 | **Column prunes — platform core (Task 3b G1):** `organizations.phone`, `organizations.address`, `api_keys.is_locked`, `dcus.queue_buffer_length`, `grids.are_all_dcus_online`, `grids.are_all_dcus_under_high_load_threshold`, `grids.meter_consumption_issue_threshold_detection_days`, `grids.meter_communication_issue_threshold_detection_days`, `grids.uses_dual_meter_setup` | Drop columns | Maintainer sign-off 2026-07-09 — unused or superseded in OSS baseline | Drop columns at cutover; platform-core import updates entities/DTOs | confirmed |
 
 ## Column adjustments
 
@@ -64,6 +65,12 @@ tables; company DB converges at cutover.
 |---|---|---|---|---|
 | `orders` | `meter_credit_transfer_id` (+ FK, unique `REL_a53c58bdb5ae0193f17497c81b`) | Drop | Only referenced excluded `meter_credit_transfers` | Archive/relink historical orders first; remove tiamat `produceMeterInteraction` branch, reporting meta check, TypeORM join/relation at payments import |
 
+### §3 — Motivated by register #13 (drop payouts module)
+
+| Table / view | Column(s) | Change | Rationale | Cutover / code impact |
+|---|---|---|---|---|
+| `grids` | `is_automatic_payout_generation_enabled` | Drop | Payouts module dropped; toggle has no live path | Drop column at cutover; remove from grid entity/DTO at platform-core import |
+
 ### §4 — Motivated by register #12 (drop device registry)
 
 | Table / view | Column(s) | Change | Rationale | Cutover / code impact |
@@ -76,6 +83,7 @@ tables; company DB converges at cutover.
 | Table / view | Column(s) | Change | Rationale | Cutover / code impact |
 |---|---|---|---|---|
 | `pd_sites` | `pd_flow_id` (+ FK to `pd_flows`) | Drop | Only referenced dropped pd-hero workflow tables; sites kept for pipeline/geo | Drop column at cutover; pegasus `PdSiteView` pd-flow actions UI removed or reworked at field-ops import |
+| `organizations` | `pd_hero_google_drive_folder_id` | Drop | Only used by dropped pd-hero service (`loch/pd-hero`) | Drop column at cutover; remove from organization entity at platform-core import |
 
 ### §6 — Motivated by register #16 (meter task batch renames)
 
@@ -83,12 +91,25 @@ tables; company DB converges at cutover.
 |---|---|---|---|---|
 | `meter_task_batch_executions` (was `directive_batch_executions`) | `directive_batch_id` (+ FK to `meter_task_batches`) | Rename → `meter_task_batch_id` | Align column name with renamed parent table | `ALTER TABLE … RENAME COLUMN` at cutover; TypeORM entity updated at metering import |
 
-### §pending — Column prune backlog (Task 3a)
+### §7 — Motivated by register #17 (platform core column prunes, Task 3b G1)
 
-> Provisional drops flagged during object batches — **must be confirmed or removed in Task 3b**
-> (`002b-schema-column-adjustments.md`). Examples: `meters.watchdog_session`,
-> `meters.watchdog_last_run_at` (no app usage found; related to dropped watchdog sessions).
-> `grids.is_automatic_payout_generation_enabled` (payouts module dropped; register #13).
+| Table / view | Column(s) | Change | Rationale | Cutover / code impact |
+|---|---|---|---|---|
+| `organizations` | `phone`, `address` | Drop | Unused in OSS baseline | Drop columns at cutover; organization entity/DTO at platform-core import |
+| `api_keys` | `is_locked` | Drop | Unused in OSS baseline | Drop column at cutover; api_keys entity at platform-core import |
+| `dcus` | `queue_buffer_length` | Drop | Unused in OSS baseline | Drop column at cutover; dcu entity at platform-core import |
+| `grids` | `are_all_dcus_online`, `are_all_dcus_under_high_load_threshold`, `meter_consumption_issue_threshold_detection_days`, `meter_communication_issue_threshold_detection_days`, `uses_dual_meter_setup` | Drop | Unused or superseded in OSS baseline | Drop columns at cutover; grid entity/DTO at platform-core import |
+
+### §15 — Motivated by register #15 (autopilot deferred)
+
+| Table / view | Column(s) | Change | Rationale | Cutover / code impact |
+|---|---|---|---|---|
+| `grids` | `telegram_response_path_autopilot` | Drop | Autopilot deferred; column only in types/entity | Drop column at cutover; grid entity at platform-core import |
+
+### §pending — Column prune backlog (Task 3a / 3b)
+
+> Provisional drops still awaiting review in later batches:
+> `meters.watchdog_session`, `meters.watchdog_last_run_at` (watchdog module dropped; no app usage found).
 
 ## Appendix — annotated A/B diff (002b Task 6)
 

@@ -140,7 +140,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** In progress — **3a complete**; **3b** not started
+- [ ] **Status:** In progress — **3a complete**; **3b** in progress (**G1 signed off**; G2+ pending)
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -344,7 +344,7 @@ decisions log.
 Tracked items that must not be lost between chat sessions:
 
 - [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
-- [ ] **Task 3b** — Generate `002b-schema-column-adjustments.md` from reference DB; walk keep tables; confirm §pending backlog (`meters.watchdog_session`, etc.).
+- [ ] **Task 3b** — `002b-schema-column-adjustments.md` generated (589 columns; 23 drops after G1). **G1 platform core signed off** (12 new drops → register #17, §3, §5, §15). **Next:** G2 metering batch.
 - [ ] **Enum value trim** — `external_system_enum`, `notification_type_enum`, and other keep enums (end of Task 3).
 - [ ] **Orphan function review** — `append_rls_organization_id_by_historical_grid_id()` (no trigger in chain); `lock_next_order()` (superseded by `lock_next_order_and_wallets`).
 - [x] **Rename — meter task batches** — `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (register **#16**; applied in init migration Task 5).
@@ -371,3 +371,5 @@ Tracked items that must not be lost between chat sessions:
 - 2026-07-09 — [Task 3 batch F6] — Field ops **keep**: `issues`, `notes`, `audits`, `pd_sites`, `pd_site_submissions` + issue enums/triggers. Register **#14** **drop**: pd-hero workflow subgraph + `lock_next_pd_action()`. Register **#15** **drop**: `autopilot_executions` (deferred capability). Column adjustments §5: drop `pd_sites.pd_flow_id`. `append_rls_organization_id_by_customer_id()` tagged shared (no capability).
 - 2026-07-09 — [Task 3 batch F3] — Metering **keep**: customers, connections, meter_interactions, hardware install/import, USSD, views, enums, triggers. Register **#16** **rename**: `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (+ sequences, function, triggers; column §6: `directive_batch_id` → `meter_task_batch_id`). `communication_protocol_enum` keep all values; customer enums keep (value trim deferred). No metering drops. **Task 3a complete.**
 - 2026-07-08 — [Task 3 plan] — Split Task 3 into **3a** (object batches) and **3b** (column review pass). New companion artifact `002b-schema-column-adjustments.md`: one row per column on keep tables/views; maintainer adds/removes drops before Task 5; confirmed rows sync to register Column adjustments.
+- 2026-07-09 — [Task 3b start] — Generated `002b-schema-column-adjustments.md` from legacy migration SQL (589 columns: 576 keep, 12 drop pre-filled, 1 rename). Docker unavailable for `information_schema` cross-check. Review batches G1+ (platform core first). §pending + register §1–§6 pre-filled; sync to register on batch sign-off.
+- 2026-07-09 — [Task 3b G1] — Platform core signed off. **12 new drops:** `organizations.phone/address/pd_hero_google_drive_folder_id`, `api_keys.is_locked`, `dcus.queue_buffer_length`, `grids.is_automatic_payout_generation_enabled/telegram_response_path_autopilot/are_all_dcus_online/are_all_dcus_under_high_load_threshold/meter_*_threshold_*/uses_dual_meter_setup`. **Keeps confirmed:** notification toggles, `members.subscribed_to_telegram_revenue_notifications`, `grids.feature_access_config`. Register **#17** + column §3, §5 (amended), §7, §15 added; §pending narrowed to watchdog columns.
