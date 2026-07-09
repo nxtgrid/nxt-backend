@@ -140,7 +140,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** In progress (batches A–D recorded; Batch F and column review remain)
+- [ ] **Status:** In progress — **3a complete**; **3b** not started
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -166,7 +166,7 @@ each one during classification.
 Review inventory rows in grouped batches (tables, enums, roles, …). Record bucket +
 capability tag per row. Column drops discovered here are **provisional** until Task 3b.
 
-**Progress:** batches A–D recorded; **F1 (platform core)** and **F2 (production monitoring)** recorded. F3–F6 remain.
+**Progress:** batches A–D, F1–F6 confirmed. **Task 3a complete** — every inventory row bucketed.
 
 ### Task 3b — Column review pass (maintainer, after 3a)
 
@@ -339,6 +339,19 @@ decisions log.
 
 ---
 
+## Open follow-ups (before Task 5)
+
+Tracked items that must not be lost between chat sessions:
+
+- [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
+- [ ] **Task 3b** — Generate `002b-schema-column-adjustments.md` from reference DB; walk keep tables; confirm §pending backlog (`meters.watchdog_session`, etc.).
+- [ ] **Enum value trim** — `external_system_enum`, `notification_type_enum`, and other keep enums (end of Task 3).
+- [ ] **Orphan function review** — `append_rls_organization_id_by_historical_grid_id()` (no trigger in chain); `lock_next_order()` (superseded by `lock_next_order_and_wallets`).
+- [x] **Rename — meter task batches** — `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (register **#16**; applied in init migration Task 5).
+- [ ] **Task 6** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11).
+
+---
+
 ## Notes & decisions log
 
 > Append here as the plan is executed. Format: `YYYY-MM-DD — [task] — note`
@@ -350,6 +363,11 @@ decisions log.
 - 2026-07-08 — [Task 3 batch B] — Exclude deprecated directive system (register #1 confirmed): tables `directives`/`lorawan_directives`, view `batch_commands`, 6 enums (incl. `directive_type` + `directive_special_status` after column drops on keep tables), triggers/seq. Keep `directive_batches`/`directive_batch_executions` (rename candidates). Column adjustments §1: drop `orders.directive_id`/`lorawan_directive_id`, `directive_batches.directive_type`, `meters.current_special_status`, view column. Column prune backlog started (§pending).
 - 2026-07-08 — [Task 3 batch C] — Exclude deprecated meter credit transfers (register #7 confirmed): table `meter_credit_transfers`, enum `meter_credit_transfer_status_enum`, sequence `meter_credit_transfers_id_seq`, trigger, function `append_rls_organization_id_by_receiver_meter_id()`. Register #4 narrowed to drop `directive_watchdog_sessions` only (`一demo` has no schema). Column adjustments §2: drop `orders.meter_credit_transfer_id`.
 - 2026-07-08 — [Task 3 batch D] — Drop dead schema (registers #4, #8, #9 confirmed): `directive_watchdog_sessions`, `features`/`member_feature`, `public.migrations` (+ sequences/indexes/policies). No archive at cutover. `energy_cabins` **keep** (1) Production monitoring — pegasus map layer; tagged early outside Batch F.
-- 2026-07-08 — [Task 3 batch F1] — Platform core **keep** (inventory tagged): accounts, orgs, members, agents, api_keys, grids, poles, dcus→gateways, routers, `agents_with_account`, auth triggers/functions, RLS helpers, platform enums. Register **#10** confirmed: full DCU→gateway rename + `route`→`router` trigger typo. Register **#11** confirmed: init migration `CREATE EXTENSION IF NOT EXISTS` only for non-default required (`postgis`, `pg_net`, `pgsodium`, `pgjwt`); omit Supabase defaults (`pg_stat_statements`, `pgcrypto`, `supabase_vault`, `uuid-ossp`), `pg_graphql`, `hypopg`, `index_advisor`. Default set verified against `supabase/postgres` schema-17 (PG17 image; PG15 local stack equivalent). Storage bucket inventory row = placeholder only.
-- 2026-07-08 — [Task 3 batch F2] — Production monitoring **keep**: `mppts`, `solcast_cache`, `energy_cabins`, enums, mppt/cabin triggers, `get_grid_status` (retagged from platform core). Register **#12** confirmed **drop**: `devices`/`device_types`/`device_logs` + function/triggers/sequences (device-data-sink removed from OSS scope). Column adjustments §4: drop `meters.device_id`, view column.
+- 2026-07-08 — [Task 3 batch F1] — Platform core **keep** (inventory tagged): accounts, orgs, members, agents, api_keys, grids, poles, `dcus`, routers, `agents_with_account`, auth triggers/functions, RLS helpers, platform enums. Register **#11** confirmed (extension policy). Storage bucket inventory row = placeholder only.
+- 2026-07-09 — [Task 3 register #10 amended] — DCU→gateway rename **withdrawn**; register #10 narrowed to router trigger typo only (`append_rls_organization_id_on_route_insert` → `…_on_router_insert`). Column adjustments §3 removed.
+- 2026-07-09 — [Task 3 batch F2] — Production monitoring **keep**: `mppts`, `solcast_cache`, `energy_cabins`, enums, mppt/cabin triggers, `get_grid_status`. Register **#12** **drop**: device registry. Column adjustments §4: drop `meters.device_id`.
+- 2026-07-09 — [Task 3 batch F4] — Payments **keep**: `banks`, `wallets`, `transactions`, `orders`, payment enums (except `payout_status_enum`), `find_*` revenue RPCs, `lock_next_order_and_wallets`, wallet/transaction triggers. Register **#13** **drop**: `payouts`, `bank_accounts`, `payout_status_enum`, `lock_next_order()` (+ sequences/policies). `currency_enum` stays under **(3) Payments** (ADR-004 capability tag).
+- 2026-07-09 — [Task 3 batch F5] — Notifications **keep**: `notifications`, `notification_parameters`, `notification_status_enum`, `notification_type_enum` (enum value trim deferred). No drops. Grid/member notification toggle columns deferred to Task 3b.
+- 2026-07-09 — [Task 3 batch F6] — Field ops **keep**: `issues`, `notes`, `audits`, `pd_sites`, `pd_site_submissions` + issue enums/triggers. Register **#14** **drop**: pd-hero workflow subgraph + `lock_next_pd_action()`. Register **#15** **drop**: `autopilot_executions` (deferred capability). Column adjustments §5: drop `pd_sites.pd_flow_id`. `append_rls_organization_id_by_customer_id()` tagged shared (no capability).
+- 2026-07-09 — [Task 3 batch F3] — Metering **keep**: customers, connections, meter_interactions, hardware install/import, USSD, views, enums, triggers. Register **#16** **rename**: `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (+ sequences, function, triggers; column §6: `directive_batch_id` → `meter_task_batch_id`). `communication_protocol_enum` keep all values; customer enums keep (value trim deferred). No metering drops. **Task 3a complete.**
 - 2026-07-08 — [Task 3 plan] — Split Task 3 into **3a** (object batches) and **3b** (column review pass). New companion artifact `002b-schema-column-adjustments.md`: one row per column on keep tables/views; maintainer adds/removes drops before Task 5; confirmed rows sync to register Column adjustments.
