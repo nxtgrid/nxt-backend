@@ -1,7 +1,7 @@
 # Schema Programmability Review (working review)
 
 **Companion to:** `002b-database-baseline.md` — **Task 3c**
-**Status:** In progress — H1 + H2 + H3 + H4 signed off; H5 pending
+**Status:** **Task 3c complete** — H1–H5 signed off (2026-07-09)
 **Generated:** 2026-07-09 — full migration chain (`legacy/supabase/migrations/`, 19 files)
 
 ## Summary
@@ -9,10 +9,10 @@
 | kind | count | signed off |
 |------|------:|------------|
 | enum values (31 types + 1 new) | 180 | **H4 signed off** (4 enum value drops total: #28, #29) |
-| functions | 20 + 6 new helpers | H1 + H2 + H3 signed off; H5 pending |
-| triggers (19 public + 2 auth + 1 new) | 22 | H5a signed off; H5b + H5c pending |
+| functions | 20 + 6 new helpers | **signed off** |
+| triggers (19 public + 2 auth + 1 new) | 22 | **signed off** |
 
-Pre-filled renames from register **#10** (router trigger) and **#16** (meter task batch function + triggers).
+Pre-filled renames from register **#10** (router trigger) and **#16** (meter command batch function + triggers).
 Default action is **keep** until a batch is signed off; ⚠️ rows need explicit maintainer decision.
 
 ## Review batches
@@ -23,7 +23,7 @@ Default action is **keep** until a batch is signed off; ⚠️ rows need explici
 | **H2** | Auth + platform RPCs (`handle_*`, `get_grid_status`) | **signed off** 2026-07-09 |
 | **H3** | Payments RPCs (`lock_next_order_and_wallets`, `find_*`) | **signed off** 2026-07-09 |
 | **H4** | Enum value trim (by capability) | **signed off** 2026-07-09 |
-| H5 | Triggers vs functions | **in progress** — H5a signed off; H5b + H5c pending |
+| H5 | Triggers vs functions | **signed off** 2026-07-09 |
 
 ## Batch H1 — RLS helpers
 
@@ -42,7 +42,7 @@ H1 is split so difficult functions are reviewed **one at a time**:
 |---|----------|----------|----------|
 | 2 | `rls_check_if_lender()` | **keep** | — |
 | 3 | `append_rls_organization_id_by_historical_grid_id()` | **drop** | #21 |
-| 4 | `append_rls_organization_id_by_directive_batch_id()` | **rename** → `append_rls_organization_id_by_meter_task_batch_id()` | #16 |
+| 4 | `append_rls_organization_id_by_directive_batch_id()` | **rename** → `append_rls_organization_id_by_meter_command_batch_id()` | #16 |
 
 ### H1b — `append_rls_*` + triggers — signed off 2026-07-09
 
@@ -129,7 +129,7 @@ consumers and frontend apps resolve this now-DB-native value.
 | `append_rls_organization_id_by_customer_id()` | **keep + redesign** | **#23** | H1b signed off 2026-07-09 | delegates to new helper `rls_org_id_from_customer()` |
 | `append_rls_organization_id_by_customer_id_or_agent_id_or_connec()` | **keep + redesign** | **#23** | H1b signed off 2026-07-09 | branches delegate to helpers; 2nd dead lookup (`organization_id` branch) removed |
 | `append_rls_organization_id_by_dcu_id_or_meter_id()` | **keep + redesign** | **#23** | H1b signed off 2026-07-09 | branches delegate to `rls_org_id_from_dcu()` / `rls_org_id_from_meter()` |
-| `append_rls_organization_id_by_directive_batch_id()` | **rename + redesign** | **#16, #23** | H1a + H1b signed off 2026-07-09 | → `append_rls_organization_id_by_meter_task_batch_id()`; delegates to `rls_org_id_from_grid()` |
+| `append_rls_organization_id_by_directive_batch_id()` | **rename + redesign** | **#16, #23** | H1a + H1b signed off 2026-07-09 | → `append_rls_organization_id_by_meter_command_batch_id()`; delegates to `rls_org_id_from_grid()` |
 | `append_rls_organization_id_by_meter_id()` | **keep + redesign** | **#23** | H1b signed off 2026-07-09 | delegates to new helper `rls_org_id_from_meter()` |
 | `append_rls_organization_id_by_metering_hardware_install_session()` | **keep + redesign** | **#23** | H1b signed off 2026-07-09 | delegates to `rls_org_id_from_meter()` via session's `meter_id` |
 | `append_rls_organization_id_by_order_id()` | **keep + redesign** | **#23** | H1b signed off 2026-07-09 | delegates to `rls_org_id_from_grid()` via `historical_grid_id` |
@@ -451,8 +451,8 @@ H5 confirms trigger wiring matches signed-off function decisions (H1–H3). **No
 | sub-batch | scope | count | status |
 |-----------|-------|------:|--------|
 | **H5a** | `append_rls_*` INSERT triggers (legacy chain) | 19 | **signed off** 2026-07-09 |
-| **H5b** | Auth triggers on `auth.users` | 2 | pending sign-off |
-| **H5c** | New admin-org GUC sync trigger (#22, not in legacy chain) | 1 | pending sign-off |
+| **H5b** | Auth triggers on `auth.users` | 2 | **signed off** 2026-07-09 |
+| **H5c** | New admin-org GUC sync trigger (#22, not in legacy chain) | 1 | **signed off** 2026-07-09 |
 
 ### H5a — `append_rls_*` INSERT triggers — signed off 2026-07-09
 
@@ -464,7 +464,7 @@ All are `BEFORE INSERT FOR EACH ROW`. **Keep all 19** — wiring matches H1b fun
 | 2 | `append_rls_organization_id_on_agent_insert` | `agents` | `append_rls_organization_id_by_grid_id()` | keep | — |
 | 3 | `append_rls_organization_id_on_customer_insert` | `customers` | `append_rls_organization_id_by_grid_id()` | keep | — |
 | 4 | `append_rls_organization_id_on_dcus_insert` | `dcus` | `append_rls_organization_id_by_grid_id()` | keep | — |
-| 5 | `append_rls_organization_id_on_directive_batch_insert` | `directive_batches` | `append_rls_organization_id_by_grid_id()` | **rename** | **#16** → `…_on_meter_task_batch_insert` ON `meter_task_batches` |
+| 5 | `append_rls_organization_id_on_directive_batch_insert` | `directive_batches` | `append_rls_organization_id_by_grid_id()` | **rename** | **#16** → `…_on_meter_command_batch_insert` ON `meter_command_batches` |
 | 6 | `append_rls_organization_id_on_energy_cabin_insert` | `energy_cabins` | `append_rls_organization_id_by_grid_id()` | keep | — |
 | 7 | `append_rls_organization_id_on_mppt_insert` | `mppts` | `append_rls_organization_id_by_grid_id()` | keep | — |
 | 8 | `append_rls_organization_id_on_pole_insert` | `poles` | `append_rls_organization_id_by_grid_id()` | keep | — |
@@ -476,7 +476,7 @@ All are `BEFORE INSERT FOR EACH ROW`. **Keep all 19** — wiring matches H1b fun
 | 14 | `append_rls_organization_id_on_wallet_insert` | `wallets` | `append_rls_organization_id_by_customer_id_or_agent_id_or_connec()` | keep | — |
 | 15 | `append_rls_organization_id_on_meter_install_session_insert` | `metering_hardware_install_sessions` | `append_rls_organization_id_by_dcu_id_or_meter_id()` | keep | — |
 | 16 | `append_rls_organization_id_on_meter_commissioning_insert` | `meter_commissionings` | `append_rls_organization_id_by_metering_hardware_install_session()` | keep | — |
-| 17 | `append_rls_organization_id_on_directive_batch_execution_insert` | `directive_batch_executions` | `append_rls_organization_id_by_directive_batch_id()`¹ | **rename** | **#16** → `…_on_meter_task_batch_execution_insert` ON `meter_task_batch_executions`; function → `by_meter_task_batch_id()` |
+| 17 | `append_rls_organization_id_on_directive_batch_execution_insert` | `directive_batch_executions` | `append_rls_organization_id_by_directive_batch_id()`¹ | **rename** | **#16** → `…_on_meter_command_batch_execution_insert` ON `meter_command_batch_executions`; function → `by_meter_command_batch_id()` |
 | 18 | `append_rls_organization_id_on_issue_insert` | `issues` | `append_rls_organization_id_by_meter_id()` | keep | — |
 | 19 | `append_rls_organization_id_on_transaction_insert` | `transactions` | `append_rls_organization_id_by_order_id()` | keep | — |
 
@@ -484,16 +484,16 @@ All are `BEFORE INSERT FOR EACH ROW`. **Keep all 19** — wiring matches H1b fun
 
 **Cross-check:** 27 public triggers in legacy chain − 5 on excluded/dropped tables − 3 Make.com (#6, parameterized) = **19 keep** ✓
 
-### H5b — Auth triggers (pending sign-off)
+### H5b — Auth triggers — signed off 2026-07-09
 
-| trigger | ON table | function | timing | recommendation |
-|---------|----------|----------|--------|----------------|
-| `on_auth_user_created` | `auth.users` | `handle_new_user()` | AFTER INSERT | **keep** — H2 signed off |
-| `on_auth_user_updated` | `auth.users` | `handle_update_user()` | AFTER UPDATE | **keep** — H2 signed off |
+| trigger | ON table | function | timing | decision |
+|---------|----------|----------|--------|----------|
+| `on_auth_user_created` | `auth.users` | `handle_new_user()` | AFTER INSERT | **keep** |
+| `on_auth_user_updated` | `auth.users` | `handle_update_user()` | AFTER UPDATE | **keep** |
 
-### H5c — Admin org GUC sync trigger (pending sign-off)
+### H5c — Admin org GUC sync trigger — signed off 2026-07-09
 
-**Recommendation: add** (register **#22**, not in legacy chain). Proposed:
+**Add** (register **#22**, not in legacy chain):
 
 | trigger | ON table | function | timing | register |
 |---------|----------|----------|--------|----------|
@@ -515,7 +515,7 @@ Maintains `app.admin_organization_id` GUC for `rls_check_if_admin_org_member()`.
 | `append_rls_organization_id_by_customer_id()` | H1b | keep + redesign | #23 | H1b 2026-07-09 | delegates to `rls_org_id_from_customer()`; triggers: `append_rls_organization_id_on_connection_insert` ON `connections`, `append_rls_organization_id_on_note_insert` ON `notes` |
 | `append_rls_organization_id_by_customer_id_or_agent_id_or_connec()` | H1b | keep + redesign | #23 | H1b 2026-07-09 | branches delegate to helpers; 2nd dead lookup removed; triggers: `append_rls_organization_id_on_wallet_insert` ON `wallets` |
 | `append_rls_organization_id_by_dcu_id_or_meter_id()` | H1b | keep + redesign | #23 | H1b 2026-07-09 | branches delegate to `rls_org_id_from_dcu()` / `rls_org_id_from_meter()`; triggers: `append_rls_organization_id_on_meter_install_session_insert` |
-| `append_rls_organization_id_by_directive_batch_id()` | H1a + H1b | rename + redesign | #16, #23 | H1a + H1b 2026-07-09 | → `append_rls_organization_id_by_meter_task_batch_id()`; delegates to `rls_org_id_from_grid()` |
+| `append_rls_organization_id_by_directive_batch_id()` | H1a + H1b | rename + redesign | #16, #23 | H1a + H1b 2026-07-09 | → `append_rls_organization_id_by_meter_command_batch_id()`; delegates to `rls_org_id_from_grid()` |
 | `append_rls_organization_id_by_meter_id()` | H1b | keep + redesign | #23 | H1b 2026-07-09 | delegates to `rls_org_id_from_meter()`; triggers: `append_rls_organization_id_on_issue_insert` ON `issues` |
 | `append_rls_organization_id_by_metering_hardware_install_session()` | H1b | keep + redesign | #23 | H1b 2026-07-09 | delegates to `rls_org_id_from_meter()` via session's meter_id; triggers: `append_rls_organization_id_on_meter_commissioning_insert` |
 | `append_rls_organization_id_by_order_id()` | H1b | keep + redesign | #23 | H1b 2026-07-09 | delegates to `rls_org_id_from_grid()` via historical_grid_id; triggers: `append_rls_organization_id_on_transaction_insert` ON `transactions` |
@@ -541,8 +541,8 @@ Maintains `app.admin_organization_id` GUC for `rls_check_if_admin_org_member()`.
 | append_rls_organization_id_on_connection_insert | connections | append_rls_organization_id_by_customer_id() | keep |  | H5a 2026-07-09 |  |
 | append_rls_organization_id_on_customer_insert | customers | append_rls_organization_id_by_grid_id() | keep |  | H5a 2026-07-09 |  |
 | append_rls_organization_id_on_dcus_insert | dcus | append_rls_organization_id_by_grid_id() | keep |  | H5a 2026-07-09 |  |
-| append_rls_organization_id_on_directive_batch_execution_insert | directive_batch_executions | append_rls_organization_id_by_directive_batch_id() | rename | #16 | H5a 2026-07-09 | → `…_on_meter_task_batch_execution_insert` ON `meter_task_batch_executions` |
-| append_rls_organization_id_on_directive_batch_insert | directive_batches | append_rls_organization_id_by_grid_id() | rename | #16 | H5a 2026-07-09 | → `…_on_meter_task_batch_insert` ON `meter_task_batches` |
+| append_rls_organization_id_on_directive_batch_execution_insert | directive_batch_executions | append_rls_organization_id_by_directive_batch_id() | rename | #16 | H5a 2026-07-09 | → `…_on_meter_command_batch_execution_insert` ON `meter_command_batch_executions` |
+| append_rls_organization_id_on_directive_batch_insert | directive_batches | append_rls_organization_id_by_grid_id() | rename | #16 | H5a 2026-07-09 | → `…_on_meter_command_batch_insert` ON `meter_command_batches` |
 | append_rls_organization_id_on_energy_cabin_insert | energy_cabins | append_rls_organization_id_by_grid_id() | keep |  | H5a 2026-07-09 |  |
 | append_rls_organization_id_on_issue_insert | issues | append_rls_organization_id_by_meter_id() | keep |  | H5a 2026-07-09 |  |
 | append_rls_organization_id_on_member_insert | members | append_rls_organization_id_by_account_id() | keep |  | H5a 2026-07-09 |  |
@@ -555,9 +555,9 @@ Maintains `app.admin_organization_id` GUC for `rls_check_if_admin_org_member()`.
 | append_rls_organization_id_on_route_insert | routers | append_rls_organization_id_by_grid_id() | rename | #10 | H5a 2026-07-09 | → `…_on_router_insert` |
 | append_rls_organization_id_on_transaction_insert | transactions | append_rls_organization_id_by_order_id() | keep |  | H5a 2026-07-09 |  |
 | append_rls_organization_id_on_wallet_insert | wallets | append_rls_organization_id_by_customer_id_or_agent_id_or_connec() | keep |  | H5a 2026-07-09 |  |
-| on_auth_user_created | auth.users | handle_new_user() | keep |  | H5b pending | H2 signed off |
-| on_auth_user_updated | auth.users | handle_update_user() | keep |  | H5b pending | H2 signed off |
-| sync_admin_organization_id_guc | organizations | sync_admin_organization_id_guc()¹ | **add** | **#22** | H5c pending | Not in legacy chain; maintains GUC `app.admin_organization_id` |
+| on_auth_user_created | auth.users | handle_new_user() | keep |  | H5b 2026-07-09 | H2 signed off |
+| on_auth_user_updated | auth.users | handle_update_user() | keep |  | H5b 2026-07-09 | H2 signed off |
+| sync_admin_organization_id_guc | organizations | sync_admin_organization_id_guc()¹ | **add** | **#22** | H5c 2026-07-09 | Not in legacy chain; maintains GUC `app.admin_organization_id` |
 
 ¹ Proposed names for Task 5 — trigger + handler function (see register #22, Programmability §3).
 
@@ -577,6 +577,6 @@ Maintains `app.admin_organization_id` GUC for `rls_check_if_admin_org_member()`.
 
 **H4 (enum value trim) fully closed 2026-07-09** — H4a: `external_system_enum` drop 3 (#28); H4b/H4c/H4e keep all; H4d drop `AUTO_PAYOUT_GENRATION_REPORT` (#29).
 
-**H5a (`append_rls_*` triggers) signed off 2026-07-09** — keep all 19; renames #10 (router) + #16 ×2 (meter task batches).
+**H5 fully closed 2026-07-09** — H5a: keep 19 + renames #10/#16; H5b: keep 2 auth; H5c: add `sync_admin_organization_id_guc` (#22).
 
-**Remaining:** H5b (auth triggers) + H5c (admin-org GUC sync trigger #22).
+**Task 3c complete.** Next: **Task 3d** (database-wide performance audit).

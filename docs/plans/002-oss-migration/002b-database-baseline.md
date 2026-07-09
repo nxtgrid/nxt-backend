@@ -144,7 +144,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** In progress — **3a complete**; **3b complete**; **3c** in progress (H1 + H2 + H3 + H4 signed off; H5 pending)
+- [ ] **Status:** In progress — **3a complete**; **3b complete**; **3c complete**; **3d** next
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -199,7 +199,7 @@ chain used as source of truth (repaired after G2).
 
 ### Task 3c — Programmability review (maintainer, after 3b)
 
-- [ ] **Status:** In progress — **H1 + H2 + H3 + H4 signed off**; H5 pending
+- [x] **Status:** **Complete** — H1–H5 signed off 2026-07-09
 - **Depends on:** Task 3b complete
 
 **Purpose:** sanity-check **keep** enums (per-value), functions, and triggers before Task 5. Object
@@ -255,7 +255,7 @@ performance-driven change is registered before the diff runs, avoiding unexplain
 - **Indexes on keep tables** — **new ground, not previously inventoried** (Task 2's inventory has no
   "index" kind at all). 3d must start by enumerating indexes on keep tables from the reference DB,
   then check: FK columns indexed, RLS-predicate columns indexed (e.g. `rls_organization_id`),
-  redundant/overlapping indexes, coverage after Task 3 renames (`meter_task_batches` etc.). One
+  redundant/overlapping indexes, coverage after Task 3 renames (`meter_command_batches` etc.). One
   instance already caught and fixed directly during H1b rather than waiting for this pass — see
   register #25 (`idx_accounts_organization_id`) — because it surfaced while reviewing a specific
   function group; 3d is the systematic sweep for the rest of the schema.
@@ -432,8 +432,8 @@ decisions log.
 
 Tracked items that must not be lost between chat sessions:
 
-- [ ] **Task 3c** — In progress. **H1 + H2 + H3 + H4 + H5a signed off** (see decisions log). **Next:** H5b + H5c (triggers).
-- [ ] **Task 3d (new, broadened)** — Database-wide performance audit: function volatility (`VOLATILE`/`STABLE`/`IMMUTABLE`), RLS policy invocation pattern (bare vs. subquery-wrapped calls), index coverage on keep tables (not previously inventoried), trigger/view design. Runs after Task 3a–3c close, before Task 4/5. See Task 3d section above.
+- [x] **Task 3c** — **Complete** (2026-07-09). H1–H5 signed off; `002b-schema-programmability-review.md` final.
+- [ ] **Task 3d** — **Next.** Database-wide performance audit (see Task 3d section).
 - [ ] **ADR-007 amendment follow-up** — backend `getConfig().deployment.adminOrganizationId` consumers and frontend apps (qilin/pegasus/eos/niffler/sphinx) need a resolution path for the now-DB-native admin organization; explicitly deferred in the ADR-007 Amendment (2026-07-09) "Open / deferred" — revisit before/at Task 5 or capability import, whichever comes first.
 - [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
 - [x] **Task 3b** — Complete. `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
@@ -458,7 +458,7 @@ Tracked items that must not be lost between chat sessions:
 - 2026-07-09 — [Task 3 batch F4] — Payments **keep**: `banks`, `wallets`, `transactions`, `orders`, payment enums (except `payout_status_enum`), `find_*` revenue RPCs, `lock_next_order_and_wallets`, wallet/transaction triggers. Register **#13** **drop**: `payouts`, `bank_accounts`, `payout_status_enum`, `lock_next_order()` (+ sequences/policies). `currency_enum` stays under **(3) Payments** (ADR-004 capability tag).
 - 2026-07-09 — [Task 3 batch F5] — Notifications **keep**: `notifications`, `notification_parameters`, `notification_status_enum`, `notification_type_enum` (enum value trim deferred). No drops. Grid/member notification toggle columns deferred to Task 3b.
 - 2026-07-09 — [Task 3 batch F6] — Field ops **keep**: `issues`, `notes`, `audits`, `pd_sites`, `pd_site_submissions` + issue enums/triggers. Register **#14** **drop**: pd-hero workflow subgraph + `lock_next_pd_action()`. Register **#15** **drop**: `autopilot_executions` (deferred capability). Column adjustments §5: drop `pd_sites.pd_flow_id`. `append_rls_organization_id_by_customer_id()` tagged shared (no capability).
-- 2026-07-09 — [Task 3 batch F3] — Metering **keep**: customers, connections, meter_interactions, hardware install/import, USSD, views, enums, triggers. Register **#16** **rename**: `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (+ sequences, function, triggers; column §6: `directive_batch_id` → `meter_task_batch_id`). `communication_protocol_enum` keep all values; customer enums keep (value trim deferred). No metering drops. **Task 3a complete.**
+- 2026-07-09 — [Task 3 batch F3] — Metering **keep**: customers, connections, meter_interactions, hardware install/import, USSD, views, enums, triggers. Register **#16** **rename**: `directive_batches` → `meter_command_batches`, `directive_batch_executions` → `meter_command_batch_executions` (+ sequences, function, triggers; column §6: `directive_batch_id` → `meter_command_batch_id`). `communication_protocol_enum` keep all values; customer enums keep (value trim deferred). No metering drops. **Task 3a complete.**
 - 2026-07-08 — [Task 3 plan] — Split Task 3 into **3a** (object batches), **3b** (column review), and **3c** (programmability: enums/functions/triggers). Column artifact: `002b-schema-column-adjustments.md`; programmability artifact: `002b-schema-programmability-review.md`.
 - 2026-07-09 — [Task 3b start] — Generated `002b-schema-column-adjustments.md` from legacy migration SQL (589 columns: 576 keep, 12 drop pre-filled, 1 rename). Docker unavailable for `information_schema` cross-check. Review batches G1+ (platform core first). §pending + register §1–§6 pre-filled; sync to register on batch sign-off.
 - 2026-07-09 — [Task 3b G1] — Platform core signed off. **12 new drops:** `organizations.phone/address/pd_hero_google_drive_folder_id`, `api_keys.is_locked`, `dcus.queue_buffer_length`, `grids.is_automatic_payout_generation_enabled/telegram_response_path_autopilot/are_all_dcus_online/are_all_dcus_under_high_load_threshold/meter_*_threshold_*/uses_dual_meter_setup`. **Keeps confirmed:** notification toggles, `members.subscribed_to_telegram_revenue_notifications`, `grids.feature_access_config`. Register **#17** + column §3, §5 (amended), §7, §15 added; §pending narrowed to watchdog columns.
@@ -476,5 +476,7 @@ Tracked items that must not be lost between chat sessions:
 - 2026-07-09 — [Task 3c H4a] — Platform-core enum trim signed off. `account_type_enum`, `organization_type_enum`, `weather_type_enum` **keep all**. `member_type_enum` **keep all 10** (RBAC vocabulary). `external_system_enum` **keep 11, drop 3** — drop `JOTFORM` (pd-hero #14), `STEAMACO`, `ACREL`; **keep `JIRA`** (required by `issues.external_tracking_system`, same enum type, DB default). Register **#28** + Programmability adjustments §9.
 - 2026-07-09 — [Task 3c H4b] — Metering enums signed off. **Keep all** — no drops (`communication_protocol_enum`, customer enums, all core metering status/type enums).
 - 2026-07-09 — [Task 3c H4c/H4d/H4e] — **H4 closed.** H4c payments + H4e field ops/production monitoring: **keep all**. H4d notifications: **keep 15, drop `AUTO_PAYOUT_GENRATION_REPORT`** only (payouts #13). Total enum value drops in H4: 4 (`external_system_enum` ×3, `notification_type_enum` ×1). Registers **#28**, **#29**.
-- 2026-07-09 — [Task 3c H5a] — `append_rls_*` INSERT triggers signed off. **Keep all 19** — wiring confirmed vs H1b; 3 renames unchanged (#10 router, #16 ×2 meter task batches). No new register entries (already in #10/#16).
+- 2026-07-09 — [Task 3c H5a] — `append_rls_*` INSERT triggers signed off. **Keep all 19** — wiring confirmed vs H1b; 3 renames unchanged (#10 router, #16 ×2 meter command batches). No new register entries (already in #10/#16).
+- 2026-07-09 — [Task 3c H5b/H5c] — **H5 closed; Task 3c complete.** H5b: keep `on_auth_user_created` + `on_auth_user_updated`. H5c: **add** `sync_admin_organization_id_guc` on `organizations` (#22).
+- 2026-07-09 — [Register #16 amended] — Target names corrected: `meter_task_*` → **`meter_command_*`** (`meter_command_batches`, `meter_command_batch_executions`, `meter_command_batch_id`, function/trigger/index renames). Rationale: align with "command batch" domain language vs generic "task".
 - 2026-07-09 — [Task 3d broadened] — Maintainer: Task 3d should be a **database-wide** structural performance audit, not just function volatility — done at this point because Task 3a–3c lock in the full keep-object list before Task 5 authors the init migration and Task 6 diffs it. Scope now also covers: RLS policy invocation pattern (bare vs. subquery-wrapped helper calls — legacy chain is inconsistent), index coverage on keep tables (**gap found:** Task 2's inventory never captured indexes as objects at all — 3d starts by enumerating them from the reference DB), trigger design overhead, view definitions. Explicit boundary: empirical/load-driven tuning (`EXPLAIN ANALYZE` under real data volume) is out of reach until a capability import brings real usage — plan ships schema only, no data migration. New companion artifact stub: `002b-schema-performance-audit.md`.

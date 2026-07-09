@@ -43,8 +43,8 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | device_logs | table | public | drop |  | RLS enabled; 3 policies; register #12 |
 | device_types | table | public | drop |  | RLS enabled; 4 policies; register #12 |
 | devices | table | public | drop |  | RLS enabled; 3 policies; register #12 |
-| directive_batch_executions | table | public | keep | (2) Metering | RLS enabled; 2 policies; **rename → `meter_task_batch_executions`** (register #16) |
-| directive_batches | table | public | keep | (2) Metering | RLS enabled; 3 policies; **rename → `meter_task_batches`** (register #16); drop `directive_type` (register #1 §1) |
+| directive_batch_executions | table | public | keep | (2) Metering | RLS enabled; 2 policies; **rename → `meter_command_batch_executions`** (register #16) |
+| directive_batches | table | public | keep | (2) Metering | RLS enabled; 3 policies; **rename → `meter_command_batches`** (register #16); drop `directive_type` (register #1 §1) |
 | directive_watchdog_sessions | table | public | drop |  | RLS enabled; register #4 |
 | directives | table | public | exclude |  | RLS enabled; 3 policies |
 | energy_cabins | table | public | keep | (1) Production monitoring | RLS enabled; 2 policies; pegasus grid map layer (Supabase read) |
@@ -56,7 +56,7 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | members | table | public | keep | Platform core | RLS enabled; 2 policies |
 | meter_commissionings | table | public | keep | (2) Metering | RLS enabled; 2 policies |
 | meter_credit_transfers | table | public | exclude |  | RLS enabled; register #7 |
-| meter_interactions | table | public | keep | (2) Metering | RLS enabled; 2 policies; `batch_execution_id` → `meter_task_batch_executions` (register #16) |
+| meter_interactions | table | public | keep | (2) Metering | RLS enabled; 2 policies; `batch_execution_id` → `meter_command_batch_executions` (register #16) |
 | metering_hardware_imports | table | public | keep | (2) Metering | RLS enabled; 1 policy |
 | metering_hardware_install_sessions | table | public | keep | (2) Metering | RLS enabled; 3 policies |
 | meters | table | public | keep | (2) Metering | RLS enabled; 5 policies; drop `current_special_status` (register #1 §1); drop `device_id` (register #12 §4) |
@@ -100,7 +100,7 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | directive_status_enum | enum | public | exclude |  | values: INITIALISED, PENDING, SENT_TO_API, … |
 | directive_type_enum | enum | public | exclude |  | values: ON, OFF, READ_VOLTAGE, …; was on `directive_batches.directive_type` (dropped) |
 | external_system_enum | enum | public | keep | Platform core | values: STEAMACO, CALIN, …; enum value trim deferred |
-| fs_command_type_enum | enum | public | keep | (2) Metering | values: ON, OFF; on `meter_task_batches.fs_command` (renamed) |
+| fs_command_type_enum | enum | public | keep | (2) Metering | values: ON, OFF; on `meter_command_batches.fs_command` (renamed) |
 | gender_enum | enum | public | keep | (2) Metering | values: MALE, FEMALE; on `customers`; enum value trim deferred |
 | generator_type_enum | enum | public | keep | (2) Metering | values: SMALL, LARGE; on `customers`; enum value trim deferred |
 | id_document_type_enum | enum | public | keep | (2) Metering | values: PASSPORT, NATIONAL_ID, …; on `customers`; enum value trim deferred |
@@ -138,7 +138,7 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | append_rls_organization_id_by_customer_id_or_agent_id_or_connec() | function | public | keep | (3) Payments | wallets trigger |
 | append_rls_organization_id_by_dcu_id_or_meter_id() | function | public | keep | (2) Metering | metering_hardware_install_sessions trigger |
 | append_rls_organization_id_by_device_id() | function | public | drop |  | register #12 |
-| append_rls_organization_id_by_directive_batch_id() | function | public | keep | (2) Metering | **rename → `append_rls_organization_id_by_meter_task_batch_id()`** (register #16) |
+| append_rls_organization_id_by_directive_batch_id() | function | public | keep | (2) Metering | **rename → `append_rls_organization_id_by_meter_command_batch_id()`** (register #16) |
 | append_rls_organization_id_by_grid_id() | function | public | keep | Platform core | grid-scoped entity inserts |
 | append_rls_organization_id_by_historical_grid_id() | function | public | keep | Platform core | orphan — no trigger in chain; review in Task 3c |
 | append_rls_organization_id_by_meter_id() | function | public | keep | (5) Field ops | issues trigger |
@@ -166,8 +166,8 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | append_rls_organization_id_on_dcus_insert ON dcus | trigger | public | keep | Platform core |  |
 | append_rls_organization_id_by_device_id ON device_logs | trigger | public | drop |  | register #12 |
 | append_rls_organization_id_on_devices_insert ON devices | trigger | public | drop |  | register #12 |
-| append_rls_organization_id_on_directive_batch_execution_insert ON directive_batch_executions | trigger | public | keep | (2) Metering | **rename → `…_on_meter_task_batch_execution_insert` ON `meter_task_batch_executions`** (register #16) |
-| append_rls_organization_id_on_directive_batch_insert ON directive_batches | trigger | public | keep | (2) Metering | **rename → `…_on_meter_task_batch_insert` ON `meter_task_batches`** (register #16) |
+| append_rls_organization_id_on_directive_batch_execution_insert ON directive_batch_executions | trigger | public | keep | (2) Metering | **rename → `…_on_meter_command_batch_execution_insert` ON `meter_command_batch_executions`** (register #16) |
+| append_rls_organization_id_on_directive_batch_insert ON directive_batches | trigger | public | keep | (2) Metering | **rename → `…_on_meter_command_batch_insert` ON `meter_command_batches`** (register #16) |
 | append_rls_organization_id_on_directive_insert ON directives | trigger | public | exclude |  | deprecated table |
 | append_rls_organization_id_on_energy_cabin_insert ON energy_cabins | trigger | public | keep | (1) Production monitoring | on keep table `energy_cabins` |
 | notify_make_about_is_fs_on_updated ON grids | trigger | public | parameterize |  | optional recipe: `docs/database/optional/make-grid-triggers.sql` |

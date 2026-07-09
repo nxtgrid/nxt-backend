@@ -24,7 +24,7 @@ spec for the convergence data migration that brings the company DB in line with 
 
 | # | Object(s) | Change | Rationale | Cutover implication | Status |
 |---|---|---|---|---|---|
-| 1 | **Exclude — deprecated directive command system:** tables `directives`, `lorawan_directives`; view `batch_commands`; enums `directive_direction`, `directive_error`, `directive_phase`, `directive_status`, `directive_type`, `directive_special_status`; sequence `lorawan_directives_id_seq`; triggers on deprecated tables; indexes on deprecated tables | Exclude (deprecated) | Superseded by `meter-interactions`; historical `orders` references (ADR-004 decision 9, ADR-008). `directive_batches` / `directive_batch_executions` **renamed** to `meter_task_batches` / `meter_task_batch_executions` (register #16). Live batch path uses `task_type` + `fs_command`, not `directive_type` | Archive/relink historical `orders` refs; then drop excluded objects. See column adjustments §1 | confirmed |
+| 1 | **Exclude — deprecated directive command system:** tables `directives`, `lorawan_directives`; view `batch_commands`; enums `directive_direction`, `directive_error`, `directive_phase`, `directive_status`, `directive_type`, `directive_special_status`; sequence `lorawan_directives_id_seq`; triggers on deprecated tables; indexes on deprecated tables | Exclude (deprecated) | Superseded by `meter-interactions`; historical `orders` references (ADR-004 decision 9, ADR-008). `directive_batches` / `directive_batch_executions` **renamed** to `meter_command_batches` / `meter_command_batch_executions` (register #16). Live batch path uses `task_type` + `fs_command`, not `directive_type` | Archive/relink historical `orders` refs; then drop excluded objects. See column adjustments §1 | confirmed |
 | 2 | `grafana_readonly` role + grants + 15 `TO grafana_readonly` RLS policies | Parameterize (company infra) | Company-specific observability access, not part of a generic baseline (ADR-004 decision 3) | None (may stay in company DB); operator recipe `docs/database/optional/grafana-readonly.sql` — not in `supabase/migrations/` | confirmed |
 | 3 | `make_readonly` role + grants + 4 `TO make_readonly` RLS policies | Parameterize (company infra) | Company-specific Make.com read access (ADR-004 decision 3) | None (may stay in company DB); operator recipe `docs/database/optional/make-readonly.sql` — not in `supabase/migrations/` | confirmed |
 | 5 | `snaplet_readonly_2` role + grants on `public` + `auth` | Parameterize (company infra) | Snaplet seeding tooling; not generic OSS infra | None (may stay in company DB); operator recipe `docs/database/optional/snaplet-readonly.sql` — not in `supabase/migrations/` | confirmed |
@@ -39,7 +39,7 @@ spec for the convergence data migration that brings the company DB in line with 
 | 13 | **Drop — payouts module:** tables `payouts`, `bank_accounts`; enum `payout_status_enum`; sequences `payouts_id_seq`, `bank_accounts_id_seq`; function `lock_next_order()`; RLS policies on `payouts` / `bank_accounts` | Drop (dead) | Payouts module dropped from OSS scope; `bank_accounts` only used by `payouts`; `lock_next_order` superseded by `lock_next_order_and_wallets` | Drop from company DB; drop `grids.is_automatic_payout_generation_enabled` (column adjustments §3) | confirmed |
 | 14 | **Drop — pd-hero workflow (WIP):** tables `pd_flows`, `pd_flow_templates`, `pd_sections`, `pd_section_templates`, `pd_actions`, `pd_action_templates`, `pd_documents`, `pd_document_templates`, `pd_audits`; enums `pd_action_status_enum`, `pd_action_type_enum`, `pd_document_type_enum`; sequences `pd_flows_id_seq`, `pd_flow_templates_id_seq`, `pd_sections_id_seq`, `pd_section_templates_id_seq`, `pd_actions_id_seq`, `pd_action_templates_id_seq`, `pd_documents_id_seq`, `pd_document_templates_id_seq`, `pd_audits_id_seq`; function `lock_next_pd_action()`; RLS policies on dropped tables | Drop (dead) | pd-hero Make.com/Google workflow under-developed; only `pd_sites` / `pd_site_submissions` kept for site pipeline. Likely replaced by different design | Drop from company DB; drop `pd_sites.pd_flow_id`, `organizations.pd_hero_google_drive_folder_id` (column adjustments §5) | confirmed |
 | 15 | **Drop — autopilot execution log:** table `autopilot_executions`, sequence `autopilot_executions_id_seq`; RLS policies | Drop (deferred) | Autopilot deferred from OSS baseline; likely returns as separate microservice with its own persistence | Drop from company DB; drop `grids.telegram_response_path_autopilot` (column adjustments §15) | confirmed |
-| 16 | **Rename — meter task batches:** tables `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions`; sequences `directive_batches_id_seq` → `meter_task_batches_id_seq`, `directive_batch_executions_id_seq` → `meter_task_batch_executions_id_seq`; function `append_rls_organization_id_by_directive_batch_id()` → `append_rls_organization_id_by_meter_task_batch_id()`; triggers `append_rls_organization_id_on_directive_batch_insert` → `append_rls_organization_id_on_meter_task_batch_insert`, `append_rls_organization_id_on_directive_batch_execution_insert` → `append_rls_organization_id_on_meter_task_batch_execution_insert`; FK `meter_interactions.batch_execution_id` → `meter_task_batch_executions` | Rename | Legacy `directive_*` naming from deprecated directive system; live path is meter-interactions / task batches | Company DB: `ALTER TABLE … RENAME` (+ sequence/function/trigger renames); init migration uses new names. See column adjustments §6 | confirmed |
+| 16 | **Rename — meter command batches:** tables `directive_batches` → `meter_command_batches`, `directive_batch_executions` → `meter_command_batch_executions`; sequences `directive_batches_id_seq` → `meter_command_batches_id_seq`, `directive_batch_executions_id_seq` → `meter_command_batch_executions_id_seq`; indexes `idx_directive_batches_rls_organization_id` → `idx_meter_command_batches_rls_organization_id`, `idx_directive_batch_executions_rls_organization_id` → `idx_meter_command_batch_executions_rls_organization_id`; function `append_rls_organization_id_by_directive_batch_id()` → `append_rls_organization_id_by_meter_command_batch_id()`; triggers `append_rls_organization_id_on_directive_batch_insert` → `append_rls_organization_id_on_meter_command_batch_insert`, `append_rls_organization_id_on_directive_batch_execution_insert` → `append_rls_organization_id_on_meter_command_batch_execution_insert`; FK `meter_interactions.batch_execution_id` → `meter_command_batch_executions`; column `directive_batch_id` → `meter_command_batch_id` on executions table | Rename | Legacy `directive_*` naming from deprecated directive system; live path is meter-interactions / command batches | Company DB: `ALTER TABLE … RENAME` (+ sequence/index/function/trigger renames); init migration uses new names. See column adjustments §6 | confirmed |
 | 17 | **Column prunes — platform core (Task 3b G1):** `organizations.phone`, `organizations.address`, `api_keys.is_locked`, `dcus.queue_buffer_length`, `grids.are_all_dcus_online`, `grids.are_all_dcus_under_high_load_threshold`, `grids.meter_consumption_issue_threshold_detection_days`, `grids.meter_communication_issue_threshold_detection_days`, `grids.uses_dual_meter_setup` | Drop columns | Maintainer sign-off 2026-07-09 — unused or superseded in OSS baseline | Drop columns at cutover; platform-core import updates entities/DTOs | confirmed |
 | 18 | **Column prunes — metering (Task 3b G2):** `directive_batches.lock_session`, `directive_batches.execution_bucket`, `meter_commissionings.initialised_steps` / `pending_steps` / `processing_steps` / `successful_steps` / `failed_steps` / `total_steps`, `meter_commissionings.lock_session`, `meters.power_down_count`, `meters.power_down_count_updated_at`, `meters.is_simulated`, `meters.pulse_counter_kwh`, `meters.pulse_counter_kwh_updated_at` (+ matching view columns on `meters_with_account_and_statuses`) | Drop columns | Maintainer sign-off 2026-07-09 — unused or superseded in OSS baseline | Drop columns at cutover; metering import updates entities/DTOs and view definition | confirmed |
 | 19 | **Column prunes — payments + production monitoring (Task 3b G3):** `wallets.goldring_migration_id`, `orders.external_system` | Drop columns | Maintainer sign-off 2026-07-09 — migration-era / unused in OSS baseline | Drop columns at cutover; payments import updates order/wallet entities | confirmed |
@@ -68,7 +68,7 @@ tables; company DB converges at cutover.
 | Table / view | Column(s) | Change | Rationale | Cutover / code impact |
 |---|---|---|---|---|
 | `orders` | `directive_id`, `lorawan_directive_id` (+ FKs, unique on `directive_id`) | Drop | Only referenced excluded directive tables | Archive/relink historical orders first |
-| `meter_task_batches` (was `directive_batches`) | `directive_type` | Drop | Legacy; live code uses `task_type` + `fs_command` (DTO has no `directive_type`) | Drop column; TypeORM entity updated at metering import |
+| `meter_command_batches` (was `directive_batches`) | `directive_type` | Drop | Legacy; live code uses `task_type` + `fs_command` (DTO has no `directive_type`) | Drop column; TypeORM entity updated at metering import |
 | `meters` | `current_special_status` | Drop | Shadow of deprecated directive status; `issues` table is canonical | Drop column; `issues.service` today reads this column — fix at metering import to use `issues` |
 | `meters_with_account_and_statuses` | `current_special_status` (view column) | Drop from view definition | Follows `meters` column drop | Recreate view without column |
 
@@ -105,11 +105,11 @@ tables; company DB converges at cutover.
 | `pd_sites` | `pd_flow_id` (+ FK to `pd_flows`) | Drop | Only referenced dropped pd-hero workflow tables; sites kept for pipeline/geo | Drop column at cutover; pegasus `PdSiteView` pd-flow actions UI removed or reworked at field-ops import |
 | `organizations` | `pd_hero_google_drive_folder_id` | Drop | Only used by dropped pd-hero service (`loch/pd-hero`) | Drop column at cutover; remove from organization entity at platform-core import |
 
-### §6 — Motivated by register #16 (meter task batch renames)
+### §6 — Motivated by register #16 (meter command batch renames)
 
 | Table / view | Column(s) | Change | Rationale | Cutover / code impact |
 |---|---|---|---|---|
-| `meter_task_batch_executions` (was `directive_batch_executions`) | `directive_batch_id` (+ FK to `meter_task_batches`) | Rename → `meter_task_batch_id` | Align column name with renamed parent table | `ALTER TABLE … RENAME COLUMN` at cutover; TypeORM entity updated at metering import |
+| `meter_command_batch_executions` (was `directive_batch_executions`) | `directive_batch_id` (+ FK to `meter_command_batches`) | Rename → `meter_command_batch_id` | Align column name with renamed parent table | `ALTER TABLE … RENAME COLUMN` at cutover; TypeORM entity updated at metering import |
 
 ### §7 — Motivated by register #17 (platform core column prunes, Task 3b G1)
 
@@ -130,7 +130,7 @@ tables; company DB converges at cutover.
 
 | Table / view | Column(s) | Change | Rationale | Cutover / code impact |
 |---|---|---|---|---|
-| `meter_task_batches` (was `directive_batches`) | `lock_session`, `execution_bucket` | Drop | Unused in OSS baseline | Drop columns at cutover; metering import |
+| `meter_command_batches` (was `directive_batches`) | `lock_session`, `execution_bucket` | Drop | Unused in OSS baseline | Drop columns at cutover; metering import |
 | `meter_commissionings` | `initialised_steps`, `pending_steps`, `processing_steps`, `successful_steps`, `failed_steps`, `total_steps`, `lock_session` | Drop | Step counters and lock unused in OSS baseline | Drop columns at cutover; metering import |
 | `meters` | `power_down_count`, `power_down_count_updated_at`, `is_simulated`, `pulse_counter_kwh`, `pulse_counter_kwh_updated_at` | Drop | Unused in OSS baseline | Drop columns at cutover; metering import |
 | `meters_with_account_and_statuses` | same five columns (view columns) | Drop from view definition | Follows `meters` column drops | Recreate view without columns |
@@ -159,13 +159,15 @@ tables; company DB converges at cutover.
 Authoritative for init-migration changes to **keep** enums (value trims), functions, and triggers.
 **Working review copy:** `002b-schema-programmability-review.md` (Task 3c).
 
-### §1 — Motivated by register #16 (meter task batch renames, Task 3c H1a)
+### §1 — Motivated by register #16 (meter command batch renames, Task 3c H1a)
 
 | Object | Change | Rationale | Cutover / code impact |
 |--------|--------|-----------|------------------------|
-| `append_rls_organization_id_by_directive_batch_id()` | Rename → `append_rls_organization_id_by_meter_task_batch_id()` | Register #16 — align with renamed `meter_task_batches` table | `ALTER FUNCTION … RENAME` at cutover; init uses new name |
-| Trigger `append_rls_organization_id_on_directive_batch_insert` | Rename → `append_rls_organization_id_on_meter_task_batch_insert` ON `meter_task_batches` | Register #16 | `ALTER TRIGGER … RENAME` + table rename at cutover |
-| Trigger `append_rls_organization_id_on_directive_batch_execution_insert` | Rename → `append_rls_organization_id_on_meter_task_batch_execution_insert` ON `meter_task_batch_executions` | Register #16 | `ALTER TRIGGER … RENAME` + table rename at cutover |
+| `append_rls_organization_id_by_directive_batch_id()` | Rename → `append_rls_organization_id_by_meter_command_batch_id()` | Register #16 — align with renamed `meter_command_batches` table | `ALTER FUNCTION … RENAME` at cutover; init uses new name |
+| Trigger `append_rls_organization_id_on_directive_batch_insert` | Rename → `append_rls_organization_id_on_meter_command_batch_insert` ON `meter_command_batches` | Register #16 | `ALTER TRIGGER … RENAME` + table rename at cutover |
+| Trigger `append_rls_organization_id_on_directive_batch_execution_insert` | Rename → `append_rls_organization_id_on_meter_command_batch_execution_insert` ON `meter_command_batch_executions` | Register #16 | `ALTER TRIGGER … RENAME` + table rename at cutover |
+| Index `idx_directive_batches_rls_organization_id` | Rename → `idx_meter_command_batches_rls_organization_id` ON `meter_command_batches` | Register #16 | `ALTER INDEX … RENAME` at cutover |
+| Index `idx_directive_batch_executions_rls_organization_id` | Rename → `idx_meter_command_batch_executions_rls_organization_id` ON `meter_command_batch_executions` | Register #16 | `ALTER INDEX … RENAME` at cutover |
 
 ### §2 — Motivated by register #21 (orphan RLS helper drop, Task 3c H1a)
 
@@ -198,7 +200,7 @@ Authoritative for init-migration changes to **keep** enums (value trims), functi
 | `append_rls_organization_id_by_customer_id()` | Body redesign | `NEW.rls_organization_id := rls_org_id_from_customer(NEW.customer_id)` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
 | `append_rls_organization_id_by_customer_id_or_agent_id_or_connec()` | Body redesign | Each `IF/ELSIF` branch delegates to the matching helper; `organization_id` branch assigns `NEW.organization_id` directly (2nd dead lookup removed) | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
 | `append_rls_organization_id_by_dcu_id_or_meter_id()` | Body redesign | Branches delegate to `rls_org_id_from_dcu()` / `rls_org_id_from_meter()` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
-| `append_rls_organization_id_by_directive_batch_id()` (→ `by_meter_task_batch_id()`, register #16) | Body redesign | Looks up `grid_id` from the batch row, delegates to `rls_org_id_from_grid()` | `CREATE OR REPLACE FUNCTION` at cutover under the renamed name |
+| `append_rls_organization_id_by_directive_batch_id()` (→ `by_meter_command_batch_id()`, register #16) | Body redesign | Looks up `grid_id` from the batch row, delegates to `rls_org_id_from_grid()` | `CREATE OR REPLACE FUNCTION` at cutover under the renamed name |
 | `append_rls_organization_id_by_meter_id()` | Body redesign | `NEW.rls_organization_id := rls_org_id_from_meter(NEW.meter_id)` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
 | `append_rls_organization_id_by_metering_hardware_install_session()` | Body redesign | Looks up `meter_id` from the session row, delegates to `rls_org_id_from_meter()` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
 | `append_rls_organization_id_by_order_id()` | Body redesign | Looks up `historical_grid_id` from the order row, delegates to `rls_org_id_from_grid()` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
@@ -243,7 +245,7 @@ Authoritative for init-migration changes to **keep** enums (value trims), functi
 
 ### §pending — Programmability backlog
 
-> H5b + H5c pending.
+> None — Task 3c complete (2026-07-09).
 
 ## Appendix — annotated A/B diff (002b Task 6)
 

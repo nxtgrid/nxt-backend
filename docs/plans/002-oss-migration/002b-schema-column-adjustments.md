@@ -116,7 +116,7 @@ names where register entries do (renames applied in Task 5 init migration).
 | directive_batch_executions | failed_count | keep |  |  | type: integer DEFAULT 0 |
 | directive_batch_executions | processed_count | keep |  |  | type: integer DEFAULT 0 |
 | directive_batch_executions | total_count | keep |  |  | type: integer DEFAULT 0 |
-| directive_batch_executions | directive_batch_id | rename | §6 | Align with renamed parent table | → meter_task_batch_id |
+| directive_batch_executions | directive_batch_id | rename | §6 | Align with renamed parent table | → meter_command_batch_id |
 | directive_batch_executions | rls_organization_id | keep |  |  | type: integer |
 | directive_batch_executions | completed_at | keep |  |  | type: (added) |
 | directive_batch_executions | qualified_at | keep |  |  | type: (added) |

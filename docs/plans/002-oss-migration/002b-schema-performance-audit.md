@@ -22,7 +22,7 @@ exists.
 |---------|-----------|-------|
 | Function volatility | `pg_proc.provolatile` on keep functions (Task 3c list) | Legacy chain leaves every function at the implicit default `VOLATILE` — confirmed no `CREATE FUNCTION` declares `STABLE`/`IMMUTABLE`. RLS-attached functions matter most: unmarked, they can be re-evaluated once per row instead of once per statement. |
 | RLS policy invocation pattern | `pg_policies` USING/WITH CHECK clauses | Legacy chain is inconsistent: some policies wrap helper calls in a subquery (`( SELECT public.fn() AS fn )`, plan-cacheable), others call bare (`public.fn()`). Distinct from volatility. |
-| Indexes on keep tables | **new** — reference DB (`pg_indexes` / `\d` on keep tables) | Not previously inventoried (Task 2's inventory has no "index" kind). Check: FK columns indexed, RLS-predicate columns indexed (e.g. `rls_organization_id`), redundant/overlapping indexes, coverage survives Task 3 renames (`meter_task_batches` etc.). |
+| Indexes on keep tables | **new** — reference DB (`pg_indexes` / `\d` on keep tables) | Not previously inventoried (Task 2's inventory has no "index" kind). Check: FK columns indexed, RLS-predicate columns indexed (e.g. `rls_organization_id`), redundant/overlapping indexes, coverage survives Task 3 renames (`meter_command_batches` etc.). |
 | Trigger design overhead | Task 3c H1b (`append_rls_*` group) + H5 (all keep triggers) | Whether the `BEFORE INSERT` denormalization pattern is the right shape, or any function could be simplified/merged. |
 | View definitions | Keep views (`002b-schema-inventory.md`) | e.g. `meters_with_account_and_statuses` — wide view, many joins; check plan shape. |
 
