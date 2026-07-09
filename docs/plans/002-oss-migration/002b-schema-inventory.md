@@ -140,7 +140,7 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | append_rls_organization_id_by_device_id() | function | public | drop |  | register #12 |
 | append_rls_organization_id_by_directive_batch_id() | function | public | keep | (2) Metering | **rename → `append_rls_organization_id_by_meter_task_batch_id()`** (register #16) |
 | append_rls_organization_id_by_grid_id() | function | public | keep | Platform core | grid-scoped entity inserts |
-| append_rls_organization_id_by_historical_grid_id() | function | public | keep | Platform core | orphan — no trigger in chain; review in Task 3b |
+| append_rls_organization_id_by_historical_grid_id() | function | public | keep | Platform core | orphan — no trigger in chain; review in Task 3c |
 | append_rls_organization_id_by_meter_id() | function | public | keep | (5) Field ops | issues trigger |
 | append_rls_organization_id_by_metering_hardware_install_session() | function | public | keep | (2) Metering | meter_commissionings trigger |
 | append_rls_organization_id_by_order_id() | function | public | keep | (3) Payments | transactions trigger |

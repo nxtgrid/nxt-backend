@@ -28,7 +28,9 @@ the scaffold (Track B, 002c) and joins it at the interlock (types + CI drift gua
 - `002b-schema-inventory.md` — working artifact: every schema object, classified (created in
   Task 2/3a).
 - `002b-schema-column-adjustments.md` — working artifact: every column on keep tables/views,
-  with keep/drop/rename action (created in Task 3b).
+  with keep/drop/rename action (**Task 3b** — complete).
+- `002b-schema-programmability-review.md` — working artifact: enum values, functions, triggers
+  on keep objects (**Task 3c**).
 - `002b-schema-deviation-register.md` — long-lived register of every deviation from the
   original schema. **This register later becomes the spec for the company convergence
   migration at cutover.** Created up-front with candidate entries (see file).
@@ -140,7 +142,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** In progress — **3a complete**; **3b** in progress (**G1 signed off**; G2+ pending)
+- [ ] **Status:** In progress — **3a complete**; **3b complete**; **3c** not started
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -170,6 +172,8 @@ capability tag per row. Column drops discovered here are **provisional** until T
 
 ### Task 3b — Column review pass (maintainer, after 3a)
 
+- [x] **Status:** Complete (2026-07-09)
+
 **Purpose:** walk **every column on every keep table** (and keep views) and confirm the final
 set of column-level changes before Task 5.
 
@@ -182,15 +186,48 @@ tables/views:
   known drops from Task 3a batches and the register **Column adjustments** section.
 - Maintainer reviews table-by-table: add drops, remove drops, flag renames.
 - Each **drop** or **rename** must land in the deviation register **Column adjustments**
-  (with cutover implication) before Task 3 is done.
-- Enum value trimming on **keep** enums is a separate pass at the end of Task 3 (or folded
-  into 3b where an enum-typed column is kept).
+  (with cutover implication).
 
-**Done when (Task 3 overall):** no inventory row has an empty bucket; every keep row has a
-capability tag; `002b-schema-column-adjustments.md` exists with a final action for every
-column on every keep table/view; the deviation register contains every non-keep decision,
-rename, and confirmed column adjustment, each with a cutover implication; maintainer has
-signed off.
+**Done when:** `002b-schema-column-adjustments.md` has a final action for every column on every
+keep table/view; all confirmed drops/renames are in the deviation register **Column adjustments**
+(§1–§10); maintainer signed off batches G1–G4.
+
+**Result:** 587 columns — 535 keep, 49 drop, 3 rename (register #17–#20 + §1–§10). Full migration
+chain used as source of truth (repaired after G2).
+
+### Task 3c — Programmability review (maintainer, after 3b)
+
+- [ ] **Status:** Not started
+- **Depends on:** Task 3b complete
+
+**Purpose:** sanity-check **keep** enums (per-value), functions, and triggers before Task 5. Object
+bucket decisions from Task 3a are not re-litigated unless review surfaces a miss; this pass
+confirms value-level trims, function/trigger renames already in the register, orphans, and
+architectural fit (e.g. company-specific RLS helpers).
+
+**Companion artifact:** `002b-schema-programmability-review.md` — one row per enum value /
+function / trigger on keep objects:
+
+- enum: `enum | value | action (keep / drop) | register § | rationale | notes`
+- function: `function | action (keep / drop / rename) | register § | rationale | notes`
+- trigger: `trigger | on table | action | register § | rationale | notes`
+
+**Seed from:** reference DB (`pg_enum`, `pg_proc`, `pg_trigger`) + inventory keep rows; pre-fill
+register **#10** / **#16** function and trigger renames.
+
+**Review batches (suggested):** H1 RLS helpers → H2 auth/platform RPCs → H3 payments RPCs → H4 enum
+value trim (by capability) → H5 triggers vs functions.
+
+**High-attention (not pre-decided):** `rls_check_if_nxt_member()` (NXT-specific RLS — may need
+broader architecture discussion), `rls_check_if_lender()`, orphan
+`append_rls_organization_id_by_historical_grid_id()`, deferred enum trims (`external_system_enum`,
+`notification_type_enum`, customer enums, …). See review backlog in companion file.
+
+Each **drop**, **rename**, or enum **value drop** must land in the deviation register before Task 3
+is complete (add **Programmability adjustments** section as needed).
+
+**Done when (Task 3 overall):** Task 3c signed off; programmability artifact complete; register
+contains every programmability deviation with cutover implication; maintainer signed off.
 
 ---
 
@@ -343,11 +380,9 @@ decisions log.
 
 Tracked items that must not be lost between chat sessions:
 
+- [ ] **Task 3c** — Generate `002b-schema-programmability-review.md`; review keep enums (per-value), functions, triggers in batches H1–H5. **First:** H1 RLS helpers (`rls_check_if_nxt_member`, orphans, …).
 - [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
-- [ ] **Task 3b** — `002b-schema-column-adjustments.md` generated (589 columns; 23 drops after G1). **G1 platform core signed off** (12 new drops → register #17, §3, §5, §15). **Next:** G2 metering batch.
-- [ ] **Enum value trim** — `external_system_enum`, `notification_type_enum`, and other keep enums (end of Task 3).
-- [ ] **Orphan function review** — `append_rls_organization_id_by_historical_grid_id()` (no trigger in chain); `lock_next_order()` (superseded by `lock_next_order_and_wallets`).
-- [x] **Rename — meter task batches** — `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (register **#16**; applied in init migration Task 5).
+- [x] **Task 3b** — Complete. `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
 - [ ] **Task 6** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11).
 
 ---
@@ -370,6 +405,10 @@ Tracked items that must not be lost between chat sessions:
 - 2026-07-09 — [Task 3 batch F5] — Notifications **keep**: `notifications`, `notification_parameters`, `notification_status_enum`, `notification_type_enum` (enum value trim deferred). No drops. Grid/member notification toggle columns deferred to Task 3b.
 - 2026-07-09 — [Task 3 batch F6] — Field ops **keep**: `issues`, `notes`, `audits`, `pd_sites`, `pd_site_submissions` + issue enums/triggers. Register **#14** **drop**: pd-hero workflow subgraph + `lock_next_pd_action()`. Register **#15** **drop**: `autopilot_executions` (deferred capability). Column adjustments §5: drop `pd_sites.pd_flow_id`. `append_rls_organization_id_by_customer_id()` tagged shared (no capability).
 - 2026-07-09 — [Task 3 batch F3] — Metering **keep**: customers, connections, meter_interactions, hardware install/import, USSD, views, enums, triggers. Register **#16** **rename**: `directive_batches` → `meter_task_batches`, `directive_batch_executions` → `meter_task_batch_executions` (+ sequences, function, triggers; column §6: `directive_batch_id` → `meter_task_batch_id`). `communication_protocol_enum` keep all values; customer enums keep (value trim deferred). No metering drops. **Task 3a complete.**
-- 2026-07-08 — [Task 3 plan] — Split Task 3 into **3a** (object batches) and **3b** (column review pass). New companion artifact `002b-schema-column-adjustments.md`: one row per column on keep tables/views; maintainer adds/removes drops before Task 5; confirmed rows sync to register Column adjustments.
+- 2026-07-08 — [Task 3 plan] — Split Task 3 into **3a** (object batches), **3b** (column review), and **3c** (programmability: enums/functions/triggers). Column artifact: `002b-schema-column-adjustments.md`; programmability artifact: `002b-schema-programmability-review.md`.
 - 2026-07-09 — [Task 3b start] — Generated `002b-schema-column-adjustments.md` from legacy migration SQL (589 columns: 576 keep, 12 drop pre-filled, 1 rename). Docker unavailable for `information_schema` cross-check. Review batches G1+ (platform core first). §pending + register §1–§6 pre-filled; sync to register on batch sign-off.
 - 2026-07-09 — [Task 3b G1] — Platform core signed off. **12 new drops:** `organizations.phone/address/pd_hero_google_drive_folder_id`, `api_keys.is_locked`, `dcus.queue_buffer_length`, `grids.is_automatic_payout_generation_enabled/telegram_response_path_autopilot/are_all_dcus_online/are_all_dcus_under_high_load_threshold/meter_*_threshold_*/uses_dual_meter_setup`. **Keeps confirmed:** notification toggles, `members.subscribed_to_telegram_revenue_notifications`, `grids.feature_access_config`. Register **#17** + column §3, §5 (amended), §7, §15 added; §pending narrowed to watchdog columns.
+- 2026-07-09 — [Task 3b G2] — Metering signed off. File regenerated from full migration chain (fixes stale `goldring_migration_id`/`process_meta`, adds `task_type`/`batch_execution_id`/`payload_data`/etc.). **15 new drops:** watchdog cols (§4b, register #4), `directive_batches.lock_session/execution_bucket`, `meter_commissionings.*_steps/lock_session`, `meters.power_down_count/power_down_count_updated_at/is_simulated/pulse_counter_kwh/pulse_counter_kwh_updated_at` (+ view mirrors). Register **#18** + column §4b, §8; §pending cleared.
+- 2026-07-09 — [Task 3b G3] — Payments + production monitoring signed off. Pre-filled order drops confirmed (§1, §2). **2 new drops:** `wallets.goldring_migration_id`, `orders.external_system`. Register **#19** + column §9.
+- 2026-07-09 — [Task 3b G4] — Notifications + field ops signed off. `pd_sites.pd_flow_id` confirmed (§5). **2 renames:** `issues.external_system` → `external_tracking_system`, `issues.external_reference` → `external_tracking_reference`. **4 drops:** `issues.estimated_lost_revenue`, `snoozed_until`, `mppt_id`, `grid_id`. Register **#20** + column §10.
+- 2026-07-09 — [Task 3b close] — **Task 3b complete.** All keep table/view columns reviewed (G1–G4). Enum value trim deferred to new **Task 3c** (programmability review). Companion stub: `002b-schema-programmability-review.md`.
