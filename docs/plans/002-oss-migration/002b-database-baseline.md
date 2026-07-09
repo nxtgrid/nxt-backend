@@ -31,6 +31,8 @@ the scaffold (Track B, 002c) and joins it at the interlock (types + CI drift gua
   with keep/drop/rename action (**Task 3b** — complete).
 - `002b-schema-programmability-review.md` — working artifact: enum values, functions, triggers
   on keep objects (**Task 3c**).
+- `002b-schema-performance-audit.md` — working artifact: indexes, function volatility, RLS
+  invocation patterns, trigger/view design on keep objects (**Task 3d**, stub created; not started).
 - `002b-schema-deviation-register.md` — long-lived register of every deviation from the
   original schema. **This register later becomes the spec for the company convergence
   migration at cutover.** Created up-front with candidate entries (see file).
@@ -142,7 +144,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** In progress — **3a complete**; **3b complete**; **3c** not started
+- [ ] **Status:** In progress — **3a complete**; **3b complete**; **3c** in progress (H1 + H2 + H3 + H4 signed off; H5 pending)
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -197,7 +199,7 @@ chain used as source of truth (repaired after G2).
 
 ### Task 3c — Programmability review (maintainer, after 3b)
 
-- [ ] **Status:** Not started
+- [ ] **Status:** In progress — **H1 + H2 + H3 + H4 signed off**; H5 pending
 - **Depends on:** Task 3b complete
 
 **Purpose:** sanity-check **keep** enums (per-value), functions, and triggers before Task 5. Object
@@ -228,6 +230,56 @@ is complete (add **Programmability adjustments** section as needed).
 
 **Done when (Task 3 overall):** Task 3c signed off; programmability artifact complete; register
 contains every programmability deviation with cutover implication; maintainer signed off.
+
+### Task 3d — Database-wide performance audit (new, after 3a–3c)
+
+- [ ] **Status:** Not started
+- **Depends on:** Task 3a, 3b, 3c complete (runs once the full keep-object list — tables, columns,
+  enums, functions, triggers, renames — is final, so nothing gets audited twice)
+
+**Purpose:** surfaced during Task 3c H1c (function volatility) but broadened at the maintainer's
+request into a full **structural performance audit** of the baseline schema — done now because
+this is the point where every keep object is locked in, and before Task 5 authors the init migration
+(so findings are inputs to that authoring, not a retrofit) and before Task 6's A/B diff (so any
+performance-driven change is registered before the diff runs, avoiding unexplained hunks).
+
+**Scope (structural/static only — see boundary below):**
+
+- **Function volatility** (`VOLATILE` / `STABLE` / `IMMUTABLE`) — not something Supabase sets for
+  you; the legacy chain leaves every function at the implicit default `VOLATILE` (confirmed: no
+  `CREATE FUNCTION` in the chain declares `STABLE`/`IMMUTABLE`). Unmarked RLS-attached functions can
+  be re-evaluated once per row instead of once per statement.
+- **RLS policy invocation pattern** — the legacy chain is inconsistent: some policies wrap helper
+  calls in a subquery (`( SELECT public.rls_check_if_nxt_member() AS … )`, plan-cacheable), others
+  call bare (`public.rls_check_if_nxt_member()`). Distinct from volatility; both matter.
+- **Indexes on keep tables** — **new ground, not previously inventoried** (Task 2's inventory has no
+  "index" kind at all). 3d must start by enumerating indexes on keep tables from the reference DB,
+  then check: FK columns indexed, RLS-predicate columns indexed (e.g. `rls_organization_id`),
+  redundant/overlapping indexes, coverage after Task 3 renames (`meter_task_batches` etc.). One
+  instance already caught and fixed directly during H1b rather than waiting for this pass — see
+  register #25 (`idx_accounts_organization_id`) — because it surfaced while reviewing a specific
+  function group; 3d is the systematic sweep for the rest of the schema.
+- **Trigger design overhead** — H1b `append_rls_*` group resolved directly during Task 3c rather
+  than deferred here: dead join removed, join logic consolidated onto 6 shared helper functions,
+  `search_path` hardened. See register #23 and programmability review H1b. 3d still covers
+  trigger/view design for objects **outside** that group.
+- **View definitions** — e.g. `meters_with_account_and_statuses` (wide view, many joins).
+
+**Out of scope / boundary:** empirical, load-driven tuning (`EXPLAIN ANALYZE` under realistic data
+volumes) is not possible yet — there is no data, and per this plan's non-goals, "Any data migration —
+this plan ships schema only." That kind of tuning belongs to a later capability-import or
+production-readiness pass, once real usage exists. `SECURITY DEFINER` search-path hardening is
+already present on most functions in the chain — spot-check only, not a full pass.
+
+**Companion artifact:** new `002b-schema-performance-audit.md` (stub to be created alongside this
+task's start) — one section per concern above; findings that change schema shape (new/dropped
+indexes, volatility changes, policy rewrites) sync to the deviation register **Performance
+adjustments** section (added when 3d starts).
+
+**Done when:** every keep function has a justified volatility marking; RLS policy invocation pattern
+is consistent; index coverage for keep tables is reviewed and gaps recorded; all resulting schema
+changes are in the deviation register with cutover implications; init migration (Task 5) authors the
+schema with the audited shape from the start.
 
 ---
 
@@ -380,7 +432,9 @@ decisions log.
 
 Tracked items that must not be lost between chat sessions:
 
-- [ ] **Task 3c** — Generate `002b-schema-programmability-review.md`; review keep enums (per-value), functions, triggers in batches H1–H5. **First:** H1 RLS helpers (`rls_check_if_nxt_member`, orphans, …).
+- [ ] **Task 3c** — In progress. **H1 + H2 + H3 + H4 + H5a signed off** (see decisions log). **Next:** H5b + H5c (triggers).
+- [ ] **Task 3d (new, broadened)** — Database-wide performance audit: function volatility (`VOLATILE`/`STABLE`/`IMMUTABLE`), RLS policy invocation pattern (bare vs. subquery-wrapped calls), index coverage on keep tables (not previously inventoried), trigger/view design. Runs after Task 3a–3c close, before Task 4/5. See Task 3d section above.
+- [ ] **ADR-007 amendment follow-up** — backend `getConfig().deployment.adminOrganizationId` consumers and frontend apps (qilin/pegasus/eos/niffler/sphinx) need a resolution path for the now-DB-native admin organization; explicitly deferred in the ADR-007 Amendment (2026-07-09) "Open / deferred" — revisit before/at Task 5 or capability import, whichever comes first.
 - [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
 - [x] **Task 3b** — Complete. `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
 - [ ] **Task 6** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11).
@@ -412,3 +466,15 @@ Tracked items that must not be lost between chat sessions:
 - 2026-07-09 — [Task 3b G3] — Payments + production monitoring signed off. Pre-filled order drops confirmed (§1, §2). **2 new drops:** `wallets.goldring_migration_id`, `orders.external_system`. Register **#19** + column §9.
 - 2026-07-09 — [Task 3b G4] — Notifications + field ops signed off. `pd_sites.pd_flow_id` confirmed (§5). **2 renames:** `issues.external_system` → `external_tracking_system`, `issues.external_reference` → `external_tracking_reference`. **4 drops:** `issues.estimated_lost_revenue`, `snoozed_until`, `mppt_id`, `grid_id`. Register **#20** + column §10.
 - 2026-07-09 — [Task 3b close] — **Task 3b complete.** All keep table/view columns reviewed (G1–G4). Enum value trim deferred to new **Task 3c** (programmability review). Companion stub: `002b-schema-programmability-review.md`.
+- 2026-07-09 — [Task 3c start] — Generated `002b-schema-programmability-review.md` from full migration chain: 179 enum values (31 keep types), 20 functions, 21 triggers (19 public + 2 auth). Batch order: H1 (RLS helpers, split H1a/H1b/H1c) → H2 (auth/platform RPCs) → H3 (payments RPCs) → H4 (enum trim) → H5 (triggers).
+- 2026-07-09 — [Task 3c H1a] — Signed off: `rls_check_if_lender()` keep; `append_rls_organization_id_by_historical_grid_id()` **drop** (orphan, register #21); `append_rls_organization_id_by_directive_batch_id()` rename confirmed (register #16). H1b (`append_rls_*` + triggers) split into a one-function-per-turn queue (10 items); H1c (`rls_check_if_nxt_member`) deferred as a separate architecture discussion.
+- 2026-07-09 — [Task 3c H1c] — **Architecture decision, not a simple keep/drop:** `rls_check_if_nxt_member()` hard-codes `nxt_org_id := 2`; RLS cannot read `getConfig().deployment.adminOrganizationId` (ADR-007). Signed off: admin organization becomes **DB-native** — new enum value `organization_type_enum.PLATFORM_OPERATOR`, partial unique index (at most one), sync trigger on `organizations` maintaining a Postgres GUC (`app.admin_organization_id`) for fast RLS reads; function renamed → `rls_check_if_admin_org_member()`, marked `STABLE`. Register **#22** + Programmability adjustments §3. Full rationale recorded in **ADR-007 Amendment (2026-07-09)** (supersedes part of decisions 1/10); how backend `getConfig()` consumers and frontend apps resolve the now-DB-native value is explicitly **left open** in the amendment for later review.
+- 2026-07-09 — [Task 3c scope changes] — Two process adjustments from maintainer: (1) new **Task 3d — Programmability performance audit** added, scoped to `VOLATILE`/`STABLE`/`IMMUTABLE` function markings (surfaced by the H1c `STABLE` discussion; not a Supabase default, legacy chain leaves every function `VOLATILE`) — runs after Task 3c closes, before Task 5. (2) **H1b** (`append_rls_*` + their triggers) will be reviewed as **one group discussion**, not one-by-one per function — an explicit exception to discussing other functions individually.
+- 2026-07-09 — [Task 3c H1b] — Signed off. Correctness check on all 10 `append_rls_*` functions found no logical bugs, but 3 structural issues fixed **now** rather than deferred to Task 3d (maintainer preference — fix as issues surface, matching how H1c's performance issue was handled): (1) dead join to `organizations` in `by_account_id()` removed; (2) second dead lookup in the `organization_id` branch of `by_customer_id_or_agent_id_or_connec()` removed; (3) `SET search_path TO ''` added to all 10 (9 were missing it) — addresses Supabase "Function Search Path Mutable" linter warning. Broadened the search_path audit beyond this group per maintainer request ("ANY function"): also fixed on `lock_next_order_and_wallets()` (register #24; only other keep function missing it). Traced join-depth/index-coverage concern raised earlier — **retracted**: every join in every function resolves via a primary-key lookup (walk from known child row up through FK values to parent PKs), already optimal; no missing index. Found a **different**, real gap while tracing: `accounts.organization_id` backs 2 RLS policies with no supporting index (unlike every other RLS-filtered org column in the schema) — added `idx_accounts_organization_id` (register #25). Main architectural question — "can the rls_ column/trigger pattern be simplified?" — answered: **keep the denormalize-via-trigger strategy** (correct trade for read-heavy RLS; STABLE alone wouldn't help a per-row-varying join at query time), but **consolidate the duplicated join logic**: 10 trigger functions now delegate to **6 new** shared helper functions (`rls_org_id_from_grid/customer/connection/agent/meter/dcu`), each `LANGUAGE sql STABLE` (inlining-eligible, so delegation costs nothing at runtime vs. inlining the join by hand). Register **#23** (redesign) + Programmability adjustments §4–§6.
+- 2026-07-09 — [Task 3c H2] — Signed off (one function at a time). `handle_new_user()` **keep** — bare account row on auth INSERT; already hardened. `handle_update_user()` **keep** — syncs `organization_id` to `accounts` for RLS; `account_type`/`member_type` stay JWT-only. `get_grid_status()` **keep + redesign** (register **#26**) — drop `are_all_dcus_online` + `are_all_dcus_under_high_load_threshold` from return type (columns dropped in register #17; pegasus uses separate `dcus` query for gateway alerts); mark **`STABLE`**. Programmability adjustments §7.
+- 2026-07-09 — [Task 3c H3] — Signed off (one function at a time). `lock_next_order_and_wallets()` **keep** — atomic `FOR UPDATE SKIP LOCKED` payment lock; search_path fix already in register **#24**; stays `VOLATILE`. `find_energy_topup_revenue()` **keep + `STABLE`** (register **#27**). `find_top_spenders()` **keep + `STABLE` + GROUP BY fix** (#27) — drop `meta_receiver_id` (meter) from `GROUP BY` so top-spender rankings aggregate at customer level. Programmability adjustments §8.
+- 2026-07-09 — [Task 3c H4a] — Platform-core enum trim signed off. `account_type_enum`, `organization_type_enum`, `weather_type_enum` **keep all**. `member_type_enum` **keep all 10** (RBAC vocabulary). `external_system_enum` **keep 11, drop 3** — drop `JOTFORM` (pd-hero #14), `STEAMACO`, `ACREL`; **keep `JIRA`** (required by `issues.external_tracking_system`, same enum type, DB default). Register **#28** + Programmability adjustments §9.
+- 2026-07-09 — [Task 3c H4b] — Metering enums signed off. **Keep all** — no drops (`communication_protocol_enum`, customer enums, all core metering status/type enums).
+- 2026-07-09 — [Task 3c H4c/H4d/H4e] — **H4 closed.** H4c payments + H4e field ops/production monitoring: **keep all**. H4d notifications: **keep 15, drop `AUTO_PAYOUT_GENRATION_REPORT`** only (payouts #13). Total enum value drops in H4: 4 (`external_system_enum` ×3, `notification_type_enum` ×1). Registers **#28**, **#29**.
+- 2026-07-09 — [Task 3c H5a] — `append_rls_*` INSERT triggers signed off. **Keep all 19** — wiring confirmed vs H1b; 3 renames unchanged (#10 router, #16 ×2 meter task batches). No new register entries (already in #10/#16).
+- 2026-07-09 — [Task 3d broadened] — Maintainer: Task 3d should be a **database-wide** structural performance audit, not just function volatility — done at this point because Task 3a–3c lock in the full keep-object list before Task 5 authors the init migration and Task 6 diffs it. Scope now also covers: RLS policy invocation pattern (bare vs. subquery-wrapped helper calls — legacy chain is inconsistent), index coverage on keep tables (**gap found:** Task 2's inventory never captured indexes as objects at all — 3d starts by enumerating them from the reference DB), trigger design overhead, view definitions. Explicit boundary: empirical/load-driven tuning (`EXPLAIN ANALYZE` under real data volume) is out of reach until a capability import brings real usage — plan ships schema only, no data migration. New companion artifact stub: `002b-schema-performance-audit.md`.

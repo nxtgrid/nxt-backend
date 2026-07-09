@@ -44,6 +44,15 @@ spec for the convergence data migration that brings the company DB in line with 
 | 18 | **Column prunes — metering (Task 3b G2):** `directive_batches.lock_session`, `directive_batches.execution_bucket`, `meter_commissionings.initialised_steps` / `pending_steps` / `processing_steps` / `successful_steps` / `failed_steps` / `total_steps`, `meter_commissionings.lock_session`, `meters.power_down_count`, `meters.power_down_count_updated_at`, `meters.is_simulated`, `meters.pulse_counter_kwh`, `meters.pulse_counter_kwh_updated_at` (+ matching view columns on `meters_with_account_and_statuses`) | Drop columns | Maintainer sign-off 2026-07-09 — unused or superseded in OSS baseline | Drop columns at cutover; metering import updates entities/DTOs and view definition | confirmed |
 | 19 | **Column prunes — payments + production monitoring (Task 3b G3):** `wallets.goldring_migration_id`, `orders.external_system` | Drop columns | Maintainer sign-off 2026-07-09 — migration-era / unused in OSS baseline | Drop columns at cutover; payments import updates order/wallet entities | confirmed |
 | 20 | **Column changes — notifications + field ops (Task 3b G4):** `issues.external_system` → `external_tracking_system`, `issues.external_reference` → `external_tracking_reference`; drop `issues.estimated_lost_revenue`, `issues.snoozed_until`, `issues.mppt_id`, `issues.grid_id` | Rename + drop columns | Maintainer sign-off 2026-07-09 — clarify external tracking naming; prune unused issue columns | `ALTER TABLE … RENAME COLUMN` + drops at cutover; field-ops import updates issue entity/DTO | confirmed |
+| 21 | **Drop — orphan RLS helper:** function `append_rls_organization_id_by_historical_grid_id()` | Drop (dead) | Task 3c H1a — no trigger in migration chain; `orders.historical_grid_id` set in app (`tiamat/order-meta.ts`); `transactions` use `append_rls_organization_id_by_order_id()` instead | Drop function from company DB at cutover (no-op if already unused); omit from init migration | confirmed |
+| 22 | **Rename + redesign — admin organization becomes DB-native:** function `rls_check_if_nxt_member()` → `rls_check_if_admin_org_member()` (GUC-backed, marked `STABLE`); **add** enum value `organization_type_enum.PLATFORM_OPERATOR`; **add** partial unique index `one_platform_operator_org` on `organizations`; **add** sync trigger on `organizations` maintaining GUC `app.admin_organization_id` | Rename + redesign + add | Task 3c H1a/H1c — RLS cannot read the app config (`getConfig().deployment.adminOrganizationId`, ADR-007 decision 1/10); admin org must be DB-native and fast to check. Full rationale: ADR-007 Amendment (2026-07-09) | Company DB at cutover: create the enum value + index + trigger; flag NXT Grid's organization row `organization_type = 'PLATFORM_OPERATOR'` (trigger populates GUC automatically); update RLS policies referencing the old function name; app-side `getConfig().deployment.adminOrganizationId` consumers **not yet migrated** — open in ADR-007 | confirmed |
+| 23 | **Redesign — `append_rls_*` trigger functions consolidated onto shared helpers:** 10 functions (`append_rls_organization_id_by_account_id/grid_id/connection_id/customer_id/customer_id_or_agent_id_or_connec/dcu_id_or_meter_id/directive_batch_id/meter_id/metering_hardware_install_session/order_id`) redesigned to delegate to **6 new** helper functions (`rls_org_id_from_grid/customer/connection/agent/meter/dcu`); dead join to `organizations` removed from `by_account_id()`; second dead lookup removed from the `organization_id` branch of `by_customer_id_or_agent_id_or_connec()`; `SET search_path TO ''` added to all 10 (9 were missing it) | Redesign + add | Task 3c H1b — same denormalize-via-trigger strategy kept (correct for read-heavy RLS), but join logic was duplicated near-verbatim across several functions (e.g. meter→connection→customer→grid appears 3×); consolidating removes duplication with no runtime cost (`LANGUAGE sql STABLE` helpers are inlining-eligible). `search_path` fix addresses Supabase "Function Search Path Mutable" linter warning | Company DB at cutover: `CREATE FUNCTION` the 6 helpers; `CREATE OR REPLACE FUNCTION` the 10 trigger functions with new bodies (same names/signatures/trigger wiring — no `ALTER TRIGGER` needed except the already-recorded #16 rename). See Programmability adjustments §4 | confirmed |
+| 24 | **Harden — `lock_next_order_and_wallets()` search_path:** add `SET search_path TO ''` | Harden | Task 3c H1b spillover + H3 logic review — "Function Search Path Mutable" linter fix; function logic confirmed **keep** (atomic `FOR UPDATE SKIP LOCKED` payment lock, supersedes dropped `lock_next_order()`) | Company DB at cutover: `CREATE OR REPLACE FUNCTION` with `SET search_path TO ''` added; no behavior change | confirmed |
+| 25 | **Add index — `idx_accounts_organization_id`** on `accounts(organization_id)` | Add index | Task 3c H1b — found while tracing RLS index coverage for register #23; `accounts` has 2 RLS policies (`Allow org member to select`, `Allow org members to update`) filtering directly on `organization_id`, but (unlike every other RLS-filtered org column in the schema) had no supporting index | Company DB: `CREATE INDEX IF NOT EXISTS` at cutover (no-op if already present); init migration includes it from the start | confirmed |
+| 26 | **Redesign — `get_grid_status(grid_id)` return type:** drop `are_all_dcus_online` and `are_all_dcus_under_high_load_threshold` from `RETURNS TABLE`; mark function **`STABLE`** | Redesign | Task 3c H2 — columns dropped from `grids` in register #17; function still selected them (init migration would fail). Pegasus already fetches gateway status via separate `dcus` query; UI usage of RPC columns commented out. `STABLE` marking: read-only RPC, same fix-when-it-surfaces principle as H1c/H1b | Company DB at cutover: `CREATE OR REPLACE FUNCTION` with narrowed return type + `STABLE`; pegasus supabase types at production-monitoring import | confirmed |
+| 27 | **Harden + fix — payments reporting RPCs:** `find_energy_topup_revenue()` marked **`STABLE`**; `find_top_spenders()` marked **`STABLE`** + `GROUP BY` narrowed to `meta_receiver_id_part_2`, `meta_receiver_name_part_2` only (drop `meta_receiver_id`/meter — fixes customer split across meters) | Harden + fix | Task 3c H3 — read-only RPCs should be `STABLE`; legacy `GROUP BY` included meter id so one customer with multiple meters appeared as separate partial rows in top-spender rankings (loch revenue reports) | Company DB at cutover: `CREATE OR REPLACE FUNCTION` both; no app code change required (return shape unchanged) | confirmed |
+| 28 | **Enum value trim — `external_system_enum`:** drop values `JOTFORM`, `STEAMACO`, `ACREL` (keep 11 incl. `JIRA`) | Drop enum values | Task 3c H4a — unused/dead integrations; `JIRA` **kept** (required by `issues.external_tracking_system`, register #20 — same enum type, DB default `'JIRA'`) | Company DB at cutover: verify no rows reference dropped values on any `external_system_enum` column (dcus, meters, grids, issues, notifications, …); migrate/archive if found; init migration creates trimmed enum | confirmed |
+| 29 | **Enum value trim — `notification_type_enum`:** drop value `AUTO_PAYOUT_GENRATION_REPORT` (keep 15) | Drop enum value | Task 3c H4d — payouts module dropped (register #13); only producer was dropped `loch/payouts.service` | Company DB at cutover: verify no `notifications.notification_type = 'AUTO_PAYOUT_GENRATION_REPORT'` rows (archive if found); init migration creates trimmed enum | confirmed |
 
 ## Column adjustments
 
@@ -150,7 +159,91 @@ tables; company DB converges at cutover.
 Authoritative for init-migration changes to **keep** enums (value trims), functions, and triggers.
 **Working review copy:** `002b-schema-programmability-review.md` (Task 3c).
 
-_(Section populated during Task 3c sign-off.)_
+### §1 — Motivated by register #16 (meter task batch renames, Task 3c H1a)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `append_rls_organization_id_by_directive_batch_id()` | Rename → `append_rls_organization_id_by_meter_task_batch_id()` | Register #16 — align with renamed `meter_task_batches` table | `ALTER FUNCTION … RENAME` at cutover; init uses new name |
+| Trigger `append_rls_organization_id_on_directive_batch_insert` | Rename → `append_rls_organization_id_on_meter_task_batch_insert` ON `meter_task_batches` | Register #16 | `ALTER TRIGGER … RENAME` + table rename at cutover |
+| Trigger `append_rls_organization_id_on_directive_batch_execution_insert` | Rename → `append_rls_organization_id_on_meter_task_batch_execution_insert` ON `meter_task_batch_executions` | Register #16 | `ALTER TRIGGER … RENAME` + table rename at cutover |
+
+### §2 — Motivated by register #21 (orphan RLS helper drop, Task 3c H1a)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `append_rls_organization_id_by_historical_grid_id()` | Drop function | Orphan — no trigger; never wired in chain | `DROP FUNCTION` at cutover if present; omit from init migration |
+
+### §3 — Motivated by register #22 (admin organization becomes DB-native, Task 3c H1c)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `rls_check_if_nxt_member()` | Rename → `rls_check_if_admin_org_member()`; body redesigned to read `current_setting('app.admin_organization_id', true)` instead of hard-coded `2`; marked `STABLE` | RLS cannot call `getConfig()`; DB-native + GUC-cached keeps the check fast (in-memory read, evaluated once per statement). Full architecture: ADR-007 Amendment (2026-07-09) | `DROP FUNCTION` old name + `CREATE FUNCTION` new name at cutover; update ~40 `"Allow NXT Grid"` policies to reference new name |
+| `organization_type_enum` | Add value `PLATFORM_OPERATOR` | Marks the platform-operator organization row; not in legacy chain | `ALTER TYPE … ADD VALUE` at cutover; flag NXT Grid's org row |
+| `organizations` | Add partial unique index `one_platform_operator_org` on `organization_type` WHERE `= 'PLATFORM_OPERATOR'` | Enforce at most one platform-operator org | `CREATE UNIQUE INDEX` at cutover |
+| `organizations` | Add `AFTER INSERT OR UPDATE OF organization_type OR DELETE` trigger syncing GUC `app.admin_organization_id` | DB-native flag change must propagate to the fast-read cache automatically (no manual script for the common path) | `CREATE TRIGGER` + `CREATE FUNCTION` at cutover; requires `SECURITY DEFINER` owned by a role that can `ALTER DATABASE` (confirm for self-hosted adopters — ADR-007 Amendment "Open / deferred") |
+
+### §4 — Motivated by register #23 (`append_rls_*` consolidation, Task 3c H1b)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `rls_org_id_from_grid(grid_id)` | Add (new) | Leaf helper — `SELECT organization_id FROM grids WHERE id = grid_id`; `LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''` | `CREATE FUNCTION` at cutover |
+| `rls_org_id_from_customer(customer_id)` | Add (new) | Delegates to `rls_org_id_from_grid()` via `customers.grid_id` | `CREATE FUNCTION` at cutover |
+| `rls_org_id_from_connection(connection_id)` | Add (new) | Delegates to `rls_org_id_from_customer()` via `connections.customer_id` | `CREATE FUNCTION` at cutover |
+| `rls_org_id_from_agent(agent_id)` | Add (new) | Delegates to `rls_org_id_from_grid()` via `agents.grid_id` | `CREATE FUNCTION` at cutover |
+| `rls_org_id_from_meter(meter_id)` | Add (new) | Delegates to `rls_org_id_from_connection()` via `meters.connection_id` | `CREATE FUNCTION` at cutover |
+| `rls_org_id_from_dcu(dcu_id)` | Add (new) | Delegates to `rls_org_id_from_grid()` via `dcus.grid_id` | `CREATE FUNCTION` at cutover |
+| `append_rls_organization_id_by_account_id()` | Body redesign | Dead join to `organizations` removed; direct `SELECT organization_id FROM accounts WHERE id = NEW.account_id` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_grid_id()` | Body redesign | `NEW.rls_organization_id := rls_org_id_from_grid(NEW.grid_id)` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_connection_id()` | Body redesign | `NEW.rls_organization_id := rls_org_id_from_connection(NEW.connection_id)` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_customer_id()` | Body redesign | `NEW.rls_organization_id := rls_org_id_from_customer(NEW.customer_id)` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_customer_id_or_agent_id_or_connec()` | Body redesign | Each `IF/ELSIF` branch delegates to the matching helper; `organization_id` branch assigns `NEW.organization_id` directly (2nd dead lookup removed) | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_dcu_id_or_meter_id()` | Body redesign | Branches delegate to `rls_org_id_from_dcu()` / `rls_org_id_from_meter()` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_directive_batch_id()` (→ `by_meter_task_batch_id()`, register #16) | Body redesign | Looks up `grid_id` from the batch row, delegates to `rls_org_id_from_grid()` | `CREATE OR REPLACE FUNCTION` at cutover under the renamed name |
+| `append_rls_organization_id_by_meter_id()` | Body redesign | `NEW.rls_organization_id := rls_org_id_from_meter(NEW.meter_id)` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_metering_hardware_install_session()` | Body redesign | Looks up `meter_id` from the session row, delegates to `rls_org_id_from_meter()` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| `append_rls_organization_id_by_order_id()` | Body redesign | Looks up `historical_grid_id` from the order row, delegates to `rls_org_id_from_grid()` | `CREATE OR REPLACE FUNCTION` at cutover; same name/trigger |
+| All 10 functions above | Add `SET search_path TO ''` | Addresses Supabase "Function Search Path Mutable" linter warning (9 of 10 were missing it) | Included in the `CREATE OR REPLACE FUNCTION` bodies above |
+
+### §5 — Motivated by register #24 (`lock_next_order_and_wallets` search_path, Task 3c H1b spillover)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `lock_next_order_and_wallets(uuid)` | Add `SET search_path TO ''` | Same linter fix as register #23; logic unchanged | `CREATE OR REPLACE FUNCTION` at cutover; no behavior change |
+
+### §6 — Motivated by register #25 (`accounts.organization_id` index, Task 3c H1b)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `accounts` | Add index `idx_accounts_organization_id` on `organization_id` | Supports existing `Allow org member to select` / `Allow org members to update` RLS policies, which filter directly on this column with no prior index | `CREATE INDEX IF NOT EXISTS` at cutover |
+
+### §7 — Motivated by register #26 (`get_grid_status` redesign, Task 3c H2)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `get_grid_status(grid_id integer)` | Drop `are_all_dcus_online` and `are_all_dcus_under_high_load_threshold` from `RETURNS TABLE`; remove from `SELECT` body; mark **`STABLE`** | Register #17 drops those `grids` columns; function must align or init migration fails. Pegasus gateway alerts use `dcus.is_online` query instead | `CREATE OR REPLACE FUNCTION` at cutover; pegasus types at production-monitoring import |
+
+### §8 — Motivated by register #27 (payments reporting RPCs, Task 3c H3)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `find_energy_topup_revenue(grid_id, start_date, end_date)` | Mark **`STABLE`** | Read-only aggregate; no side effects | `CREATE OR REPLACE FUNCTION` at cutover |
+| `find_top_spenders(...)` | Mark **`STABLE`**; `GROUP BY meta_receiver_id_part_2, meta_receiver_name_part_2` only (drop `meta_receiver_id`) | Customer-level top-spender aggregation; legacy meter id in GROUP BY split one customer across rows | `CREATE OR REPLACE FUNCTION` at cutover; return shape unchanged |
+
+### §9 — Motivated by register #28 (`external_system_enum` value trim, Task 3c H4a)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `external_system_enum` | Omit values `JOTFORM`, `STEAMACO`, `ACREL` from init migration | JOTFORM: pd-hero dropped (#14); STEAMACO/ACREL: no live code refs. **JIRA retained** — `issues.external_tracking_system` uses this enum with default `'JIRA'` | Company DB: audit all columns typed `external_system_enum`; migrate rows off dropped values before enum recreation at cutover |
+
+### §10 — Motivated by register #29 (`notification_type_enum` value trim, Task 3c H4d)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `notification_type_enum` | Omit value `AUTO_PAYOUT_GENRATION_REPORT` from init migration | Payouts module dropped (register #13); sendgrid case for this type becomes dead code at notifications import | Company DB: audit/archive `notifications` rows with this type before enum recreation at cutover |
+
+### §pending — Programmability backlog
+
+> H5b + H5c pending.
 
 ## Appendix — annotated A/B diff (002b Task 6)
 
