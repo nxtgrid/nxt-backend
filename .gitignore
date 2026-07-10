@@ -44,10 +44,14 @@ Thumbs.db
 _NOTES
 
 .nx/cache
+
 # Supabase
 supabase/.temp
 supabase/.branches
 supabase/.env
+supabase/.env.keys
+supabase/.env.local
+supabase/.env.*.local
 legacy/supabase/.temp
 legacy/supabase/.branches
 

@@ -285,7 +285,7 @@ schema with the audited shape from the start.
 
 ## Task 4 — Scaffold the fresh root `supabase/` project
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-10)
 - **Depends on:** 002a complete (can run in parallel with Tasks 1–3)
 
 ```bash
@@ -294,7 +294,9 @@ npx supabase@<pinned> init
 ```
 
 - Pick and record the pinned CLI version (decisions log + interim tooling rule above).
-- Set the Postgres major version in the new `config.toml` to match the legacy one.
+- Set the Postgres major version in the new `config.toml` to match the legacy one (**15** —
+  provisional, for Task 6's A/B diff only; see the PG version flip note under Task 6, which
+  moves this to **17** — the leading target — once Task 6 signs off).
 - Review generated `config.toml` defaults; keep it minimal (no edge-function config yet).
 
 **Done when:** root `supabase/` exists with `config.toml` and an empty `migrations/`;
@@ -322,9 +324,10 @@ Create the single canonical migration, e.g. `supabase/migrations/<timestamp>_ini
   tables (002c capability imports, adopter migrations) get explicit grants per migration instead of
   an ambient auto-expose default. See register #33 / Data API access adjustments §1.
 - **Extensions (register #11):** init migration runs `CREATE EXTENSION IF NOT EXISTS` only for
-  extensions **not** enabled on a fresh Supabase Postgres image (`postgis`, `pg_net`, `pgsodium`,
-  `pgjwt`). Omit platform defaults (`pg_stat_statements`, `pgcrypto`, `supabase_vault`,
-  `uuid-ossp`), `pg_graphql`, and advisor extensions (`hypopg`, `index_advisor`).
+  extensions **not** enabled on a fresh Supabase Postgres image (`postgis`, `pg_net`, `pgsodium`).
+  Omit platform defaults (`pg_stat_statements`, `pgcrypto`, `supabase_vault`, `uuid-ossp`),
+  `pg_graphql`, advisor extensions (`hypopg`, `index_advisor`), and `pgjwt` (not available on
+  Postgres 17 at all; confirmed unused in the legacy schema/app code — amended 2026-07-10).
 - **FK cycle hardening (register #34):** the 5 denormalized "latest pointer" FKs
   (`meters.last_metering_hardware_install_session_id`,
   `metering_hardware_install_sessions.last_metering_hardware_import_id`,
@@ -368,6 +371,18 @@ Iterate Tasks 5↔6 until the assertion holds.
 **Done when:** the final diff-vs-register walkthrough is done with the maintainer and each
 diff hunk is annotated with its register entry number (keep the annotated diff as an appendix
 in the register file).
+
+**PG version flip (after sign-off):** Task 4 set `config.toml`'s `major_version` to **15**
+provisionally, matching legacy, so this diff isn't contaminated by PG-version-driven textual
+noise on top of the real deviation-vs-register check. Postgres 17 is the leading target for the
+OSS baseline going forward (Supabase's current default for all new projects, platform and
+self-hosted, as of 2026 — decided in Task 4 discussion, 2026-07-10). Once this task's assertion
+holds: flip `config.toml`'s `major_version` to **17** and re-run `npx supabase@<pinned> db
+reset` against a clean local PG17 stack to confirm the init migration still applies with zero
+errors — the same kind of check that caught the `pgjwt` incompatibility (register #11) before
+it became a live blocker; there may be others. **17** is the value that ships from this point
+forward. Task 9.2's fresh platform project (provisioned on PG17 by default) is the live
+platform-side confirmation. Record the re-verification result in the decisions log.
 
 ---
 
@@ -457,6 +472,15 @@ Tracked items that must not be lost between chat sessions:
 - [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
 - [x] **Task 3b** — Complete. `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
 - [ ] **Task 6** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11).
+- [ ] **NXT Grid's own PG15→17 platform upgrade** — untracked, independent prerequisite surfaced
+  during Task 4 discussion (2026-07-10): Postgres 17 is now the leading target for the OSS
+  baseline (register #11 `pgjwt` fix), but NXT Grid's own production project is still on PG15
+  and Supabase's platform-level PG15 sunset has no committed date yet. This is not 002b/002c
+  work — it's a separate platform-upgrade project on Supabase's timeline, with its own
+  prerequisites (drop deprecated extensions, re-hash custom-role md5 passwords if any, etc.) —
+  but nobody currently owns tracking it, and it's a real dependency for eventual company cutover
+  parity (ADR-012 doesn't yet name it). Consider adding as an ADR-012 trigger once it's clearer
+  whether it lands before or after the OSS cutover.
 
 ---
 
@@ -507,3 +531,60 @@ Tracked items that must not be lost between chat sessions:
 - 2026-07-10 — [Final sanity wrap-up, item 2/4] — Checked `pg_graphql` handling (register #11) against current Supabase behavior: confirmed via Supabase's changelog that `pg_graphql` stopped being enabled by default on **2026-05-18** (existing projects with 30+ days zero GraphQL usage were auto-disabled too — explains current production state). Register #11's decision to omit `pg_graphql` from the init migration is unaffected and correctly matches current platform reality; no change needed.
 - 2026-07-10 — [Final sanity wrap-up, item 3/4 — **register #33 added**] — Found a real, previously-unaddressed gap while checking Supabase's recent Data API changes: as of **2026-05-30**, new Supabase projects no longer auto-grant `anon`/`authenticated`/`service_role` access to `public` tables (enforced on **all** existing projects — new tables only — from 2026-10-30); without an explicit `GRANT`, PostgREST returns `42501` before RLS is even evaluated. The legacy migration chain's dump contains exactly the grants now required explicitly (`GRANT ALL ON TABLE/SEQUENCE/FUNCTION … TO anon/authenticated/service_role` per object, plus 3 `ALTER DEFAULT PRIVILEGES` statements for future tables) — but Task 5's original wording ("strip … supabase-managed grants") risked stripping the very grants that are now load-bearing, not just dump noise. Resolved: **keep** explicit per-object grants for all keep tables/sequences/functions (makes the baseline self-contained, independent of project-creation toggles or hosting mode); **omit** the 3 `ALTER DEFAULT PRIVILEGES` auto-expose-future-tables statements (deliberate alignment with Supabase's now-recommended explicit-grant-per-migration pattern; costs nothing today since production's existing tables are grandfathered regardless — this only shapes the baseline template and future 002c capability-import migrations). Register **#33** + new **Data API access adjustments** §1. Task 5 amended (grants section); Task 9.2 done-when amended (verify Data API reachability on the fresh hosted project, not just dashboard-clean). Also fixed a stale note found in the same pass: register file's "§pending — Performance backlog" still said D4 "not yet started" — corrected to reflect D1–D4 complete.
 - 2026-07-10 — [Final sanity wrap-up, item 4/4 — **register #34 added**] — Maintainer recalled "back-and-forth" FK pointers between `meters`/`metering_hardware_install_sessions`/`metering_hardware_imports`/`meter_commissionings` and suspected redundancy/deletion/query-cost issues; asked for a full sweep. Built the complete FK graph across all 35 keep tables and searched for cycles: found exactly **5 direct 2-cycles** (confirmed complete via an independent `last_`/`latest_` column-name sweep), **0 cycles of length 3+** — the 3 named plus 2 more of the same shape (`dcus` ↔ `metering_hardware_install_sessions`; `meters` ↔ `issues`). All 5 are the same pattern: a denormalized "latest child" pointer column paired with the child's structural back-reference to its parent. Traced app-code usage and confirmed **all 5 are legitimate and actively read** — not redundant: explicit intent comment in `dcus.service.ts` ("point at the latest dcu session, so it's easily retrievable"), heavy use in the `meters_with_account_and_statuses` view (chains 4 of the 5 in one query), PostgREST embeds in `meter-installs.service.ts`/`meter-uninstalls.service.ts`, and a TypeORM `@OneToOne`. Checked indexing: both sides of every cycle are already covered (forward pointers via pre-existing `UNIQUE` constraints; structural back-pointers via register #30/Task 3d D1) — the query-efficiency concern is already resolved by prior work. Checked deletion: all 10 FKs in these cycles default to `NO ACTION` (real gap, matches the "hard to delete" complaint), but a full `legacy/` codebase sweep found **zero** hard-deletes anywhere (every removal is a soft-delete or status transition) — not live-impacting today, a latent trap for future manual/ops deletes. Maintainer accepted the recommendation: add `ON DELETE SET NULL` to the 5 forward pointers only; leave the 5 structural back-pointers `NO ACTION`. Register **#34** + new **FK design adjustments** §1. Task 5 amended (FK hardening bullet). This closes the final sanity wrap-up (items 1–4 of 4).
+- 2026-07-10 — [Task 4 CLI pin] — Confirmed **`2.109.1`** as the Task 4 pin (also the current
+  latest published stable release, checked live against the npm registry — nothing newer except
+  `2.110.0-beta.*` prereleases). Matches Task 1's "≥2.62.10 or 2.109.1" candidates and Task 1's
+  finding that 2.109.1 works without the `.temp` cache-clear workaround 2.54.10 needed. Per the
+  interim tooling rule, this is a single frozen version for the rest of 002b (Tasks 4–9), not
+  something to keep bumping — only revisited if a concrete blocker forces it, same as Task 1's
+  workaround was a logged exception, not routine maintenance. Feeds the 002c workspace pin.
+- 2026-07-10 — [Task 4 discussion — register #11 amended, `pgjwt` dropped] — While discussing
+  Task 4's Postgres major-version pin, checked whether a fresh Supabase project today still
+  provisions on PG15 (the plan's working assumption): it does not — Supabase now defaults **all**
+  new projects (platform and self-hosted) to **Postgres 17** as of 2026; regular users cannot
+  pick PG15 at creation (version selector is gated behind an internal Supabase-staff-only flag).
+  Cross-checked register #11's extension list against PG17: `postgis`/`pg_net` remain compatible;
+  `pgsodium` is "pending deprecation" per Supabase but not removed; **`pgjwt` is not available on
+  PG17 at all** (removed from the image bundle alongside `timescaledb`/`plv8`/`plcoffee`/`plls`) —
+  our planned `CREATE EXTENSION IF NOT EXISTS "pgjwt"` would have failed outright on any PG17
+  project (i.e. every new adopter project going forward, and Task 9.2's fresh project). Grepped
+  the full legacy migration chain + all app code for pgjwt's functions (`sign`/`verify`/
+  `url_encode`/`url_decode`/`algorithm_sign`) — zero usage beyond the bare `CREATE EXTENSION`
+  line, matching Supabase's own guidance that it's normally safe to disable. **Register #11
+  amended:** drop `pgjwt` from the init migration's extension list — no functional loss, removes
+  a cross-version landmine before Task 5.
+- 2026-07-10 — [Task 4 discussion — PG version strategy] — Maintainer: **Postgres 17 is the
+  leading target** for the OSS baseline (matches Supabase's own new-project default; "no forks,
+  single-track" per ADR-004 argues for one baseline valid across whatever PG version an
+  operator's project happens to run, rather than picking 15 specifically). Resolved the tension
+  with Task 6's "apples to apples" A/B-diff requirement (Option A, chosen over running Task 6
+  cross-version): Task 4's `config.toml` sets `major_version = 15` **provisionally**, matching
+  legacy, so Task 6's diff isn't contaminated by PG-version-driven textual noise on top of the
+  real deviation-vs-register check. Once Task 6 signs off, `config.toml` flips to `major_version
+  = 17` and the init migration is re-verified with a clean `db reset` on a local PG17 stack (same
+  kind of check that just caught the `pgjwt` incompatibility) — **17** ships from that point
+  forward; Task 9.2's fresh platform project (already PG17 by default) is the live confirmation.
+  Plan text amended: Task 4 bullet + new "PG version flip" note under Task 6's done-when. Also
+  surfaced and logged as an open follow-up: NXT Grid's own production PG15→17 upgrade is a real,
+  currently untracked, independent prerequisite for full cutover parity — not 002b/002c scope,
+  no committed Supabase timeline, but worth an ADR-012 trigger once clearer.
+- 2026-07-10 — [Task 4 complete] — Maintainer-executed (agent guiding step by step, per roadmap
+  division-of-labor). `npx supabase@2.109.1 init` at repo root scaffolded `supabase/config.toml`
+  + empty `migrations/` (also updated root `.gitignore` with newer CLI's env-file ignore
+  patterns — harmless template side effect). Generated `config.toml` defaulted `db.major_version`
+  to **17** (confirms the Task 4 discussion finding live); set to **15** per the agreed PG version
+  strategy (provisional, for Task 6's A/B diff — flips to 17 after Task 6 signs off, see note
+  under Task 6). Reviewed remaining generated defaults against "keep it minimal": nothing to
+  strip — the newer CLI template has no `[functions.*]` block to omit in the first place (those
+  are only added by `supabase functions new`), and all other new sections (`db.migrations`,
+  `db.seed`, `storage.vector`, `auth.oauth_server`, `experimental.pgdelta`, etc.) are inert
+  platform-service scaffolding, not edge-function config. `npx supabase@2.109.1 start`: first
+  attempt failed — cold image pull hit Docker registry rate-limiting (`toomanyrequests`, ~5.5min
+  with retries), and the `analytics` (Logflare) + `vector` containers missed their health-check
+  window afterward, so the CLI tore the stack down. Diagnosed as image-pull/health-check
+  flakiness, not a config problem (container logs showed normal startup chatter, no fatal error;
+  `WARN: no files matched pattern: supabase/seed.sql` is the expected/harmless Task 8 seed-file
+  gap, unrelated to the failure). `stop` + retry succeeded immediately once images were cached —
+  local stack came up healthy (DB, auth, storage all reporting). **Done-when met:** root
+  `supabase/` exists with `config.toml` + empty `migrations/`; `start` boots an empty local stack
+  from the repo root.
