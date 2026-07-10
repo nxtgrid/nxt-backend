@@ -162,7 +162,7 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | 002d | Platform core import | Move platform-core modules into the new workspace (two passes) | Just-in-time — not yet authored |
 | 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
-| (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement | Just-in-time — not yet authored |
+| (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement. Strategy-level decisions (host flip mechanics, rollback stance, maintenance window) recorded early in **ADR-012** — reconcile with it when authoring | Just-in-time — not yet authored |
 
 ## Standing assumptions and open decision points
 
@@ -175,6 +175,7 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | 5 | **Adopter requirements surface during execution** | Outside requirements (renames, omissions, additions) are discovered *while executing* sub-plans, not gathered up-front — and always recorded (see below) | Continuous |
 | 6 | **Branch strategy** | The migration lives on the long-running **`oss-migration`** branch; `main` keeps the original tree (incl. original README) untouched. No external automation watches this repo (production builds from the private repo). Documentation rewrites (root README, AGENTS.md commands) are deferred to the later phases | When/how the branch lands on `main` — decided in a later phase |
 | 7 | **Git hooks (husky) suspended** | Hooks are suspended from Step 0 onward to avoid friction during groundwork. Automatic lint/typecheck on commit is reintroduced as a 002c task, activated once the new workspace's lint/typecheck targets are stable | 002c execution |
+| 8 | **Company cutover strategy (ADR-012)** | Decided ahead of the just-in-time sub-plan, since they're durable and unlikely to change: schema convergence splits into "anytime" (additive/dead-drop) vs. "flip-atomic" (renames) changes; `api` can blue/green but `worker` needs a hard stop-then-start; RLS parity gets an explicit regression pass; hard point-of-no-return past the flip-atomic migration (PITR checkpoint immediately before); a short maintenance window is acceptable; Geo FastAPI is out of scope | The "Parity verification & company cutover" sub-plan is authored — reconcile its runbook with ADR-012, which it supersedes on execution detail |
 
 ## Deviation recording
 
@@ -198,6 +199,8 @@ cutover. Weigh each rename individually; record all of them.
 - **ADR-007** — config mechanism executed by 002c (skeleton) and each capability import (flags).
 - **ADR-008** — the four-phase strategy this roadmap operationalizes.
 - **ADR-009** — migration governance executed across 002b (baseline) and 002c (CI lane, CODEOWNERS).
+- **ADR-012** — company cutover strategy; strategy-level decisions for the last, not-yet-authored
+  sub-plan (see assumption 8).
 - **Plan 001** — device-messaging service extraction (parallel effort; see assumption 1).
 
 ---
@@ -224,3 +227,13 @@ cutover. Weigh each rename individually; record all of them.
   execution-model note in each sub-plan header): per task, the maintainer chooses who
   executes; the agent must ask when unstated, verify actual repo state rather than assume,
   and always keep the bookkeeping regardless of who did the work.
+- 2026-07-10 — Discussed company cutover strategy ahead of authoring the last sub-plan (its
+  prerequisites are far from complete). Surfaced runtime facts not considered in ADR-008: the 4
+  legacy apps collapse to 2 hosts (`api`/`worker`, ADR-004/005), and the database is the primary
+  integration point for 5 frontends + Grafana + Make.com, not just the backend. Recorded as
+  **ADR-012**: schema convergence splits into anytime-safe vs. flip-atomic changes; `api`/`worker`
+  have different flip mechanics; RLS parity gets an explicit regression pass; hard point-of-no-return
+  past the flip-atomic migration (PITR checkpoint before); short maintenance window accepted; Geo
+  FastAPI out of scope. The ADR's illustrative cutover sequence is explicitly non-binding — the
+  authoritative runbook remains the just-in-time sub-plan, to reconcile with ADR-012 when authored.
+  New standing assumption 8 added; sub-plan index and related-documents updated to point to it.

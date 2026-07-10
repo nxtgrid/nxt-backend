@@ -85,6 +85,7 @@ changes, or work clearly outside the domains below.
 | Open-source migration strategy | 008 |
 | Database migration deployment & governance | 009 |
 | Meter command batches, load shedding, meter grouping | 011 |
+| Company cutover strategy | 012 |
 
 ### How to read (progressive)
 

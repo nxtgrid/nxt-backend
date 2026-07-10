@@ -56,6 +56,8 @@ spec for the convergence data migration that brings the company DB in line with 
 | 30 | **Add indexes — D1 FK/RLS coverage sweep:** 47 new indexes on keep tables — 3 RLS-predicate/renamed-FK gaps (`idx_grids_organization_id`, `idx_metering_hardware_imports_rls_organization_id`, `idx_meter_command_batch_executions_meter_command_batch_id`) + 44 plain FK-column indexes across `agents`, `api_keys`, `audits` (8), `connection_requested_meters`, `dcus`, `energy_cabins`, `meter_command_batches` (2), `meter_commissionings`, `metering_hardware_imports` (1 more), `metering_hardware_install_sessions` (3), `meters.pole_id`, `mppts`, `notes` (4), `notifications` (4), `orders` (3), `pd_site_submissions`, `pd_sites` (2), `poles`, `routers`, `transactions`, `ussd_session_hops`, `ussd_sessions` (3). Full per-column list + rationale: `002b-schema-performance-audit.md` Indexes § Gap findings | Add index | Task 3d D1 — systematic FK/RLS-predicate index coverage sweep across all 35 keep tables. Tier 1 mirrors register #25 (RLS-predicate/FK column with no supporting index, same class of gap); Tier 2 is standard "index every FK" hygiene — largely absent except on `rls_organization_id`-style denormalized columns. Reviewed and excluded: 2 columns with no current read/RLS usage (`members.busy_commissioning_id`, `meters.rls_grid_id` — Performance adjustments §1 notes) and 2 orders partial/full index pairs confirmed intentional, not redundant | Company DB at cutover: `CREATE INDEX IF NOT EXISTS` for all 47 (no-op if already present); init migration includes them from the start | confirmed |
 | 31 | **Mark `STABLE` — D2 remaining RLS-helper volatility:** `rls_check_if_lender()`, `rls_get_member_org_id()` | Harden (volatility) | Task 3d D2 — both are single-statement `auth.jwt()` reads with no side effects, same shape as `rls_check_if_admin_org_member()` (register #22, already `STABLE`). Every other keep function's volatility was already decided in Task 3c (H1b/H1c/H2/H3) — these 2 were the only ones left. `rls_get_member_org_id()` is the single most-invoked RLS helper in the schema (~24 policies across ~20 keep tables); `rls_check_if_lender()` used in 4. Full analysis: `002b-schema-performance-audit.md` Function volatility § D2 | Company DB at cutover: `CREATE OR REPLACE FUNCTION` both with `STABLE` added; no behavior change; both already have `SECURITY DEFINER` + `SET search_path TO ''` | confirmed |
 | 32 | **Normalize RLS policy invocation pattern — D3:** wrap 18 bare helper-function calls in `( SELECT public.fn() AS fn )` — 14 × `rls_check_if_admin_org_member()` on `grids`/`meters`/`notes`/`organizations`/`pd_sites`/`poles`/`wallets` ("Allow NXT Grid to insert" `WITH CHECK`) and `accounts`/`connections`/`grids`/`meters`/`organizations`/`pd_site_submissions`/`pd_sites` ("Allow NXT Grid to update" `USING`); 4 × `rls_get_member_org_id()` on `notes`/`poles` ("Allow org members to insert" `WITH CHECK`) and `accounts`/`orders` ("Allow org members to update" `USING`) | Rewrite policy clause | Task 3d D3 — parsed all 123 `CREATE POLICY` statements (single migration, never altered later); found 69 helper-function calls across keep-table policies, 51 already wrapped (the Postgres/Supabase-recommended `InitPlan`-cacheable pattern) and 18 bare. Clean split: every bare call is on `INSERT`/`WITH CHECK` or `UPDATE`/`USING` — zero on `SELECT` (all 26 `SELECT`-side calls already wrapped). Normalizing removes the inconsistency and closes the bulk-`UPDATE` per-row-reevaluation gap; pairs with register #31 (`STABLE`), which is what makes the wrap's caching valid. Full list: `002b-schema-performance-audit.md` RLS policy invocation pattern § D3 | Company DB at cutover: `ALTER POLICY`/recreate the 18 policies with the wrapped clause; no behavior change (same boolean result), read-path performance only | confirmed |
+| 33 | **Data API grants — keep explicit per-object grants; omit auto-expose default:** init migration carries forward `GRANT ALL ON TABLE/SEQUENCE/FUNCTION … TO "anon"/"authenticated"/"service_role"` for every **keep** table/sequence/function (mirrors the legacy dump, keep-bucket scope only); **omits** the 3 `ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES/SEQUENCES/FUNCTIONS TO "anon"/"authenticated"/"service_role"` statements | Keep (explicit) + omit (default-privileges) | Found during final Task 3d wrap-up sanity check: Supabase changed platform defaults — new projects created on/after 2026-05-30 no longer auto-grant `anon`/`authenticated`/`service_role` access to `public` tables (PostgREST returns `42501 permission denied` without an explicit `GRANT`, before RLS is even evaluated); enforced on all existing projects from 2026-10-30 (new tables added after that date, on any project). Explicit per-object grants on keep objects make the baseline self-contained — reachable via the Data API regardless of the project-creation toggle, local vs. hosted vs. self-hosted vanilla Postgres. Omitting the default-privileges statements is a deliberate choice to align with Supabase's now-recommended pattern (explicit `GRANT` + RLS + policy as one reviewable unit per migration) rather than re-introduce the auto-expose-everything default the platform itself is moving away from. Production's 57 existing tables are unaffected either way — grandfathered permanently per Supabase's changelog; this only governs objects added going forward | Company DB: no-op (existing grants/default-privileges setup untouched — this deviation only shapes the OSS baseline template, not company production). Adopters and 002c capability imports must add explicit `GRANT` statements for any new `public` table going forward — no ambient default; Task 9.2 verifies a keep table is actually reachable via the Data API on a fresh hosted project | confirmed |
+| 34 | **FK cycle hardening — add `ON DELETE SET NULL` to 5 denormalized "latest pointer" FKs:** `meters.last_metering_hardware_install_session_id` → `metering_hardware_install_sessions.id`; `metering_hardware_install_sessions.last_metering_hardware_import_id` → `metering_hardware_imports.id`; `metering_hardware_install_sessions.last_meter_commissioning_id` → `meter_commissionings.id`; `dcus.last_metering_hardware_install_session_id` → `metering_hardware_install_sessions.id`; `meters.last_encountered_issue_id` → `issues.id` | Harden (`ON DELETE`) | Found during final sanity wrap-up (item 4/4): systematic FK-cycle sweep across all 35 keep tables found exactly **5 direct 2-cycles** (no cycles of length 3+) — each a denormalized "latest child" pointer column (`last_X_id`) paired with the child's own structural back-reference to its parent. Confirmed legitimate, not redundant: `dcus.service.ts` explicitly comments "we have a dcu property point at the latest dcu session, so it's easily retrievable"; the pattern is read throughout `meters_with_account_and_statuses` (chains 4 of the 5 cycles in one view), PostgREST embeds, and a TypeORM `@OneToOne`. Both sides of every cycle are already indexed (forward pointers via pre-existing `UNIQUE` constraints; structural back-pointers via register #30/Task 3d D1) — the query-efficiency half of the concern is already resolved. The real gap: all 10 FKs in these cycles default to `NO ACTION`, so deleting a row on either side while still referenced fails outright — matches the "hard to delete" pain reported. A full `legacy/` codebase sweep found **zero** hard-deletes (`.delete()`/`DELETE FROM`/`.remove()`) against any table — every removal is a soft-delete or status transition — so this isn't live-impacting today, but is a latent trap for future/manual/ops-level deletes. Fix scoped to the 5 *forward* pointers only; the 5 structural back-pointers correctly stay `NO ACTION` (a child row should not silently lose its real parent reference) | Company DB at cutover: drop + recreate each of the 5 FKs with `ON DELETE SET NULL` (no data impact — existing rows unaffected; changes only what happens on a future `DELETE`, which nothing currently triggers). See FK design adjustments §1 | confirmed |
 
 ## Column adjustments
 
@@ -372,7 +374,74 @@ recreate the 18 listed policies with the wrapped clause (same boolean semantics,
 
 ### §pending — Performance backlog
 
-> D4 (remaining triggers/views) not yet started — see `002b-schema-performance-audit.md` batch plan.
+> None — Task 3d complete (2026-07-10). D1–D4 all signed off; see
+> `002b-schema-performance-audit.md`.
+
+## Data API access adjustments
+
+Authoritative for init-migration decisions about Postgres `GRANT`/`ALTER DEFAULT PRIVILEGES`
+statements that govern Data API (PostgREST/GraphQL) reachability on **keep** objects. Not part of
+Task 3d (performance) — found during the final pre-close sanity check on 2026-07-10, prompted by a
+Supabase platform default change discovered mid-review.
+
+### §1 — Motivated by register #33 (Data API grants)
+
+| Object(s) | Change | Rationale | Cutover / code impact |
+|-----------|--------|-----------|------------------------|
+| Every keep table, sequence, function | Keep `GRANT ALL ON TABLE/SEQUENCE/FUNCTION … TO "anon"/"authenticated"/"service_role"` (mirrors legacy dump, keep-bucket scope) | Required for Data API reachability on any project created on/after 2026-05-30 (Supabase no longer auto-grants); makes the baseline self-contained regardless of project-creation toggle or hosting mode | Init migration includes these grants from the start; Task 5 must **not** treat them as "supabase-managed grant noise" to strip |
+| 3 `ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES/SEQUENCES/FUNCTIONS TO "anon"/"authenticated"/"service_role"` statements | Omit from init migration | Deliberate: aligns with Supabase's now-recommended pattern (explicit grant + RLS + policy per migration, no ambient auto-expose of future tables) rather than re-introducing the default the platform itself is retiring | Company DB: no-op, existing default-privileges setup untouched (production tables grandfathered). 002c capability imports and any adopter migrations must add explicit `GRANT` statements for new `public` tables going forward |
+
+**Cutover / code impact:** no company DB change (existing grants/default-privileges untouched either
+way — production tables are grandfathered regardless per Supabase's changelog). Governs only the OSS
+baseline template and future migrations (002c onward). Task 9.2 must verify a keep table is actually
+reachable via the Data API on a fresh hosted project (not just "no errors in dashboard") — this is a
+new done-when criterion, not covered by the original Task 9 wording.
+
+## FK design adjustments
+
+Authoritative for init-migration changes to FK `ON DELETE`/`ON UPDATE` behavior on **keep** objects.
+Not part of Task 3d (which covered indexes, function volatility, RLS invocation pattern, and
+trigger/view design, but not FK relationship shape) — found during the final pre-close sanity check
+on 2026-07-10, prompted by the maintainer's recollection of "back-and-forth" FK pairs.
+
+### §1 — Motivated by register #34 (FK cycle hardening)
+
+**Method:** enumerated every FK constraint in the legacy chain, filtered to edges where both
+endpoints are keep tables, and searched the resulting graph for cycles. Result: **5 direct 2-cycles,
+0 cycles of length 3+** — the full set, confirmed by an independent sweep of every `last_`/`latest_`
+prefixed column name across all 35 keep tables (only 6 such columns exist; the 6th,
+`pd_actions.latest_pd_document_id`, is on a dropped table and out of scope).
+
+| Forward pointer FK (change) | Structural back-pointer (unchanged) |
+|---|---|
+| `meters.last_metering_hardware_install_session_id` → `metering_hardware_install_sessions.id` | `metering_hardware_install_sessions.meter_id` → `meters.id` |
+| `metering_hardware_install_sessions.last_metering_hardware_import_id` → `metering_hardware_imports.id` | `metering_hardware_imports.metering_hardware_install_session_id` → `metering_hardware_install_sessions.id` |
+| `metering_hardware_install_sessions.last_meter_commissioning_id` → `meter_commissionings.id` | `meter_commissionings.metering_hardware_install_session_id` → `metering_hardware_install_sessions.id` |
+| `dcus.last_metering_hardware_install_session_id` → `metering_hardware_install_sessions.id` | `metering_hardware_install_sessions.dcu_id` → `dcus.id` |
+| `meters.last_encountered_issue_id` → `issues.id` | `issues.meter_id` → `meters.id` |
+
+**Change:** add `ON DELETE SET NULL` to the 5 forward pointer FKs (left column) only. The 5
+structural back-pointers (right column) are unchanged — they stay `NO ACTION`, since a
+session/import/commissioning/issue should never silently lose its real parent reference.
+
+**Rationale:** all 5 forward pointers are a deliberate, actively-used "denormalized latest child"
+cache — not redundant. Confirmed via `dcus.service.ts` ("we have a dcu property point at the latest
+dcu session, so it's easily retrievable"), the `meters_with_account_and_statuses` view (chains 4 of
+the 5 cycles in one query), PostgREST embeds (`meter-installs.service.ts`,
+`meter-uninstalls.service.ts`), and a TypeORM `@OneToOne` (`meter.entity.ts`). Both sides of every
+cycle are already indexed — forward pointers via pre-existing `UNIQUE` constraints, structural
+back-pointers via register #30 (Task 3d D1) — so query efficiency is not a gap. The one real gap:
+every one of these 10 FKs defaults to `NO ACTION`, so deleting a row on either side while still
+referenced fails outright. A full sweep of `legacy/` found **zero** hard-deletes
+(`.delete()`/`DELETE FROM`/`.remove()`) against any table anywhere in the codebase — every removal
+is a soft-delete (`deleted_at`) or a status transition — so this isn't live-impacting today, but is a
+latent trap for future/manual/ops-level deletes (e.g. dev data resets, admin cleanup).
+
+**Cutover / code impact:** no application code change (nothing today triggers a delete on these
+tables); no data impact (existing rows unaffected — this only changes what happens on a future
+`DELETE`). Company DB at cutover: `ALTER TABLE … DROP CONSTRAINT` + `ADD CONSTRAINT … FOREIGN KEY …
+ON DELETE SET NULL` for each of the 5 (Postgres has no in-place "alter constraint action" — must
+drop/recreate).
 
 ## Appendix — annotated A/B diff (002b Task 6)
 
