@@ -1891,8 +1891,8 @@ ALTER TABLE ONLY public.wallets
 -- Indexes
 -- =============================================================================
 -- Existing kept indexes (renamed where their table was renamed), followed by
--- 48 new indexes closing FK/RLS-predicate coverage gaps found during the
--- schema audit (register #25, #30) — not present in the legacy reference DB.
+-- 49 new indexes: register #22 (partial unique on organizations), plus 48
+-- FK/RLS-predicate coverage gaps from the schema audit (register #25, #30).
 
 CREATE INDEX "IDX_14f6e0badc019bbdd2f66f7e8a" ON public.notifications USING btree (notification_status);
 
@@ -1984,6 +1984,9 @@ CREATE INDEX idx_wallets_rls_organization_id ON public.wallets USING btree (rls_
 
 -- New indexes (register #25, #30) — FK/RLS-predicate coverage gaps found while
 -- auditing the legacy schema; not present in the legacy reference DB.
+
+-- register #22 — at most one platform-operator organization (ADR-007 Amendment)
+CREATE UNIQUE INDEX one_platform_operator_org ON public.organizations USING btree (organization_type) WHERE (organization_type = 'PLATFORM_OPERATOR'::public.organization_type_enum);
 
 -- register #25 (Task 3c H1b)
 CREATE INDEX idx_accounts_organization_id ON public.accounts USING btree (organization_id);

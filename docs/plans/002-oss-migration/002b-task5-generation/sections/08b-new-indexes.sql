@@ -1,6 +1,9 @@
 -- New indexes (register #25, #30) — FK/RLS-predicate coverage gaps found while
 -- auditing the legacy schema; not present in the legacy reference DB.
 
+-- register #22 — at most one platform-operator organization (ADR-007 Amendment)
+CREATE UNIQUE INDEX one_platform_operator_org ON public.organizations USING btree (organization_type) WHERE (organization_type = 'PLATFORM_OPERATOR'::public.organization_type_enum);
+
 -- register #25 (Task 3c H1b)
 CREATE INDEX idx_accounts_organization_id ON public.accounts USING btree (organization_id);
 

@@ -87,8 +87,8 @@ parts.append(section(
     "Indexes",
     indexes_body,
     "-- Existing kept indexes (renamed where their table was renamed), followed by\n"
-    "-- 48 new indexes closing FK/RLS-predicate coverage gaps found during the\n"
-    "-- schema audit (register #25, #30) — not present in the legacy reference DB.",
+    "-- 49 new indexes: register #22 (partial unique on organizations), plus 48\n"
+    "-- FK/RLS-predicate coverage gaps from the schema audit (register #25, #30).",
 ))
 
 # 8. Functions (already has its own header)
