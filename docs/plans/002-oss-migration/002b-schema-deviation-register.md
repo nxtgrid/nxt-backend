@@ -53,6 +53,9 @@ spec for the convergence data migration that brings the company DB in line with 
 | 27 | **Harden + fix — payments reporting RPCs:** `find_energy_topup_revenue()` marked **`STABLE`**; `find_top_spenders()` marked **`STABLE`** + `GROUP BY` narrowed to `meta_receiver_id_part_2`, `meta_receiver_name_part_2` only (drop `meta_receiver_id`/meter — fixes customer split across meters) | Harden + fix | Task 3c H3 — read-only RPCs should be `STABLE`; legacy `GROUP BY` included meter id so one customer with multiple meters appeared as separate partial rows in top-spender rankings (loch revenue reports) | Company DB at cutover: `CREATE OR REPLACE FUNCTION` both; no app code change required (return shape unchanged) | confirmed |
 | 28 | **Enum value trim — `external_system_enum`:** drop values `JOTFORM`, `STEAMACO`, `ACREL` (keep 11 incl. `JIRA`) | Drop enum values | Task 3c H4a — unused/dead integrations; `JIRA` **kept** (required by `issues.external_tracking_system`, register #20 — same enum type, DB default `'JIRA'`) | Company DB at cutover: verify no rows reference dropped values on any `external_system_enum` column (dcus, meters, grids, issues, notifications, …); migrate/archive if found; init migration creates trimmed enum | confirmed |
 | 29 | **Enum value trim — `notification_type_enum`:** drop value `AUTO_PAYOUT_GENRATION_REPORT` (keep 15) | Drop enum value | Task 3c H4d — payouts module dropped (register #13); only producer was dropped `loch/payouts.service` | Company DB at cutover: verify no `notifications.notification_type = 'AUTO_PAYOUT_GENRATION_REPORT'` rows (archive if found); init migration creates trimmed enum | confirmed |
+| 30 | **Add indexes — D1 FK/RLS coverage sweep:** 47 new indexes on keep tables — 3 RLS-predicate/renamed-FK gaps (`idx_grids_organization_id`, `idx_metering_hardware_imports_rls_organization_id`, `idx_meter_command_batch_executions_meter_command_batch_id`) + 44 plain FK-column indexes across `agents`, `api_keys`, `audits` (8), `connection_requested_meters`, `dcus`, `energy_cabins`, `meter_command_batches` (2), `meter_commissionings`, `metering_hardware_imports` (1 more), `metering_hardware_install_sessions` (3), `meters.pole_id`, `mppts`, `notes` (4), `notifications` (4), `orders` (3), `pd_site_submissions`, `pd_sites` (2), `poles`, `routers`, `transactions`, `ussd_session_hops`, `ussd_sessions` (3). Full per-column list + rationale: `002b-schema-performance-audit.md` Indexes § Gap findings | Add index | Task 3d D1 — systematic FK/RLS-predicate index coverage sweep across all 35 keep tables. Tier 1 mirrors register #25 (RLS-predicate/FK column with no supporting index, same class of gap); Tier 2 is standard "index every FK" hygiene — largely absent except on `rls_organization_id`-style denormalized columns. Reviewed and excluded: 2 columns with no current read/RLS usage (`members.busy_commissioning_id`, `meters.rls_grid_id` — Performance adjustments §1 notes) and 2 orders partial/full index pairs confirmed intentional, not redundant | Company DB at cutover: `CREATE INDEX IF NOT EXISTS` for all 47 (no-op if already present); init migration includes them from the start | confirmed |
+| 31 | **Mark `STABLE` — D2 remaining RLS-helper volatility:** `rls_check_if_lender()`, `rls_get_member_org_id()` | Harden (volatility) | Task 3d D2 — both are single-statement `auth.jwt()` reads with no side effects, same shape as `rls_check_if_admin_org_member()` (register #22, already `STABLE`). Every other keep function's volatility was already decided in Task 3c (H1b/H1c/H2/H3) — these 2 were the only ones left. `rls_get_member_org_id()` is the single most-invoked RLS helper in the schema (~24 policies across ~20 keep tables); `rls_check_if_lender()` used in 4. Full analysis: `002b-schema-performance-audit.md` Function volatility § D2 | Company DB at cutover: `CREATE OR REPLACE FUNCTION` both with `STABLE` added; no behavior change; both already have `SECURITY DEFINER` + `SET search_path TO ''` | confirmed |
+| 32 | **Normalize RLS policy invocation pattern — D3:** wrap 18 bare helper-function calls in `( SELECT public.fn() AS fn )` — 14 × `rls_check_if_admin_org_member()` on `grids`/`meters`/`notes`/`organizations`/`pd_sites`/`poles`/`wallets` ("Allow NXT Grid to insert" `WITH CHECK`) and `accounts`/`connections`/`grids`/`meters`/`organizations`/`pd_site_submissions`/`pd_sites` ("Allow NXT Grid to update" `USING`); 4 × `rls_get_member_org_id()` on `notes`/`poles` ("Allow org members to insert" `WITH CHECK`) and `accounts`/`orders` ("Allow org members to update" `USING`) | Rewrite policy clause | Task 3d D3 — parsed all 123 `CREATE POLICY` statements (single migration, never altered later); found 69 helper-function calls across keep-table policies, 51 already wrapped (the Postgres/Supabase-recommended `InitPlan`-cacheable pattern) and 18 bare. Clean split: every bare call is on `INSERT`/`WITH CHECK` or `UPDATE`/`USING` — zero on `SELECT` (all 26 `SELECT`-side calls already wrapped). Normalizing removes the inconsistency and closes the bulk-`UPDATE` per-row-reevaluation gap; pairs with register #31 (`STABLE`), which is what makes the wrap's caching valid. Full list: `002b-schema-performance-audit.md` RLS policy invocation pattern § D3 | Company DB at cutover: `ALTER POLICY`/recreate the 18 policies with the wrapped clause; no behavior change (same boolean result), read-path performance only | confirmed |
 
 ## Column adjustments
 
@@ -246,6 +249,130 @@ Authoritative for init-migration changes to **keep** enums (value trims), functi
 ### §pending — Programmability backlog
 
 > None — Task 3c complete (2026-07-09).
+
+## Performance adjustments
+
+Authoritative for init-migration index additions/renames/removals and other structural performance
+changes on **keep** objects. **Working review copy:** `002b-schema-performance-audit.md` (Task 3d).
+
+### §1 — Motivated by register #30 (D1 index coverage sweep, Task 3d)
+
+**Tier 1 — RLS-predicate / renamed-FK gaps:**
+
+| Table | Index (new) | Column | Rationale |
+|---|---|---|---|
+| `grids` | `idx_grids_organization_id` | `organization_id` | RLS predicate ("Allow org members to select") + FK; same class of gap as register #25 |
+| `metering_hardware_imports` | `idx_metering_hardware_imports_rls_organization_id` | `rls_organization_id` | RLS predicate; table had zero non-PK indexes |
+| `meter_command_batch_executions` | `idx_meter_command_batch_executions_meter_command_batch_id` | `meter_command_batch_id` (renamed from `directive_batch_id`, register #16) | Parent-lookup FK, unindexed |
+
+**Tier 2 — plain FK-column hygiene (44 indexes):**
+
+| Table | Column | Index (new) |
+|---|---|---|
+| `agents` | `grid_id` | `idx_agents_grid_id` |
+| `api_keys` | `account_id` | `idx_api_keys_account_id` |
+| `audits` | `agent_id` | `idx_audits_agent_id` |
+| `audits` | `author_id` | `idx_audits_author_id` |
+| `audits` | `connection_id` | `idx_audits_connection_id` |
+| `audits` | `customer_id` | `idx_audits_customer_id` |
+| `audits` | `dcu_id` | `idx_audits_dcu_id` |
+| `audits` | `grid_id` | `idx_audits_grid_id` |
+| `audits` | `member_id` | `idx_audits_member_id` |
+| `audits` | `meter_id` | `idx_audits_meter_id` |
+| `audits` | `organization_id` | `idx_audits_organization_id` |
+| `connection_requested_meters` | `connection_id` | `idx_connection_requested_meters_connection_id` |
+| `dcus` | `grid_id` | `idx_dcus_grid_id` |
+| `energy_cabins` | `grid_id` | `idx_energy_cabins_grid_id` |
+| `meter_command_batches` | `author_id` | `idx_meter_command_batches_author_id` |
+| `meter_command_batches` | `grid_id` | `idx_meter_command_batches_grid_id` |
+| `meter_commissionings` | `metering_hardware_install_session_id` | `idx_meter_commissionings_metering_hardware_install_session_id` |
+| `metering_hardware_imports` | `metering_hardware_install_session_id` | `idx_metering_hardware_imports_metering_hardware_install_session_id` |
+| `metering_hardware_install_sessions` | `author_id` | `idx_metering_hardware_install_sessions_author_id` |
+| `metering_hardware_install_sessions` | `dcu_id` | `idx_metering_hardware_install_sessions_dcu_id` |
+| `metering_hardware_install_sessions` | `meter_id` | `idx_metering_hardware_install_sessions_meter_id` |
+| `meters` | `pole_id` | `idx_meters_pole_id` |
+| `mppts` | `grid_id` | `idx_mppts_grid_id` |
+| `notes` | `author_id` | `idx_notes_author_id` |
+| `notes` | `connection_id` | `idx_notes_connection_id` |
+| `notes` | `customer_id` | `idx_notes_customer_id` |
+| `notes` | `meter_id` | `idx_notes_meter_id` |
+| `notifications` | `account_id` | `idx_notifications_account_id` |
+| `notifications` | `grid_id` | `idx_notifications_grid_id` |
+| `notifications` | `notification_parameter_id` | `idx_notifications_notification_parameter_id` |
+| `notifications` | `organization_id` | `idx_notifications_organization_id` |
+| `orders` | `author_id` | `idx_orders_author_id` |
+| `orders` | `receiver_wallet_id` | `idx_orders_receiver_wallet_id` |
+| `orders` | `sender_wallet_id` | `idx_orders_sender_wallet_id` |
+| `pd_site_submissions` | `organization_id` | `idx_pd_site_submissions_organization_id` |
+| `pd_sites` | `operations_grid_id` | `idx_pd_sites_operations_grid_id` |
+| `pd_sites` | `organization_id` | `idx_pd_sites_organization_id` |
+| `poles` | `grid_id` | `idx_poles_grid_id` |
+| `routers` | `grid_id` | `idx_routers_grid_id` |
+| `transactions` | `order_id` | `idx_transactions_order_id` |
+| `ussd_session_hops` | `ussd_session_id` | `idx_ussd_session_hops_ussd_session_id` |
+| `ussd_sessions` | `account_id` | `idx_ussd_sessions_account_id` |
+| `ussd_sessions` | `bank_id` | `idx_ussd_sessions_bank_id` |
+| `ussd_sessions` | `meter_id` | `idx_ussd_sessions_meter_id` |
+
+**Reviewed and excluded (no index added):**
+
+| Table | Column | Reason |
+|---|---|---|
+| `members` | `busy_commissioning_id` | FK to `grids`, write-only (invite/update member) — no query filters by it; traced all usages in `legacy/` |
+| `meters` | `rls_grid_id` | FK to `grids`, denormalized alongside `rls_organization_id` on meter assignment — but no RLS policy or query reads it; write-only today |
+
+**Reviewed, no change (not redundant):** `orders` full+partial index pairs on `historical_grid_id` and
+`meta_receiver_id` — partial indexes serve the `ENERGY_TOPUP` hot path; both kept.
+
+**Cutover / code impact:** `CREATE INDEX IF NOT EXISTS` for all 47 at cutover (no-op if already
+present); init migration includes them from the start; no app code changes (pure read-path
+performance, no behavior change).
+
+### §2 — Motivated by register #31 (D2 function volatility, Task 3d)
+
+| Object | Change | Rationale | Cutover / code impact |
+|--------|--------|-----------|------------------------|
+| `rls_check_if_lender()` | Mark `STABLE` | Single-statement `auth.jwt()` read, no side effects; same shape as register #22 | `CREATE OR REPLACE FUNCTION` at cutover; no behavior change |
+| `rls_get_member_org_id()` | Mark `STABLE` | Single-statement `auth.jwt()` read, no side effects; most-invoked RLS helper in the schema (~24 policies) | `CREATE OR REPLACE FUNCTION` at cutover; no behavior change |
+
+All other keep functions' volatility was already decided in Task 3c (registers #22, #23, #26, #27) or
+is correctly left at the implicit `VOLATILE` default (functions with real side effects — `INSERT`,
+`UPDATE`, `set_config()` — or trigger functions, where volatility marking has no planner effect since
+they're invoked once per row by the trigger manager rather than through query-expression evaluation).
+No further volatility work remains for any keep function.
+
+### §3 — Motivated by register #32 (D3 RLS policy invocation pattern, Task 3d)
+
+| Table | Policy | Clause | Function | Change |
+|---|---|---|---|---|
+| `grids` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap in `( SELECT … AS … )` |
+| `meters` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap |
+| `notes` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap |
+| `organizations` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap |
+| `pd_sites` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap |
+| `poles` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap |
+| `wallets` | Allow NXT Grid to insert | `WITH CHECK` | `rls_check_if_admin_org_member()` | Wrap |
+| `accounts` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `connections` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `grids` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `meters` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `organizations` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `pd_site_submissions` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `pd_sites` | Allow NXT Grid to update | `USING` | `rls_check_if_admin_org_member()` | Wrap |
+| `notes` | Allow org members to insert | `WITH CHECK` | `rls_get_member_org_id()` | Wrap |
+| `poles` | Allow org members to insert | `WITH CHECK` | `rls_get_member_org_id()` | Wrap |
+| `accounts` | Allow org members to update | `USING` | `rls_get_member_org_id()` | Wrap |
+| `orders` | Allow org members to update | `USING` | `rls_get_member_org_id()` | Wrap |
+
+**Unchanged (51 policies):** every `SELECT` policy calling one of the 3 RLS helper functions, across
+all 35 keep tables, is already wrapped — no action.
+
+**Cutover / code impact:** policy bodies only; no table/column/app changes. Company DB at cutover:
+recreate the 18 listed policies with the wrapped clause (same boolean semantics, no behavior change).
+
+### §pending — Performance backlog
+
+> D4 (remaining triggers/views) not yet started — see `002b-schema-performance-audit.md` batch plan.
 
 ## Appendix — annotated A/B diff (002b Task 6)
 
