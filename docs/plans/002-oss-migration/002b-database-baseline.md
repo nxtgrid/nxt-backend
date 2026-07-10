@@ -306,7 +306,7 @@ npx supabase@<pinned> init
 
 ## Task 5 — Author the init migration
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-10)
 - **Depends on:** Tasks 3, 4
 
 Create the single canonical migration, e.g. `supabase/migrations/<timestamp>_init.sql`:
@@ -471,7 +471,7 @@ Tracked items that must not be lost between chat sessions:
 - [ ] **ADR-007 amendment follow-up** — backend `getConfig().deployment.adminOrganizationId` consumers and frontend apps (qilin/pegasus/eos/niffler/sphinx) need a resolution path for the now-DB-native admin organization; explicitly deferred in the ADR-007 Amendment (2026-07-09) "Open / deferred" — revisit before/at Task 5 or capability import, whichever comes first.
 - [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
 - [x] **Task 3b** — Complete. `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
-- [ ] **Task 6** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11).
+- [x] **Task 6 (pre-check)** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11) — satisfied by Task 5 `db reset` applying `postgis`/`pg_net`/`pgsodium` cleanly on the pinned CLI's PG15 stack.
 - [ ] **NXT Grid's own PG15→17 platform upgrade** — untracked, independent prerequisite surfaced
   during Task 4 discussion (2026-07-10): Postgres 17 is now the leading target for the OSS
   baseline (register #11 `pgjwt` fix), but NXT Grid's own production project is still on PG15
@@ -588,3 +588,4 @@ Tracked items that must not be lost between chat sessions:
   local stack came up healthy (DB, auth, storage all reporting). **Done-when met:** root
   `supabase/` exists with `config.toml` + empty `migrations/`; `start` boots an empty local stack
   from the repo root.
+- 2026-07-10 — [Task 5 complete] — Authored `supabase/migrations/20260710120000_init.sql` (3,178 lines) from the legacy reference dump edited down per the deviation register (#1–#34 and all adjustment sections). Generation pipeline archived at `docs/plans/002-oss-migration/002b-task5-generation/` (reproducible — re-run verified byte-for-byte identical). Maintainer ran `npx supabase@2.109.1 db reset` from repo root: **zero errors**, done-when met. Also during Task 5 prep: `legacy/supabase/config.toml` `project_id` set to `skyfox-legacy` (avoids Docker volume collision with root `nxt-backend` stack); stale `meter-consumption-2` edge-function ref disabled; analytics disabled for legacy local stack stability.
