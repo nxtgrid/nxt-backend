@@ -351,7 +351,7 @@ def main():
             unexplain(f"function rename incomplete: {old_fn} → {new_fn}")
     new_helpers = {
         f for f in new_fns
-        if f.startswith("rls_org_id_from_") or f == "sync_admin_organization_id_guc"
+        if f.startswith("rls_org_id_from_")
     }
     for fn in new_helpers:
         if fn not in old_fns:
@@ -479,9 +479,7 @@ def main():
     for key in set(old_tr) - set(new_tr):
         unexplain(f"trigger in old only: {key}")
     for key in set(new_tr) - set(old_tr):
-        if key[0] == "organizations" and "sync_admin" in key[1]:
-            explain(f"new trigger: {key}", "#22")
-        elif key[0] == "auth.users" or "auth.users" in new_tr[key]:
+        if key[0] == "auth.users" or "auth.users" in new_tr[key]:
             explain(f"auth.users trigger (hand-authored): {key}", "legacy chain")
         else:
             unexplain(f"trigger only in new: {key}")

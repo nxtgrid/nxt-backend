@@ -47,11 +47,6 @@ out.append(
     "CREATE TRIGGER on_auth_user_updated AFTER UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_update_user();"
 )
 
-# New GUC-sync trigger (register #22)
-out.append(
-    "CREATE TRIGGER sync_admin_organization_id_guc_trigger AFTER INSERT OR DELETE OR UPDATE OF organization_type ON public.organizations FOR EACH STATEMENT EXECUTE FUNCTION public.sync_admin_organization_id_guc();"
-)
-
 with open(BASE / "sections" / "11-triggers-body.sql", "w") as f:
     f.write("\n\n".join(out) + "\n")
 print("Kept/added triggers:", len(out))

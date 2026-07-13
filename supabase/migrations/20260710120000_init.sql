@@ -37,8 +37,7 @@ CREATE EXTENSION IF NOT EXISTS "pgsodium";
 -- Value trims: external_system_enum drops JOTFORM/STEAMACO/ACREL (register
 -- #28); notification_type_enum drops AUTO_PAYOUT_GENRATION_REPORT (register
 -- #29). organization_type_enum gains PLATFORM_OPERATOR (register #22 — the
--- DB-native admin-organization flag; see the Functions section for the GUC
--- mechanism this backs).
+-- DB-native admin-organization flag; see rls_check_if_admin_org_member()).
 
 CREATE TYPE public.account_type_enum AS ENUM (
     'AGENT',
@@ -2045,11 +2044,10 @@ CREATE INDEX idx_ussd_sessions_meter_id ON public.ussd_sessions USING btree (met
 -- =============================================================================
 -- Functions
 -- =============================================================================
--- 26 keep functions: 17 carried over from the legacy chain (10 of them with
+-- 25 keep functions: 17 carried over from the legacy chain (10 of them with
 -- redesigned bodies per register #23), 2 renamed/redesigned (register #16,
--- #22), 6 new RLS org-lookup leaf/delegate helpers (register #23), and 1 new
--- GUC-sync function backing the DB-native admin-organization flag
--- (register #22). Dropped: append_rls_organization_id_by_device_id,
+-- #22), and 6 new RLS org-lookup leaf/delegate helpers (register #23).
+-- Dropped: append_rls_organization_id_by_device_id,
 -- append_rls_organization_id_by_receiver_meter_id,
 -- append_rls_organization_id_by_historical_grid_id (register #12, #7, #21),
 -- lock_next_order, lock_next_pd_action (register #13, #14),
@@ -2255,53 +2253,26 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Admin-organization membership check (register #22) — renamed from
--- rls_check_if_nxt_member(); reads the GUC synced by
--- sync_admin_organization_id_guc() instead of a hard-coded organization id
+-- rls_check_if_nxt_member(); reads PLATFORM_OPERATOR row directly (indexed
+-- via one_platform_operator_org). GUC + ALTER DATABASE dropped: Supabase
+-- migrations run as non-superuser postgres and cannot set custom DB params.
 -- ---------------------------------------------------------------------------
 
 CREATE FUNCTION public.rls_check_if_admin_org_member() RETURNS boolean
-    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE
-	admin_org_id int := current_setting('app.admin_organization_id', true)::int;
-	app_meta jsonb := auth.jwt () -> 'app_metadata';
-BEGIN
-	RETURN (app_meta ->> 'account_type' = 'MEMBER'
-		AND (app_meta ->> 'organization_id')::int = admin_org_id);
-END;
-$$;
-
--- GUC-sync trigger function backing rls_check_if_admin_org_member() above.
--- SECURITY DEFINER so it can ALTER DATABASE regardless of the caller's role;
--- owned by the migration-running role (postgres on Supabase, which holds
--- ALTER DATABASE — self-hosted adopters must confirm their migration role
--- does too; see ADR-007 Amendment "Open / deferred").
-CREATE FUNCTION public.sync_admin_organization_id_guc() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO ''
-    AS $$
-DECLARE
-	admin_org_id integer;
-BEGIN
-	SELECT
-		id INTO admin_org_id
-	FROM
-		public.organizations
-	WHERE
-		organization_type = 'PLATFORM_OPERATOR'
-	ORDER BY
-		id
-	LIMIT 1;
-
-	IF admin_org_id IS NULL THEN
-		EXECUTE format('ALTER DATABASE %I SET app.admin_organization_id = DEFAULT', current_database());
-	ELSE
-		EXECUTE format('ALTER DATABASE %I SET app.admin_organization_id = %L', current_database(), admin_org_id);
-	END IF;
-
-	RETURN NULL;
-END;
+    SELECT (auth.jwt () -> 'app_metadata' ->> 'account_type') = 'MEMBER'
+        AND (auth.jwt () -> 'app_metadata' ->> 'organization_id')::int = (
+            SELECT
+                o.id
+            FROM
+                public.organizations AS o
+            WHERE
+                o.organization_type = 'PLATFORM_OPERATOR'
+            ORDER BY
+                o.id
+            LIMIT 1);
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -2518,11 +2489,9 @@ END;$$;
 -- =============================================================================
 -- Triggers
 -- =============================================================================
--- 22 triggers: 19 append_rls_organization_id_* triggers backing denormalized
--- RLS columns (3 renamed alongside their table, register #16), the 2
--- auth.users triggers carried over from the legacy chain unchanged, and 1 new
--- trigger syncing the admin-organization GUC on organizations changes
--- (register #22).
+-- 21 triggers: 19 append_rls_organization_id_* triggers backing denormalized
+-- RLS columns (3 renamed alongside their table, register #16) and the 2
+-- auth.users triggers carried over from the legacy chain unchanged.
 
 CREATE TRIGGER append_rls_organization_id_on_agent_insert BEFORE INSERT ON public.agents FOR EACH ROW EXECUTE FUNCTION public.append_rls_organization_id_by_grid_id();
 
@@ -2565,8 +2534,6 @@ CREATE TRIGGER append_rls_organization_id_on_wallet_insert BEFORE INSERT ON publ
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 CREATE TRIGGER on_auth_user_updated AFTER UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_update_user();
-
-CREATE TRIGGER sync_admin_organization_id_guc_trigger AFTER INSERT OR DELETE OR UPDATE OF organization_type ON public.organizations FOR EACH STATEMENT EXECUTE FUNCTION public.sync_admin_organization_id_guc();
 
 -- =============================================================================
 -- Row-level security
@@ -3175,7 +3142,3 @@ GRANT ALL ON FUNCTION public.rls_org_id_from_meter(integer) TO service_role;
 GRANT ALL ON FUNCTION public.rls_org_id_from_dcu(integer) TO anon;
 GRANT ALL ON FUNCTION public.rls_org_id_from_dcu(integer) TO authenticated;
 GRANT ALL ON FUNCTION public.rls_org_id_from_dcu(integer) TO service_role;
-
-GRANT ALL ON FUNCTION public.sync_admin_organization_id_guc() TO anon;
-GRANT ALL ON FUNCTION public.sync_admin_organization_id_guc() TO authenticated;
-GRANT ALL ON FUNCTION public.sync_admin_organization_id_guc() TO service_role;

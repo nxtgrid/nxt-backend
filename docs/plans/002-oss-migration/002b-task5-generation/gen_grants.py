@@ -80,7 +80,6 @@ NEW_FUNCTIONS = [
     "rls_org_id_from_agent(integer)",
     "rls_org_id_from_meter(integer)",
     "rls_org_id_from_dcu(integer)",
-    "sync_admin_organization_id_guc()",
 ]
 for fn in NEW_FUNCTIONS:
     lines = [f'GRANT ALL ON FUNCTION public.{fn} TO {role};' for role in ("anon", "authenticated", "service_role")]

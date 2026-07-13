@@ -98,11 +98,9 @@ parts.append(read("10-functions-body.sql"))
 parts.append(section(
     "Triggers",
     read("11-triggers-body.sql"),
-    "-- 22 triggers: 19 append_rls_organization_id_* triggers backing denormalized\n"
-    "-- RLS columns (3 renamed alongside their table, register #16), the 2\n"
-    "-- auth.users triggers carried over from the legacy chain unchanged, and 1 new\n"
-    "-- trigger syncing the admin-organization GUC on organizations changes\n"
-    "-- (register #22).",
+    "-- 21 triggers: 19 append_rls_organization_id_* triggers backing denormalized\n"
+    "-- RLS columns (3 renamed alongside their table, register #16) and the 2\n"
+    "-- auth.users triggers carried over from the legacy chain unchanged.",
 ))
 
 # 10. Row-level security: enable, then policies

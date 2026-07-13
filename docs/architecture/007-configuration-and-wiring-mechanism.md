@@ -268,6 +268,17 @@ unaffected by this amendment.
 **Recorded in:** `docs/plans/002-oss-migration/002b-schema-programmability-review.md` (H1c) and
 `002b-schema-deviation-register.md` (register #22, Programmability adjustments) — 002b Task 3c.
 
+> **Amended 2026-07-13 (002b Task 8)** — the GUC + `sync_admin_organization_id_guc` trigger
+> mechanism above is **superseded in the shipped baseline**. Supabase runs migrations as
+> non-superuser `postgres`, which cannot `ALTER DATABASE … SET` custom parameters (bootstrap
+> failed with `42501`); assigning the trigger function to `supabase_admin` in-migration also
+> fails (`must be able to SET ROLE "supabase_admin"`). **Shipped implementation:** drop the GUC
+> trigger; `rls_check_if_admin_org_member()` reads the `PLATFORM_OPERATOR` row directly
+> (`LANGUAGE sql STABLE`, `one_platform_operator_org` index). Enum value + partial unique index
+> unchanged. Post-migration bootstrap: `docs/deployment/supabase.md` §5. Register #22 +
+> Programmability adjustments §3 updated. The "GUC propagation lag" and "Trigger function
+> privilege" open items below are **closed** by this amendment.
+
 ---
 
 ## Consequences

@@ -394,7 +394,3 @@ GRANT ALL ON FUNCTION public.rls_org_id_from_meter(integer) TO service_role;
 GRANT ALL ON FUNCTION public.rls_org_id_from_dcu(integer) TO anon;
 GRANT ALL ON FUNCTION public.rls_org_id_from_dcu(integer) TO authenticated;
 GRANT ALL ON FUNCTION public.rls_org_id_from_dcu(integer) TO service_role;
-
-GRANT ALL ON FUNCTION public.sync_admin_organization_id_guc() TO anon;
-GRANT ALL ON FUNCTION public.sync_admin_organization_id_guc() TO authenticated;
-GRANT ALL ON FUNCTION public.sync_admin_organization_id_guc() TO service_role;

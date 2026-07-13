@@ -9,8 +9,7 @@
 -- Value trims: external_system_enum drops JOTFORM/STEAMACO/ACREL (register
 -- #28); notification_type_enum drops AUTO_PAYOUT_GENRATION_REPORT (register
 -- #29). organization_type_enum gains PLATFORM_OPERATOR (register #22 — the
--- DB-native admin-organization flag; see the Functions section for the GUC
--- mechanism this backs).
+-- DB-native admin-organization flag; see rls_check_if_admin_org_member()).
 
 CREATE TYPE public.account_type_enum AS ENUM (
     'AGENT',

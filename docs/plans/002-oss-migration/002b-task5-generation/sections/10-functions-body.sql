@@ -1,11 +1,10 @@
 -- =============================================================================
 -- Functions
 -- =============================================================================
--- 26 keep functions: 17 carried over from the legacy chain (10 of them with
+-- 25 keep functions: 17 carried over from the legacy chain (10 of them with
 -- redesigned bodies per register #23), 2 renamed/redesigned (register #16,
--- #22), 6 new RLS org-lookup leaf/delegate helpers (register #23), and 1 new
--- GUC-sync function backing the DB-native admin-organization flag
--- (register #22). Dropped: append_rls_organization_id_by_device_id,
+-- #22), and 6 new RLS org-lookup leaf/delegate helpers (register #23).
+-- Dropped: append_rls_organization_id_by_device_id,
 -- append_rls_organization_id_by_receiver_meter_id,
 -- append_rls_organization_id_by_historical_grid_id (register #12, #7, #21),
 -- lock_next_order, lock_next_pd_action (register #13, #14),
@@ -211,53 +210,26 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Admin-organization membership check (register #22) — renamed from
--- rls_check_if_nxt_member(); reads the GUC synced by
--- sync_admin_organization_id_guc() instead of a hard-coded organization id
+-- rls_check_if_nxt_member(); reads PLATFORM_OPERATOR row directly (indexed
+-- via one_platform_operator_org). GUC + ALTER DATABASE dropped: Supabase
+-- migrations run as non-superuser postgres and cannot set custom DB params.
 -- ---------------------------------------------------------------------------
 
 CREATE FUNCTION public.rls_check_if_admin_org_member() RETURNS boolean
-    LANGUAGE plpgsql STABLE SECURITY DEFINER
+    LANGUAGE sql STABLE SECURITY DEFINER
     SET search_path TO ''
     AS $$
-DECLARE
-	admin_org_id int := current_setting('app.admin_organization_id', true)::int;
-	app_meta jsonb := auth.jwt () -> 'app_metadata';
-BEGIN
-	RETURN (app_meta ->> 'account_type' = 'MEMBER'
-		AND (app_meta ->> 'organization_id')::int = admin_org_id);
-END;
-$$;
-
--- GUC-sync trigger function backing rls_check_if_admin_org_member() above.
--- SECURITY DEFINER so it can ALTER DATABASE regardless of the caller's role;
--- owned by the migration-running role (postgres on Supabase, which holds
--- ALTER DATABASE — self-hosted adopters must confirm their migration role
--- does too; see ADR-007 Amendment "Open / deferred").
-CREATE FUNCTION public.sync_admin_organization_id_guc() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO ''
-    AS $$
-DECLARE
-	admin_org_id integer;
-BEGIN
-	SELECT
-		id INTO admin_org_id
-	FROM
-		public.organizations
-	WHERE
-		organization_type = 'PLATFORM_OPERATOR'
-	ORDER BY
-		id
-	LIMIT 1;
-
-	IF admin_org_id IS NULL THEN
-		EXECUTE format('ALTER DATABASE %I SET app.admin_organization_id = DEFAULT', current_database());
-	ELSE
-		EXECUTE format('ALTER DATABASE %I SET app.admin_organization_id = %L', current_database(), admin_org_id);
-	END IF;
-
-	RETURN NULL;
-END;
+    SELECT (auth.jwt () -> 'app_metadata' ->> 'account_type') = 'MEMBER'
+        AND (auth.jwt () -> 'app_metadata' ->> 'organization_id')::int = (
+            SELECT
+                o.id
+            FROM
+                public.organizations AS o
+            WHERE
+                o.organization_type = 'PLATFORM_OPERATOR'
+            ORDER BY
+                o.id
+            LIMIT 1);
 $$;
 
 -- ---------------------------------------------------------------------------

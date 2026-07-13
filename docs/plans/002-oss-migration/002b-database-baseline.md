@@ -412,18 +412,18 @@ decisions log.
 
 ## Task 8 — Local bootstrap + seed decision
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-13)
 - **Depends on:** Task 6
 
-1. **Bootstrap proof:** from a clean clone of the branch, repo root:
-   `npx supabase@<pinned> start` → baseline applies → done. This is deployment consumer 1
-   (roadmap) and the ADR-004 bootstrap flow minus types (002c completes it).
-2. **Seed decision (with maintainer):** the ADR-007 config references DB rows
-   (`deployment.adminOrganizationId`, `deployment.systemWalletId`). Decide the minimal
-   `supabase/seed.sql` for a usable empty deployment (e.g. one organization row) — or decide
-   that bootstrap-SQL is documentation, not seed. Record the decision; implement if agreed.
+1. **Bootstrap proof:** clean-clone path — `npx supabase@2.109.1 start` from repo root → init
+   migration applies with zero errors → full stack healthy (after Docker image/volume reset when
+   local health checks flaked).
+2. **Seed decision:** **documentation-only** — no `supabase/seed.sql`. Post-migration bootstrap:
+   `docs/deployment/supabase.md` §5 + `supabase/snippets/post-migration-bootstrap-platform-operator.sql`
+   (platform operator org + org wallet). `BANKING_SYSTEM` / `deployment.systemWalletId` deferred to
+   payments capability setup.
 
-**Done when:** clean-clone bootstrap works; seed decision recorded (and implemented if agreed).
+**Done when:** clean-clone bootstrap works; seed decision recorded (and implemented if agreed). ✓
 
 ---
 
@@ -615,3 +615,20 @@ Not blockers for Tasks 5–7; tracked so they are not lost. Owner/timing is outs
   present; `directive_*` / `payouts` / `devices` absent; `PLATFORM_OPERATOR` enum value and
   `rls_check_if_admin_org_member` RPC present. Full legacy `better-supabase-types` pipeline
   deferred to 002c per plan.
+- 2026-07-13 — [Task 8 complete] — **Bootstrap proof:** maintainer-driven after Docker
+  image/volume reset + PC restart; `npx supabase@2.109.1 db reset` / `start` → init migration
+  zero errors, full stack healthy. **Seed decision:** documentation-only (no `seed.sql`) —
+  `docs/deployment/supabase.md` §4–5 + snippet
+  `supabase/snippets/post-migration-bootstrap-platform-operator.sql` (platform operator org +
+  org wallet via dashboard or SQL). `BANKING_SYSTEM` wallet / `deployment.systemWalletId` left
+  to payments capability setup. Maintainer verified bootstrap insert locally.
+- 2026-07-13 — [Task 8 — register #22 amended] — Original H1c design used a GUC
+  (`app.admin_organization_id`) + `sync_admin_organization_id_guc` trigger (`ALTER DATABASE …
+  SET`). Task 8 bootstrap exposed two blockers on Supabase: (1) migrations run as non-superuser
+  `postgres` — trigger's `ALTER DATABASE` fails with `42501` for normal SQL-editor callers; (2)
+  `ALTER FUNCTION … OWNER TO supabase_admin` in the migration also fails (`must be able to SET
+  ROLE "supabase_admin"`). **Resolved:** drop GUC trigger/function; `rls_check_if_admin_org_member()`
+  now reads `organizations` directly (`PLATFORM_OPERATOR` row via `one_platform_operator_org`
+  index; `LANGUAGE sql STABLE`). Same per-statement evaluation with register #32 subquery wraps.
+  Register #22 + Programmability adjustments §3 + ADR-007 Amendment (2026-07-13) updated.
+  Generation pipeline sections synced.

@@ -39,5 +39,3 @@ CREATE TRIGGER append_rls_organization_id_on_wallet_insert BEFORE INSERT ON publ
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 CREATE TRIGGER on_auth_user_updated AFTER UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_update_user();
-
-CREATE TRIGGER sync_admin_organization_id_guc_trigger AFTER INSERT OR DELETE OR UPDATE OF organization_type ON public.organizations FOR EACH STATEMENT EXECUTE FUNCTION public.sync_admin_organization_id_guc();
