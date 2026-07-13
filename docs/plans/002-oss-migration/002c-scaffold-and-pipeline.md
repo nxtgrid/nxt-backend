@@ -28,7 +28,7 @@ mechanism.
 
 | Concern | Decision |
 |---|---|
-| Monorepo tool | Nx **23.0.1** (or latest 23.x patch at execution time — record in decisions log), full-modern layout: Project Crystal inferred targets + TS-solution/package-based |
+| Monorepo tool | Nx **23.0.2** (or latest 23.x patch at execution time — record in decisions log), full-modern layout: Project Crystal inferred targets + TS-solution/package-based |
 | Package naming | `@nxt/<name>` scoped packages, pnpm `workspace:*`, imports via package names (no path aliases) |
 | Package manager | pnpm, Corepack-pinned via `packageManager`; **`pnpm-lock.yaml` committed** |
 | Node | 24 LTS on all pinning surfaces (`.nvmrc`, `engines`, `packageManager`, CI, Docker) |
@@ -76,7 +76,7 @@ mechanism.
 generate into a temp dir, then move contents into the root.
 
 ```bash
-npx create-nx-workspace@23.0.1 nxt-backend \
+npx create-nx-workspace@23.0.2 nxt-backend \
   --preset=ts --package-manager=pnpm --no-cloud   # exact flags: check the 23.x docs for the
                                                   # TS-solution preset name at execution time
 # then move everything from the temp dir into the repo root (including dotfiles),

@@ -40,7 +40,7 @@ are dropped, not ported. Where a real version pin is still needed, it is express
 types → typecheck 120+ consumers atomically" driver that motivated the monorepo (ADR-004 decision 2).
 Turborepo and bare npm workspaces offer no equivalent affected-graph awareness for this use case.
 
-**Fresh scaffold at Nx 23.0.1 (latest stable) with the full-modern layout:**
+**Fresh scaffold at Nx 23.0.2 (latest stable) with the full-modern layout:**
 
 - **Project Crystal / inferred targets** (`@nx/webpack/plugin`, `@nx/jest/plugin`,
   `@nx/eslint/plugin` in `nx.json`). Per-project `project.json` files collapse to name + tags +
@@ -54,7 +54,7 @@ Turborepo and bare npm workspaces offer no equivalent affected-graph awareness f
   project's `package.json`.
 
 **Achieved via re-scaffold (not `nx migrate`).** A new `create-nx-workspace` workspace is created
-at 23.0.1 and domain code is moved in per the ADR-008 Phase 3 process, preserving git history
+at 23.0.2 and domain code is moved in per the ADR-008 Phase 3 process, preserving git history
 where possible.
 
 ### 2. Package manager: pnpm (Corepack-pinned)
@@ -79,7 +79,7 @@ are non-negotiable for cache correctness, type-drift guard accuracy, and Docker 
 
 ### 3. Build executor: Nx NestJS template defaults
 
-The `@nx/nest:application` generator at Nx 23.0.1 is accepted as-is:
+The `@nx/nest:application` generator at Nx 23.0.2 is accepted as-is:
 
 - **Nest apps → `@nx/webpack` (`compiler: tsc`).** The Nx Nest generator hardcodes webpack with the
   comment "Some features require webpack plugins such as TS transformers." This is correct: NestJS
@@ -282,7 +282,7 @@ repo's `.github/workflows/` when implemented.
 ### 11. Lingering `nx` / high-CPU issue
 
 The known issue of a lingering `nx` process consuming high CPU after `serve` is treated as
-**resolved by the fresh Nx 23.0.1 scaffold**. The workaround note in `README.md` and the
+**resolved by the fresh Nx 23.0.2 scaffold**. The workaround note in `README.md` and the
 `fix-node-cpu` script (`npm rebuild fsevents`) are removed. If the issue reappears on a specific
 platform, it is filed as a bug against the scaffold — not documented as an expected quirk.
 
