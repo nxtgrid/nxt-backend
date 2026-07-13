@@ -462,25 +462,24 @@ decisions log.
 
 ---
 
-## Open follow-ups (before Task 5)
+## Pre-Task-5 checklist (closed)
 
-Tracked items that must not be lost between chat sessions:
+All items that blocked authoring the init migration are **done**. Kept here for the record.
 
-- [x] **Task 3c** — **Complete** (2026-07-09). H1–H5 signed off; `002b-schema-programmability-review.md` final.
-- [x] **Task 3d** — **Complete** (2026-07-10). D1 (indexes) + D2 (function volatility) + D3 (RLS invocation pattern) signed off — registers #30, #31, #32. D4 (remaining triggers/views) signed off — no findings, no register entry. `002b-schema-performance-audit.md` final.
-- [ ] **ADR-007 amendment follow-up** — backend `getConfig().deployment.adminOrganizationId` consumers and frontend apps (qilin/pegasus/eos/niffler/sphinx) need a resolution path for the now-DB-native admin organization; explicitly deferred in the ADR-007 Amendment (2026-07-09) "Open / deferred" — revisit before/at Task 5 or capability import, whichever comes first.
-- [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes.
-- [x] **Task 3b** — Complete. `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
-- [x] **Task 6 (pre-check)** — Re-verify Supabase default extensions on pinned CLI PG15 image before writing init migration extension block (register #11) — satisfied by Task 5 `db reset` applying `postgis`/`pg_net`/`pgsodium` cleanly on the pinned CLI's PG15 stack.
-- [ ] **NXT Grid's own PG15→17 platform upgrade** — untracked, independent prerequisite surfaced
-  during Task 4 discussion (2026-07-10): Postgres 17 is now the leading target for the OSS
-  baseline (register #11 `pgjwt` fix), but NXT Grid's own production project is still on PG15
-  and Supabase's platform-level PG15 sunset has no committed date yet. This is not 002b/002c
-  work — it's a separate platform-upgrade project on Supabase's timeline, with its own
-  prerequisites (drop deprecated extensions, re-hash custom-role md5 passwords if any, etc.) —
-  but nobody currently owns tracking it, and it's a real dependency for eventual company cutover
-  parity (ADR-012 doesn't yet name it). Consider adding as an ADR-012 trigger once it's clearer
-  whether it lands before or after the OSS cutover.
+- [x] **Task 3b** — Complete (2026-07-09). `002b-schema-column-adjustments.md`: 587 columns; 49 drops; 3 renames; G1–G4 signed off; register §1–§10.
+- [x] **Task 3c** — Complete (2026-07-09). H1–H5 signed off; `002b-schema-programmability-review.md` final.
+- [x] **Task 3d** — Complete (2026-07-10). D1–D4 signed off — registers #30, #31, #32; `002b-schema-performance-audit.md` final.
+- [x] **Task 6 (pre-check)** — Register #11 extension block verified via Task 5 `db reset` on PG15 (provisional), then PG17 flip post-Task-6.
+
+---
+
+## Deferred follow-ups (out of 002b scope)
+
+Not blockers for Tasks 5–7; tracked so they are not lost. Owner/timing is outside this sub-plan unless noted.
+
+- [ ] **ADR-007 amendment follow-up** — Backend `getConfig().deployment.adminOrganizationId` consumers and frontend apps (qilin/pegasus/eos/niffler/sphinx) need a resolution path for the now-DB-native admin organization (register #22). Explicitly deferred in the ADR-007 Amendment (2026-07-09) "Open / deferred" — **revisit at 002c or first capability import**, not 002b.
+- [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes. Doc-only; schema decision already in register.
+- [ ] **NXT Grid's own PG15→17 platform upgrade** — Untracked, independent prerequisite surfaced during Task 4 discussion (2026-07-10): OSS baseline targets PG17; NXT Grid production is still on PG15. **Not 002b/002c work** — separate Supabase platform-upgrade project (drop deprecated extensions, re-hash custom-role md5 passwords if any, etc.). Real dependency for company cutover parity (ADR-012); consider naming as an ADR-012 trigger once timeline vs OSS cutover is clearer.
 
 ---
 
