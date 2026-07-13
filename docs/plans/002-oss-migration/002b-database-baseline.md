@@ -4,7 +4,7 @@
 **Decisions:** ADR-004 (decision 3: migrations canonical, types derived; decision 9: schema
 stays whole), ADR-008 (Phase 2), ADR-009 (governance)
 **Created:** 2026-07-08
-**Status:** Not started
+**Status:** Complete (2026-07-13)
 **Depends on:** 002a (repo restructure) complete — the old chain must live at
 `legacy/supabase/migrations` and the root must be clear.
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -144,7 +144,7 @@ Useful starting queries: `information_schema.tables`, `pg_type` (enums), `pg_pro
 
 ## Task 3 — Four-bucket classification (with maintainer)
 
-- [ ] **Status:** In progress — **3a complete**; **3b complete**; **3c complete**; **3d** next
+- [x] **Status:** Complete (2026-07-10) — 3a–3d signed off
 - **Depends on:** Task 2
 
 Classify every inventory row into the ADR-008 buckets, in review sessions with the maintainer:
@@ -429,7 +429,7 @@ decisions log.
 
 ## Task 9 — Staged rollout
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-13)
 - **Depends on:** Task 8
 - **Executor:** maintainer for 9.2/9.3 (platform access)
 
@@ -440,25 +440,40 @@ decisions log.
    actually reachable via the Data API (e.g. a `supabase-js` `select` call or `curl /rest/v1/...`)
    — a passing dashboard view alone does not prove Data API grants are correct (register #33: new
    projects no longer auto-expose `public` tables as of 2026-05-30). This proves the cloud path
-   and is deployment consumer 2.
-3. **Adopter instance:** gated on adopter coordination — apply the same procedure to the
-   adopter's Supabase project when they are ready. May happen later than this plan's
-   completion; leave the checkbox open until it does. Application is operator-controlled and
-   deliberate (ADR-009) — never wired to CI.
+   and is deployment consumer 2. ✓
+3. **Adopter instance:** same procedure on the adopter's Supabase project — operator-controlled
+   and deliberate (ADR-009), never wired to CI. ✓
 
-**Done when:** 9.2 verified clean; 9.3 done or explicitly parked with a note.
+**Done when:** 9.2 verified clean; 9.3 done or explicitly parked with a note. ✓
 
 ---
 
 ## Task 10 — Close out
 
-- [ ] **Status:** Not started
-- **Depends on:** Tasks 1–9 (9.3 may be parked)
+- [x] **Status:** Complete (2026-07-13)
+- **Depends on:** Tasks 1–9
 
-- Deviation register: final read-through; every entry has a cutover implication.
-- Roadmap: sub-plan index 002b → Completed; note the interlock deliverables for 002c (baseline
-  migrations at root `supabase/`, pinned CLI version, gen-types invocation).
-- Decisions log below: complete.
+- [x] Deviation register: final read-through — entries **#1–#34** all `confirmed` with cutover
+  implications; §pending backlogs empty (Task 10.1, 2026-07-13).
+- [x] Roadmap: sub-plan index 002b → **Completed**; interlock deliverables recorded below and in
+  parent plan `docs/plans/002-oss-migration.md`.
+- [x] Deferred follow-ups from 002b routed to tackle points (see **Deferred follow-ups** below).
+- [x] Decisions log below: complete.
+
+### 002c interlock deliverables (handoff)
+
+Track A is done; Track B (**002c** Task 8) adopts:
+
+| Deliverable | Location / invocation |
+|---|---|
+| Canonical init migration | `supabase/migrations/20260710120000_init.sql` |
+| Postgres major version | **17** (`supabase/config.toml` `db.major_version`) |
+| Pinned Supabase CLI | **`2.109.1`** (`npx supabase@2.109.1 …` until 002c workspace pin) |
+| Type generation | `npx supabase@2.109.1 gen types typescript --local --schema public` |
+| Deviation register (cutover spec) | `002b-schema-deviation-register.md` |
+| Deployment + bootstrap | `docs/deployment/supabase.md` |
+| Generation pipeline (repro) | `docs/plans/002-oss-migration/002b-task5-generation/` |
+| A/B compare tool | `docs/plans/002-oss-migration/002b-task6/compare_schemas.py` |
 
 ---
 
@@ -475,11 +490,14 @@ All items that blocked authoring the init migration are **done**. Kept here for 
 
 ## Deferred follow-ups (out of 002b scope)
 
-Not blockers for Tasks 5–7; tracked so they are not lost. Owner/timing is outside this sub-plan unless noted.
+Not blockers for Tasks 5–9. **Routed** so they are picked up at the tackle point — do not rely on
+re-reading this sub-plan.
 
-- [ ] **ADR-007 amendment follow-up** — Backend `getConfig().deployment.adminOrganizationId` consumers and frontend apps (qilin/pegasus/eos/niffler/sphinx) need a resolution path for the now-DB-native admin organization (register #22). Explicitly deferred in the ADR-007 Amendment (2026-07-09) "Open / deferred" — **revisit at 002c or first capability import**, not 002b.
-- [ ] **ADR-004 amendment** — Update §5 capability map: remove `device-data-sink` from (1) Production monitoring; note register **#12** (`devices` / `device_types` / `device_logs` dropped). Update **AGENTS.md** ADR index row if the domain description changes. Doc-only; schema decision already in register.
-- [ ] **NXT Grid's own PG15→17 platform upgrade** — Untracked, independent prerequisite surfaced during Task 4 discussion (2026-07-10): OSS baseline targets PG17; NXT Grid production is still on PG15. **Not 002b/002c work** — separate Supabase platform-upgrade project (drop deprecated extensions, re-hash custom-role md5 passwords if any, etc.). Real dependency for company cutover parity (ADR-012); consider naming as an ADR-012 trigger once timeline vs OSS cutover is clearer.
+| Follow-up | Routed to | Status |
+|---|---|---|
+| **DB-native admin org — app consumers** (register #22): backend `getConfig().deployment.adminOrganizationId` call sites + frontend apps (qilin/pegasus/eos/niffler/sphinx) | **ADR-007** Amendment "Open / deferred" + **Triggers**; **002c Task 3** (config skeleton must resolve or explicitly defer); parent roadmap assumption **#9** | Open |
+| **ADR-004 capability map** — remove `device-data-sink` from (1) Production monitoring; register **#12** (`devices` / `device_types` / `device_logs` dropped) | **ADR-004** §5 amended 2026-07-13; **002e** authoring (import scope) — parent roadmap assumption **#10** | ADR-004 **done**; 002e open |
+| **NXT Grid production PG15→17** — OSS baseline is PG17; company production still PG15; separate from 002b/002c | **ADR-012** Triggers; cutover sub-plan prerequisites when authored; parent roadmap assumption **#11** | Open |
 
 ---
 
@@ -632,3 +650,20 @@ Not blockers for Tasks 5–7; tracked so they are not lost. Owner/timing is outs
   index; `LANGUAGE sql STABLE`). Same per-statement evaluation with register #32 subquery wraps.
   Register #22 + Programmability adjustments §3 + ADR-007 Amendment (2026-07-13) updated.
   Generation pipeline sections synced.
+- 2026-07-13 — [Task 9.2 complete] — Fresh hosted Supabase project: `link` + `db push` from repo
+  root (`npx supabase@2.109.1`) applied init migration cleanly. Dashboard spot-check passed
+  (keep tables present, drop/exclude absent). Bootstrap via dashboard UI per
+  `docs/deployment/supabase.md` §5 (org, wallet, auth user, account `organization_id`, member
+  row). Data API grant check: `curl` against `/rest/v1/organizations` with service-role
+  credentials → **HTTP 200** (register #33 confirmed on hosted PG17). Supabase dashboard API-keys
+  UI now surfaces **publishable** / **secret** keys by default; legacy **anon** / **service_role**
+  JWT keys remain under a **Legacy API Keys** tab — either pair works for REST smoke tests.
+- 2026-07-13 — [Task 9.3 complete] — Adopter instance: same `link` → `db push` → dashboard
+  verify → UI bootstrap procedure as 9.2 (maintainer-executed).
+- 2026-07-13 — [Task 10 complete] — Register final read-through signed off (#1–#34, all cutover
+  implications present). Parent roadmap 002b → Completed; 002c interlock deliverables recorded
+  (Task 10 handoff table). Deferred follow-ups re-routed to ADR-007 / ADR-004 / ADR-012 + parent
+  roadmap assumptions #9–#11 (no longer 002b-only checkboxes).
+- 2026-07-13 — [Deferred follow-up — ADR-004 §5] — Capability map amended: `device-data-sink`
+  removed from (1) Energy Production Monitoring; register **#12** cross-reference added (002e must
+  not import device registry). Parent assumption **#10** updated.

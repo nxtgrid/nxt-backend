@@ -144,6 +144,11 @@ sub-plans describe reality rather than speculation.
   coordination beyond the shared database during the flip.
 - The maintenance-window tolerance changes (e.g., a new integration is added that cannot tolerate
   any downtime), invalidating decision 6.
+- **NXT Grid production Postgres major-version lag** — OSS baseline targets **Postgres 17** (002b
+  complete); company production is still on **PG15** (2026-07-10). A separate Supabase
+  platform-upgrade project must complete before cutover can assume PG17 parity (extension set,
+  deprecated extensions, custom-role password re-hash if any). Parent roadmap assumption **#11**;
+  not 002b/002c scope.
 
 ## Related
 

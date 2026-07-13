@@ -118,6 +118,11 @@ Step 0 (002a) ─┬─ Track A: Database baseline (002b) ───────�
   `supabase/` content; types are regenerated from them and the type-drift CI guard goes live
   against the real schema. Whichever track finishes first waits at this join.
 
+**002b interlock deliverables (Track A complete, 2026-07-13):** see
+`002b-database-baseline.md` Task 10 handoff table — init migration at root `supabase/`, PG17,
+CLI pin `2.109.1`, gen-types invocation (`--schema public` only), deviation register, deployment
+doc. **002c Task 8** adopts these.
+
 **Hard edges for capability imports (non-negotiable, ADR-008 Phase 3):**
 
 - Platform core before any capability.
@@ -157,10 +162,10 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | ID | Title | Scope | Status |
 |---|---|---|---|
 | 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | Completed |
-| 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | Authored — unblocked |
+| 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | **Completed** (2026-07-13) |
 | 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | Authored — unblocked |
 | 002d | Platform core import | Move platform-core modules into the new workspace (two passes) | Just-in-time — not yet authored |
-| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate | Just-in-time — not yet authored |
+| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10) | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
 | (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement. Strategy-level decisions (host flip mechanics, rollback stance, maintenance window) recorded early in **ADR-012** — reconcile with it when authoring | Just-in-time — not yet authored |
 
@@ -171,11 +176,14 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | 1 | **Device-messaging (plan 001 / ADR-010)** | Runs as a parallel effort; this migration treats device-messaging as **arriving as an external service**. The Metering import sub-plan depends on plan 001 being (near) complete | Checked when the Metering sub-plan is authored |
 | 2 | **ADR-005 inter-host communication** | Deliberately open. Groundwork (002a–002c) does not need it; much of the current HTTP mesh collapses into in-process calls in the modular monolith | **Decide before the `worker` host receives its first real capability** (i.e. during/before the Production Monitoring import) |
 | 3 | **TimescaleDB schema** | Out of the 002b baseline (Supabase primary DB only). Belongs to the Production Monitoring capability import, where its consumers live | 002e authoring |
-| 4 | **Production schema = migrations** | Production has had no schema changes outside `supabase/migrations`. Certified once by a read-only `supabase db diff --linked` drift check at the start of 002b | 002b first task |
+| 4 | **Production schema = migrations** | Production has had no schema changes outside `supabase/migrations`. Certified by read-only drift check at 002b Task 1 (2026-07-08) | Done (002b Task 1) |
 | 5 | **Adopter requirements surface during execution** | Outside requirements (renames, omissions, additions) are discovered *while executing* sub-plans, not gathered up-front — and always recorded (see below) | Continuous |
 | 6 | **Branch strategy** | The migration lives on the long-running **`oss-migration`** branch; `main` keeps the original tree (incl. original README) untouched. No external automation watches this repo (production builds from the private repo). Documentation rewrites (root README, AGENTS.md commands) are deferred to the later phases | When/how the branch lands on `main` — decided in a later phase |
 | 7 | **Git hooks (husky) suspended** | Hooks are suspended from Step 0 onward to avoid friction during groundwork. Automatic lint/typecheck on commit is reintroduced as a 002c task, activated once the new workspace's lint/typecheck targets are stable | 002c execution |
 | 8 | **Company cutover strategy (ADR-012)** | Decided ahead of the just-in-time sub-plan, since they're durable and unlikely to change: schema convergence splits into "anytime" (additive/dead-drop) vs. "flip-atomic" (renames) changes; `api` can blue/green but `worker` needs a hard stop-then-start; RLS parity gets an explicit regression pass; hard point-of-no-return past the flip-atomic migration (PITR checkpoint immediately before); a short maintenance window is acceptable; Geo FastAPI is out of scope | The "Parity verification & company cutover" sub-plan is authored — reconcile its runbook with ADR-012, which it supersedes on execution detail |
+| 9 | **DB-native platform operator org** (register #22) | Admin organization is DB-native (`PLATFORM_OPERATOR`); how backend `getConfig().deployment.adminOrganizationId` and frontend apps resolve it is **not decided** | **002c Task 3** (config skeleton) or first capability import — **ADR-007** Amendment "Open / deferred" |
+| 10 | **Device registry dropped from baseline** (register #12) | `devices` / `device_types` / `device_logs` excluded from OSS schema; **ADR-004** §5 amended (2026-07-13) — `device-data-sink` removed from (1) | **002e** authoring (import must not resurrect device registry) |
+| 11 | **NXT Grid production Postgres 15→17** | OSS baseline targets PG17; NXT Grid production is still PG15 — independent Supabase platform-upgrade project (extensions, role passwords, …), not 002b/002c | Before company cutover parity — **ADR-012** trigger; prerequisites in cutover sub-plan when authored |
 
 ## Deviation recording
 

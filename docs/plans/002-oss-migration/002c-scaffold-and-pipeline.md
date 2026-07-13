@@ -148,6 +148,12 @@ Build the config mechanism exactly as decided in ADR-007 (read it in full before
    build so a bare clone boots in evaluation mode.
 6. **Tests:** unit tests for precedence order, schema-version rejection, freeze, and
    `getConfig()`-before-load error; `setConfig(testConfig)` as the test override pattern.
+7. **`deployment.adminOrganizationId` (register #22 / ADR-007 Amendment):** the platform
+   operator org is **DB-native** — not a static JSON fact. Before closing this task, **decide and
+   record** how the config layer exposes it: boot-time DB query into `getConfig()`, drop from
+   Zod schema and query `organizations` at call sites, or keep schema field with a documented
+   override path for eval mode only. Parent roadmap assumption **#9**. Do not ship hello-world
+   with an implied JSON-sourced admin org id without recording the choice.
 
 **Done when:** both apps boot with zero env (default config); `NXT_CONFIG_JSON` overrides it;
 the demo capability demonstrates all three honesty behaviors; tests green.

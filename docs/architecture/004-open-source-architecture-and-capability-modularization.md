@@ -58,7 +58,7 @@ onto **thin runtime hosts** (horizontal/operational). Capabilities expose **port
 - **Platform core (always on):** auth, api-keys, organizations, members, accounts, agents, grids,
   poles, dcus, routers, db/supabase, logging, websocket, download.
 - **(1) Energy Production Monitoring:** mppts + mppt/grid snapshots, victron, solcast & forecasts,
-  grid-diagnostics/digital-twin, device-data-sink, zerotier.
+  grid-diagnostics/digital-twin, zerotier.
 - **(2) Smart Metering & Distribution:** meters, meter-interactions/installs/commissionings,
   directive-batches (bulk meter-interactions), hardware imports/installs, connections, customers,
   device-messages, calin adapter, chirpstack/LoRaWAN, ussd-sessions.
@@ -68,6 +68,12 @@ onto **thin runtime hosts** (horizontal/operational). Capabilities expose **port
   telegram, make, flow-xo) are optional adapters.
 - **(5) Field Operations:** epicollect, issues, notes, jira, pd-flows/actions/hero.
 - **(6) Automation:** autopilot, lifeline (depends on (2) and/or (3)).
+
+> **Amended 2026-07-13 (002b / register #12)** — **`device-data-sink` removed** from (1). The
+> legacy generic device registry (`devices`, `device_types`, `device_logs`) and its Grafana-oriented
+> read path are **out of OSS scope** — dropped from the canonical baseline schema, not a
+> capability-flagged optional module. Production monitoring import (**002e**) must not resurrect
+> those tables or the `meters.device_id` FK. Cutover spec: deviation register **#12**.
 
 The primary independence boundary is **(1) Production vs (2)+(3) Metering/Payments**, over the shared
 platform core. Production is the clean island (depends only on platform core).
@@ -145,3 +151,5 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
 - A capability needs to differ per organization within one deployment (would reopen Decision 7).
 - A second real adapter appears for a port (validates/forces the Tier-2 abstraction; cf. ADR-001).
 - A capability's runtime profile diverges enough to warrant its own deployable (cf. Decision 8).
+- The OSS baseline schema deviation register adds or removes objects that affect capability
+  boundaries (keep the capability map aligned — see Decision 5 amendment, register #12).
