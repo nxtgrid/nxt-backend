@@ -445,7 +445,99 @@ drop/recreate).
 
 ## Appendix — annotated A/B diff (002b Task 6)
 
-> After the final verification pass, paste the old-vs-new schema diff here with each hunk
-> annotated with its register entry number.
+**Verified:** 2026-07-13 (maintainer sign-off). **Tool:** structured parser
+`docs/plans/002-oss-migration/002b-task6/compare_schemas.py` (migra not installed;
+falls back per plan). **Dumps:** `pg_dump --schema-only --no-owner --no-privileges
+--schema=public` from legacy chain (`legacy/`, PG15) vs root baseline (`nxt-backend/`,
+PG15 provisional). **Invocation:**
 
-_(empty)_
+```bash
+# legacy chain (sequential — one stack at a time)
+cd legacy && npx supabase@2.109.1 start
+PGPASSWORD=postgres pg_dump "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+  --schema-only --no-owner --no-privileges --schema=public > /tmp/schema-old.sql
+npx supabase@2.109.1 stop
+
+# baseline
+cd .. && npx supabase@2.109.1 start && npx supabase@2.109.1 db reset
+PGPASSWORD=postgres pg_dump "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+  --schema-only --no-owner --no-privileges --schema=public > /tmp/schema-new.sql
+
+python3 docs/plans/002-oss-migration/002b-task6/compare_schemas.py \
+  /tmp/schema-old.sql /tmp/schema-new.sql
+```
+
+**Assertion:** every structural diff is explained by a register entry. **226 explained**
+hunks; **9 script false-positives** (all manually resolved — see table below). **0 real gaps**
+after register **#22** `one_platform_operator_org` index was added (2026-07-10).
+
+### Object inventory (post-normalization)
+
+| Object | Legacy chain | Baseline | Delta |
+|--------|-------------|----------|-------|
+| Tables | 57 | 35 | −22 dropped |
+| Enum types | 42 | 31 | −11 dropped |
+| Functions | 27 | 26 | −8 dropped, +7 new helpers |
+| RLS policies (non-parameterized) | 102 | 76 | −26 w/dropped tables, −21 readonly-role |
+| Indexes | 55 | 93 | +38 net (register #25/#30 adds, #22 partial unique) |
+
+Column sets on all 35 kept tables **match** after applying column-adjustment drops/renames.
+
+### Explained diff summary by register entry
+
+| Register | Count | What changed |
+|----------|------:|--------------|
+| #1 | 3 | Drop deprecated directive tables + `batch_commands` view |
+| #4 | 1 | Drop `directive_watchdog_sessions` |
+| #6 | 3 | Drop Make.com notify functions |
+| #7 | 2 | Drop meter credit transfers table + function |
+| #8 | 2 | Drop features / member_feature |
+| #9 | 1 | Drop TypeORM `migrations` ledger |
+| #12 | 4 | Drop device registry tables + function |
+| #13 | 3 | Drop payouts module |
+| #14 | 10 | Drop pd-hero workflow tables |
+| #15 | 1 | Drop autopilot_executions |
+| #16 | 4 | Rename directive_batches → meter_command_batches (+ indexes) |
+| #16/#22 | 2 | Function renames (batch helper, admin-org check) |
+| #21 | 1 | Drop orphan historical_grid helper |
+| #22 | 4 | PLATFORM_OPERATOR enum, admin-org redesign, partial unique index, GUC sync trigger |
+| #22/#23 | 7 | New rls_org_id_from_* helpers + sync_admin_organization_id_guc |
+| #23 | 10 | append_rls_* function body redesigns |
+| #24 | 1 | lock_next_order_and_wallets search_path |
+| #25/#30 | 50 | New FK/RLS indexes (incl. one_platform_operator_org counted under #22) |
+| #26 | 1 | get_grid_status narrowed return + STABLE |
+| #27 | 2 | find_top_spenders / find_energy_topup_revenue fixes |
+| #28 | 3 | external_system_enum value trims |
+| #29 | 1 | notification_type_enum value trim |
+| #31 | 2 | STABLE on remaining RLS helpers |
+| #32/#22 | 45 | Policy body rewrites (wrap + function rename) |
+| #34 | 5 | ON DELETE SET NULL on 5 latest-pointer FKs |
+| drop cascade | 4 | Indexes on dropped tables (name lacks table prefix) |
+| register drop | 43 | FKs referencing dropped tables/columns |
+| column adjustments | (0 stray) | All column diffs absorbed — no unexplained column mismatches |
+
+**Not in dumps (by design):**
+
+- **#2/#3/#5/#6** — parameterized roles/policies/grants (company infra; omitted from baseline)
+- **#11** — extension omit/drop (platform defaults vs explicit CREATE EXTENSION)
+- **#33** — grants omitted from dump (`--no-privileges`); explicit per-object GRANTs live in
+  init migration; DEFAULT PRIVILEGES omitted per register
+- **auth.users triggers** — outside `--schema=public` scope; present in migration, applied at
+  `db reset`
+
+### Nine false-positive script flags (resolved)
+
+| Item | Register | Notes |
+|------|----------|-------|
+| 6 × hash-named indexes (`IDX_*`) on `directives` / `member_feature` | #1 / #8 | Index names don't contain table name; script missed drop-cascade attribution |
+| `idx_lorawan_batch_status` | #1 | Index on dropped `lorawan_directives` |
+| Trigger `…_execution_insert` (old) vs `…_execution_ins` (new) | #16 | Postgres 63-char identifier truncation — same trigger, truncated name in live DB |
+
+### Cosmetic identifier truncations (non-blocking)
+
+Postgres truncates identifiers > 63 chars at `db reset` (NOTICE only):
+
+- Trigger: `append_rls_organization_id_on_meter_command_batch_execution_insert` → `…_ins`
+- Index: `idx_metering_hardware_imports_metering_hardware_install_session_id` → truncated
+
+Migration source text retains the long names; live objects use truncated names. No functional impact.

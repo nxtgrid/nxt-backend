@@ -349,7 +349,7 @@ local DB with zero errors.
 
 ## Task 6 — A/B equivalence verification (the core gate)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-13)
 - **Depends on:** Task 5
 
 Compare old chain vs new baseline **sequentially** (avoids running two local stacks):
@@ -388,7 +388,7 @@ platform-side confirmation. Record the re-verification result in the decisions l
 
 ## Task 7 — Prove type generation against the baseline
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-13)
 - **Depends on:** Task 6
 
 With the root stack running on the baseline:
@@ -589,4 +589,30 @@ Tracked items that must not be lost between chat sessions:
   `supabase/` exists with `config.toml` + empty `migrations/`; `start` boots an empty local stack
   from the repo root.
 - 2026-07-10 — [Task 5 complete] — Authored `supabase/migrations/20260710120000_init.sql` (3,178 lines) from the legacy reference dump edited down per the deviation register (#1–#34 and all adjustment sections). Generation pipeline archived at `docs/plans/002-oss-migration/002b-task5-generation/` (reproducible — re-run verified byte-for-byte identical). Maintainer ran `npx supabase@2.109.1 db reset` from repo root: **zero errors**, done-when met. Also during Task 5 prep: `legacy/supabase/config.toml` `project_id` set to `skyfox-legacy` (avoids Docker volume collision with root `nxt-backend` stack); stale `meter-consumption-2` edge-function ref disabled; analytics disabled for legacy local stack stability.
-- 2026-07-10 — [Task 6 in progress] — A/B dumps taken (`/tmp/schema-old.sql` legacy chain, `/tmp/schema-new.sql` baseline). Structured comparison (migra unavailable) mapped **182 diffs to register entries**; one gap found: register **#22** partial unique index `one_platform_operator_org` missing from init migration. Added to `20260710120000_init.sql` + generation pipeline `08b-new-indexes.sql`; `npx supabase@2.109.1 db reset` re-run: **zero errors**, index confirmed live on `organizations`. Remaining: maintainer sign-off on annotated diff appendix; optional cleanup of two Postgres 63-char identifier truncations (trigger + index name — cosmetic only).
+- 2026-07-13 — [Task 6 complete] — Re-ran A/B verification (PG15 provisional): dumps
+  `/tmp/schema-old.sql` (legacy chain) vs `/tmp/schema-new.sql` (baseline after `db reset`).
+  Comparison tool archived at `docs/plans/002-oss-migration/002b-task6/compare_schemas.py`.
+  **226 explained diffs**, 9 script false-positives (all resolved — see register appendix).
+  Annotated diff appendix written to `002b-schema-deviation-register.md`. Maintainer sign-off.
+  Also: disabled `[analytics] enabled = false` on root `config.toml` (see note below).
+- 2026-07-13 — [Local Supabase startup reliability] — Observed **two distinct** local
+  `supabase start` failure modes, not one: (1) cold Docker image pull / rate-limiting
+  (Task 4 first attempt — resolved by retry once images cached); (2) `analytics` +
+  `vector` containers reporting **unhealthy** before the CLI's `health_timeout` (2m)
+  elapses — consistent across Jul 10 and Jul 13 sessions on the root stack. Disabling
+  `[analytics] enabled = false` skips both services (vector is coupled to analytics)
+  and root `start` succeeded immediately afterward; legacy stack already used the same
+  setting. This is a **pragmatic local-dev default**, not a proof that analytics is
+  always the root cause — a longer `db.health_timeout` may help if you want analytics
+  locally. Documented inline in `supabase/config.toml`.
+- 2026-07-13 — [PG17 flip complete] — `supabase/config.toml` `db.major_version` flipped
+  **15 → 17**. PG15 Docker volume wiped (`npx supabase@2.109.1 stop --no-backup` — required;
+  PG15 data dir incompatible with PG17 server). Fresh PG17 stack: init migration applied with
+  **zero errors** on first `start` (same NOTICEs: pg_net skip, 2 identifier truncations).
+  Verified: `SHOW server_version` → **17.6**; `one_platform_operator_org` index live.
+- 2026-07-13 — [Task 7 complete] — Type generation against PG17 baseline succeeded.
+  Invocation (record for 002c): `npx supabase@2.109.1 gen types typescript --local --schema public`.
+  Output: 3,297 lines. Spot-check: `meter_command_batches` / `meter_command_batch_executions`
+  present; `directive_*` / `payouts` / `devices` absent; `PLATFORM_OPERATOR` enum value and
+  `rls_check_if_admin_org_member` RPC present. Full legacy `better-supabase-types` pipeline
+  deferred to 002c per plan.

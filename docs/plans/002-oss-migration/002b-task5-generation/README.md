@@ -44,9 +44,6 @@ register instead of hand-transcribed.
    dependency order (extensions → types → tables → sequences → views →
    constraints → indexes → functions → triggers → RLS/policies → grants)
    with section-header comments, and writes the final migration file.
-7. `show_table.py` / `show_func.py` — small ad hoc lookup helpers used
-   during authoring/debugging to print one block's exact dump text (e.g.
-   `python3 show_table.py meters`). Not part of the generation path.
 
 ## Re-running the full pipeline
 
