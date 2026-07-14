@@ -88,9 +88,7 @@
         }
       },
       "test": {
-        "options": {
-          "passWithNoTests": true
-        }
+        "executor": "nx:noop"
       }
     }
   },

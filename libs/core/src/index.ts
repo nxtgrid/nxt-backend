@@ -1,1 +1,1 @@
-export * from './lib/core.js';
+export { getPackageInfo } from './modules/platform/package-info.js';

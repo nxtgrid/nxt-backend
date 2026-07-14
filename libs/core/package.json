@@ -27,7 +27,12 @@
     }
   },
   "nx": {
-    "name": "core"
+    "name": "core",
+    "targets": {
+      "test": {
+        "executor": "nx:noop"
+      }
+    }
   },
   "dependencies": {
     "tslib": "^2.3.0"
