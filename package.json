@@ -17,10 +17,14 @@
     "node": "24.x"
   },
   "scripts": {
-    "supabase": "supabase"
+    "supabase": "supabase",
+    "gen-types-local": "pnpm supabase gen types typescript --local --schema public > supabase/generated-types.ts",
+    "gen-better-types": "better-supabase-types -i supabase/generated-types.ts -o libs/core/src/types/supabase-types.ts -s --enumAsType && node supabase/scripts/fix-supabase-json-type.js && eslint --fix libs/core/src/types/supabase-types.ts && rm supabase/generated-types.ts",
+    "generate-types:local": "pnpm gen-types-local && pnpm gen-better-types"
   },
   "private": true,
   "devDependencies": {
+    "better-supabase-types": "2.7.6",
     "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "^11.0.0",
     "@nx/eslint": "23.0.2",

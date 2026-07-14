@@ -5,7 +5,7 @@
 plan builds the skeleton), ADR-008 (Phase 1: prove the golden path on hello-world before any
 domain code lands)
 **Created:** 2026-07-08
-**Status:** In progress — Tasks 1–3 complete; Task 4 next
+**Status:** In progress — Tasks 1–4 complete; Task 5 next
 **Depends on:** 002a (repo restructure) complete. Runs in **parallel** with 002b (database
 baseline); Task 8 is the interlock where the two tracks join.
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -37,7 +37,7 @@ mechanism.
 | Deploy baseline | DO App Platform building from a GitHub branch (no graph awareness — accepted) |
 | Dropped hacks | `npm-force-resolutions`, `resolutions`, gitignored lockfile, `fix-node-cpu` — zero forward weight, not ported |
 
-## Current state snapshot (2026-07-14 — updated after Tasks 1–3)
+## Current state snapshot (2026-07-14 — updated after Tasks 1–4)
 
 - **Workspace live at root:** Nx 23.0.2 + pnpm 11.12.0 + Node 24. Projects: `apps/api`
   (`@nxt/api`), `apps/worker` (`@nxt/worker`), `libs/core` (`@nxt/core`). `pnpm-lock.yaml`
@@ -59,9 +59,11 @@ mechanism.
 - **Layout:** legacy-aligned `src/modules/` (no `src/app/`); `@nxt/core` exports from
   `src/modules/platform/` and `src/modules/demo/`. Root `package.json` is tooling-only; runtime
   deps live per app/lib.
-- **Supabase (partial Task 4 prep):** root `supabase/` chain exists (from 002b); CLI pinned
-  `2.109.1` at root with `pnpm supabase` script; `docs/deployment/supabase.md` updated. Local
-  `pnpm supabase start` not yet verified as part of 002c closure.
+- **Supabase (Task 4):** root `supabase/` chain from 002b (`config.toml`: Postgres 17, API
+  `54321`, DB `54322`); CLI pinned `2.109.1` at root with `pnpm supabase` script;
+  `docs/deployment/supabase.md` updated. **Local start verified:** `pnpm supabase start` from
+  repo root boots the stack; `20260710120000_init` applied; Postgres 17.6 reachable on
+  `127.0.0.1:54322`; API on `127.0.0.1:54321`.
 - Legacy stack (reference only, in `legacy/`): Nx 21.2.2, npm, Node 22, webpack, path-alias
   imports (`@core`, `@tiamat`, `@helpers`), `.eslintrc`-era config referenced from `nx.json`.
 - The legacy type-gen pipeline (to be re-established in Task 5):
@@ -188,7 +190,7 @@ the demo capability demonstrates all three honesty behaviors; tests green.
 
 ## Task 4 — Root Supabase chain usable from the workspace
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-14)
 - **Depends on:** Task 1; coordinates with 002b (Task 4 there creates root `supabase/`)
 
 - If 002b has created root `supabase/`: use it as-is (do not wait for its baseline to be
@@ -472,3 +474,10 @@ passes without noticeable delay.
   the change. Caught by the maintainer noticing the question was worth double-checking rather
   than trusting the original Task 2 note (or this agent's own initial, incorrect restatement of
   it) at face value.
+- 2026-07-14 — [4] — **Local start verified** from repo root via `pnpm supabase start` (CLI
+  `2.109.1`, lockfile-pinned). Used existing 002b root chain as-is — no placeholder migration.
+  Baseline `20260710120000_init` is the sole applied migration; Postgres **17.6** on
+  `127.0.0.1:54322`, API `127.0.0.1:54321`. First run hit a transient ECR
+  `toomanyrequests` on `postgres:17.6.1.141`; CLI retried and succeeded. Informational gotrue
+  version warning (local `v2.192.0` vs linked remote `v2.193.0`) — no action taken. Log showed
+  `Starting database from backup...` (existing local Docker volume, not a fresh init).

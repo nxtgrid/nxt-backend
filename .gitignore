@@ -22,6 +22,7 @@ coverage/
 _NOTES
 
 # Supabase local state (root chain + legacy reference)
+supabase/generated-types.ts
 supabase/.temp/
 supabase/.branches/
 supabase/.env
