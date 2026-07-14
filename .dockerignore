@@ -17,7 +17,6 @@ legacy/
 .gitignore
 .env
 .env.*
-_NOTES
 
 # Supabase local state (types are committed; CLI state is not)
 supabase/.temp/
@@ -30,7 +29,6 @@ supabase/generated-types.ts
 .vscode/
 .idea/
 .cache/
-.sass-cache/
 .DS_Store
 Thumbs.db
 *.log

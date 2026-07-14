@@ -12,6 +12,7 @@ node_modules/
 .nx/
 
 # Test output
+test-output
 coverage/
 
 # Environment & secrets
@@ -19,7 +20,6 @@ coverage/
 .env.*
 !.env.example
 !supabase/.env.example
-_NOTES
 
 # Supabase local state (root chain + legacy reference)
 supabase/generated-types.ts
@@ -34,12 +34,9 @@ legacy/supabase/.branches/
 
 # Logs & runtime artifacts
 *.log
-connect.lock
-libpeerconnection.log
 
 # Tooling caches
-.sass-cache/
-typings/
+.pnpm-store/
 .cache/
 
 # IDE — VSCode (track shared workspace settings)
@@ -51,11 +48,6 @@ typings/
 
 # IDE — other editors
 .idea/
-.project
-.classpath
-.c9/
-*.launch
-.settings/
 *.sublime-workspace
 
 # AI agent local state
@@ -65,5 +57,3 @@ typings/
 # OS
 .DS_Store
 Thumbs.db
-
-test-output

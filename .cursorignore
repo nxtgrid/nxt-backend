@@ -6,18 +6,15 @@ dist/
 coverage/
 tmp/
 out-tsc/
+test-output/
 
 # Tooling caches
-.nx/cache/
-.nx/workspace-data/
+.nx/
+.pnpm-store/
 .cache/
-.sass-cache/
-typings/
 
 # Logs and runtime artifacts
 *.log
-connect.lock
-libpeerconnection.log
 
 # Environment files
 .env
@@ -26,17 +23,21 @@ libpeerconnection.log
 !supabase/.env.example
 
 # Supabase local state
+supabase/generated-types.ts
 supabase/.temp/
 supabase/.branches/
 supabase/.env
+supabase/.env.keys
+supabase/.env.local
+supabase/.env.*.local
+legacy/supabase/.temp/
+legacy/supabase/.branches/
+
+# AI agent local state
+.claude/worktrees/
 
 # OS / editor noise
 .DS_Store
 Thumbs.db
 .idea/
-.c9/
-.settings/
-.project
-.classpath
-*.launch
 *.sublime-workspace
