@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { deepFreeze } from './deep-freeze.js';
 import { setConfig } from './index.js';
 import { nxtConfigSchema, type NxtConfig } from './schema.js';
 
@@ -26,7 +27,7 @@ export interface LoadConfigOptions {
 export function loadConfig(options: LoadConfigOptions = {}): NxtConfig {
   const rawJson = resolveRawConfig(options);
   const config = parseConfig(rawJson);
-  const frozenConfig = Object.freeze(config);
+  const frozenConfig = deepFreeze(config);
   setConfig(frozenConfig);
   return frozenConfig;
 }

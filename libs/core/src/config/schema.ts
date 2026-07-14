@@ -35,6 +35,7 @@ const capabilitiesSchema = z.object({
 const integrationsSchema = z.object({}).strict();
 
 export const nxtConfigSchema = z.object({
+  $schema: z.string().optional(),
   $schemaVersion: z.literal('1'),
   deployment: deploymentSchema.default({}),
   public: publicConfigSchema,
