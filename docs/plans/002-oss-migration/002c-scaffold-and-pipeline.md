@@ -5,7 +5,7 @@
 plan builds the skeleton), ADR-008 (Phase 1: prove the golden path on hello-world before any
 domain code lands)
 **Created:** 2026-07-08
-**Status:** In progress — Tasks 1–8 complete; Tasks 9–11 remain
+**Status:** In progress — Tasks 1–9 complete; Tasks 10–11 remain
 **Depends on:** 002a (repo restructure) complete. Ran in **parallel** with 002b (database
 baseline); **002b interlock reached** (Tasks 4–5 + Task 8 sign-off).
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -37,7 +37,7 @@ mechanism.
 | Deploy baseline | DO App Platform building from a GitHub branch (no graph awareness — accepted) |
 | Dropped hacks | `npm-force-resolutions`, `resolutions`, gitignored lockfile, `fix-node-cpu` — zero forward weight, not ported |
 
-## Current state snapshot (2026-07-14 — updated after Tasks 1–8)
+## Current state snapshot (2026-07-14 — updated after Tasks 1–9)
 
 - **Workspace live at root:** Nx 23.0.2 + pnpm 11.12.0 + Node 24. Projects: `apps/api`
   (`@nxt/api`), `apps/worker` (`@nxt/worker`), `libs/core` (`@nxt/core`). `pnpm-lock.yaml`
@@ -96,7 +96,12 @@ mechanism.
 - **Interlock (Task 8):** clean-clone golden path verified by maintainer — `pnpm install` →
   `pnpm supabase start` → `pnpm generate-types:local` (no diff on `supabase-types.ts`) →
   `nx run-many -t typecheck build -p api,worker,core` all green. Roadmap interlock reached;
-  capability imports (002d…) unblocked pending Tasks 9–11 close-out items.
+  capability imports (002d…) unblocked; 002c close-out: Tasks 10–11 remain.
+- **DO deploy (Task 9):** App Platform buildpack baseline on branch **`oss-migration`** — two
+  components (`api` Web Service, `worker` Worker). Build: `corepack enable` + frozen install +
+  `nx sync` + `nx build`. Run: `node apps/{api,worker}/dist/main.js`. App-wide env:
+  `NODE_ENV=production`, `NX_DAEMON=false` (build). Public `/health` verified; worker heartbeat
+  in logs. Runbook: `docs/deployment/digital-ocean-buildpack.md`.
 
 ## Non-goals (deferred per ADR-006/007 — do not build)
 
@@ -337,28 +342,25 @@ marked reached — met 2026-07-14.
 
 ## Task 9 — DO deploy baseline
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-14)
 - **Depends on:** Task 2 (Task 8 sign-off optional but recommended before first deploy)
 - **Executor:** maintainer (DO account access)
 
-Per ADR-006 decision 8 — branch-based DO App Platform deploy, no graph awareness, accepted:
+Per ADR-006 decision 8 — branch-based DO App Platform deploy (buildpack path), no graph
+awareness, accepted. Runbook: `docs/deployment/digital-ocean-buildpack.md`.
 
 | Component | Build command | Run command |
 |---|---|---|
-| `api` | `pnpm install && nx sync && nx build api` | `node apps/api/dist/main.js` |
-| `worker` | `pnpm install && nx sync && nx build worker` | `node apps/worker/dist/main.js` |
+| `api` | `corepack enable && pnpm install --frozen-lockfile && pnpm exec nx sync && pnpm exec nx build api` | `node apps/api/dist/main.js` |
+| `worker` | `corepack enable && pnpm install --frozen-lockfile && pnpm exec nx sync && pnpm exec nx build worker` | `node apps/worker/dist/main.js` |
 
-- Source branch: `oss-migration` (a non-production DO app; repointed/recreated at landing).
-- Config injection: inline `NXT_CONFIG_JSON` env var (ADR-007 decision 4; DO has no volume
-  mounts) — the everything-off default config is sufficient at this stage.
-- No DB attachment needed yet (nothing uses it at hello-world stage).
+- Source branch: `oss-migration` (non-production DO app; repointed/recreated at landing).
+- App-wide env: `NODE_ENV=production`; `NX_DAEMON=false` at build time (avoids buildpack
+  export errors on `.nx/workspace-data/`).
+- Config: bundled `config.default.json` sufficient; optional `NXT_CONFIG_JSON` later.
+- No DB attachment at hello-world stage.
 
-May be **parked** (like 002b Task 9.3) if the maintainer prefers to defer DO spend; the
-golden path is then proven through Task 8 sign-off + Docker, with deploy following before the
-first capability import completes.
-
-**Done when:** both components deploy and `api`'s `/health` answers publicly — or the task is
-explicitly parked with a note and a resume condition.
+**Done when:** both components deploy and `api`'s `/health` answers publicly — met 2026-07-14.
 
 ---
 
@@ -579,3 +581,9 @@ passes without noticeable delay.
   `pnpm generate-types:local` (zero diff on `libs/core/src/types/supabase-types.ts`) →
   `pnpm exec nx run-many -t typecheck build -p api,worker,core` — all green. Roadmap interlock
   (002b ↔ 002c) marked reached; 002d capability imports unblocked.
+- 2026-07-14 — [9] — **DO App Platform buildpack baseline.** One app on branch `oss-migration`,
+  two components (`api` Web Service + `/health` check, `worker` Worker). Buildpack path (not
+  root Dockerfile). App-wide env: `NODE_ENV=production`, `NX_DAEMON=false` (build-time — avoids
+  buildpack export failure on `.nx/workspace-data/…/daemon.log`). Zero `NXT_CONFIG_JSON`; bundled
+  default config boots both hosts. Public `/health` and worker heartbeat verified. Runbook:
+  `docs/deployment/digital-ocean-buildpack.md`.
