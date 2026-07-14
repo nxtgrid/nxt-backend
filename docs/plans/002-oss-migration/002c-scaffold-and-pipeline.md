@@ -5,7 +5,7 @@
 plan builds the skeleton), ADR-008 (Phase 1: prove the golden path on hello-world before any
 domain code lands)
 **Created:** 2026-07-08
-**Status:** In progress — Tasks 1–10 complete; Task 11 remains
+**Status:** Completed (2026-07-14)
 **Depends on:** 002a (repo restructure) complete. Ran in **parallel** with 002b (database
 baseline); **002b interlock reached** (Tasks 4–5 + Task 8 sign-off).
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -37,7 +37,7 @@ mechanism.
 | Deploy baseline | DO App Platform building from a GitHub branch (no graph awareness — accepted) |
 | Dropped hacks | `npm-force-resolutions`, `resolutions`, gitignored lockfile, `fix-node-cpu` — zero forward weight, not ported |
 
-## Current state snapshot (2026-07-14 — updated after Tasks 1–10)
+## Current state snapshot (2026-07-14 — 002c complete)
 
 - **Workspace live at root:** Nx 23.0.2 + pnpm 11.12.0 + Node 24. Projects: `apps/api`
   (`@nxt/api`), `apps/worker` (`@nxt/worker`), `libs/core` (`@nxt/core`). `pnpm-lock.yaml`
@@ -96,7 +96,7 @@ mechanism.
 - **Interlock (Task 8):** clean-clone golden path verified by maintainer — `pnpm install` →
   `pnpm supabase start` → `pnpm generate-types:local` (no diff on `supabase-types.ts`) →
   `nx run-many -t typecheck build -p api,worker,core` all green. Roadmap interlock reached;
-  capability imports (002d…) unblocked; 002c close-out: Task 11 remains.
+  capability imports (002d…) unblocked.
 - **DO deploy (Task 9):** App Platform buildpack baseline on branch **`oss-migration`** — two
   components (`api` Web Service, `worker` Worker). Build: `corepack enable` + frozen install +
   `nx sync` + `nx build`. Run: `node apps/{api,worker}/dist/main.js`. App-wide env:
@@ -380,25 +380,22 @@ scope:** maintainer requested typecheck on commit (legacy had global `tsc`; new 
 affected for scoped, graph-aware checks). CI remains the authority for the full affected lane.
 
 **Done when:** a commit with a lint error in a staged file is blocked locally; a clean commit
-passes without noticeable delay — met 2026-07-14 (maintainer verification pending on amended
-typecheck step).
+passes without noticeable delay — met 2026-07-14.
 
 ---
 
 ## Task 11 — Close out
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-14)
 - **Depends on:** Tasks 1–8, 10 (9 may be parked)
 
-- **`AGENTS.md` Commands section:** update to the real new-workspace commands (pnpm/nx
-  equivalents). This is a deliberate, minimal exception to the "docs deferred" rule
-  (roadmap assumption 6): agents executing the capability imports need working commands.
-  Everything else (root README etc.) stays deferred.
-- Roadmap: 002c → Completed; capability imports (002d…) unblocked; record ADR-005's decision
-  point is now approaching (assumption 2: decide before the worker host gets its first real
-  capability).
-- Decisions log below: complete, including exact versions chosen (Nx patch, pnpm, Node,
-  Supabase CLI).
+- **`AGENTS.md` Commands section:** updated to pnpm/nx equivalents (lint bar, per-target,
+  affected/CI, pre-commit behaviour, serve, type-gen). Minimal exception to docs-deferred rule
+  (roadmap assumption 6); root README etc. still deferred.
+- Roadmap: 002c → Completed; capability imports (002d…) unblocked; **ADR-005 decision point
+  now approaching** (assumption 2: decide before the worker host gets its first real capability).
+- Decisions log below: complete (Nx **23.0.2**, pnpm **11.12.0**, Node **24**, Supabase CLI
+  **2.109.1**, husky **9.1.7**, lint-staged **17.0.8**).
 
 ---
 
@@ -602,3 +599,8 @@ typecheck step).
   typecheck on commit; chose `nx affected --uncommitted` over legacy global `tsc` or
   `run-many -p api,worker,core` for graph-aware scope aligned with CI. Not ported:
   `legacy/.husky/` boilerplate or `tsc -p tsconfig.base.json`.
+- 2026-07-14 — [11] — **002c closed out.** `AGENTS.md` Commands → pnpm/nx lint bar and related
+  targets; roadmap marks 002c Completed; 002d capability imports next. ADR-005 inter-host
+  decision point flagged approaching (before worker's first real capability). Housekeeping
+  (same session, not separate tasks): `.pnpm-store/` removed from git + gitignored;
+  `.gitignore` / `.cursorignore` tidied.

@@ -18,9 +18,18 @@ You are a senior TypeScript programmer with experience in the NestJS framework a
 
 ## Commands
 
-- **Type checking:** `npm run check-types`
-- **Linting:** `npm run eslint`
-- **Both (lint + type check):** `npm run lint`
+pnpm + Nx 23. Active projects: `api`, `worker`, `core`.
+
+- **Lint bar:** `pnpm exec nx run-many -t lint typecheck build test -p api,worker,core`
+- **Lint:** `pnpm exec nx run-many -t lint -p api,worker,core`
+- **Typecheck:** `pnpm exec nx run-many -t typecheck -p api,worker,core`
+- **One project:** `pnpm exec nx run <project>:lint` (or `:typecheck`, `:build`, `:test`)
+- **Affected (CI):** `pnpm exec nx affected -t lint test typecheck build --parallel=3`
+
+Pre-commit: ESLint on staged `.ts`, then `nx affected -t typecheck --uncommitted`.
+
+- **Serve:** `pnpm exec nx serve api` / `worker`
+- **Type-gen:** `pnpm generate-types:local` (needs `pnpm supabase start`)
 
 ## Backend (this repo)
 
