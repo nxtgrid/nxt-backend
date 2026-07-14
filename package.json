@@ -16,7 +16,9 @@
   "engines": {
     "node": "24.x"
   },
-  "scripts": {},
+  "scripts": {
+    "supabase": "supabase"
+  },
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",
@@ -41,6 +43,7 @@
     "jest-util": "~30.3.0",
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "23.0.2",
+    "supabase": "2.109.1",
     "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",
