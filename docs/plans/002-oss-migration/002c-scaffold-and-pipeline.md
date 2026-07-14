@@ -5,7 +5,7 @@
 plan builds the skeleton), ADR-008 (Phase 1: prove the golden path on hello-world before any
 domain code lands)
 **Created:** 2026-07-08
-**Status:** In progress — Tasks 1–4 complete; Task 5 next
+**Status:** In progress — Tasks 1–5 complete; Task 6 next
 **Depends on:** 002a (repo restructure) complete. Runs in **parallel** with 002b (database
 baseline); Task 8 is the interlock where the two tracks join.
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -37,7 +37,7 @@ mechanism.
 | Deploy baseline | DO App Platform building from a GitHub branch (no graph awareness — accepted) |
 | Dropped hacks | `npm-force-resolutions`, `resolutions`, gitignored lockfile, `fix-node-cpu` — zero forward weight, not ported |
 
-## Current state snapshot (2026-07-14 — updated after Tasks 1–4)
+## Current state snapshot (2026-07-14 — updated after Tasks 1–5)
 
 - **Workspace live at root:** Nx 23.0.2 + pnpm 11.12.0 + Node 24. Projects: `apps/api`
   (`@nxt/api`), `apps/worker` (`@nxt/worker`), `libs/core` (`@nxt/core`). `pnpm-lock.yaml`
@@ -64,12 +64,19 @@ mechanism.
   `docs/deployment/supabase.md` updated. **Local start verified:** `pnpm supabase start` from
   repo root boots the stack; `20260710120000_init` applied; Postgres 17.6 reachable on
   `127.0.0.1:54322`; API on `127.0.0.1:54321`.
+- **Type-gen pipeline (Task 5):** `pnpm generate-types:local` at root
+  (`gen-types-local` → `gen-better-types`). Invocation per 002b Task 7:
+  `pnpm supabase gen types typescript --local --schema public`. Post-process:
+  `better-supabase-types@2.7.6` (`--enumAsType`) → `supabase/scripts/fix-supabase-json-type.js`
+  → eslint-fix → `libs/core/src/types/supabase-types.ts` (committed). Intermediate
+  `supabase/generated-types.ts` gitignored. Golden-path consumption: `@nxt/api` imports
+  `OrganizationTypeEnum` from `@nxt/core/types/supabase-types` (package subpath export in
+  `libs/core/package.json` — not a barrel re-export; mirrors legacy `@core/types/supabase-types`
+  ergonomics without tsconfig path aliases). `nx run-many -t typecheck -p api,core` green.
 - Legacy stack (reference only, in `legacy/`): Nx 21.2.2, npm, Node 22, webpack, path-alias
   imports (`@core`, `@tiamat`, `@helpers`), `.eslintrc`-era config referenced from `nx.json`.
-- The legacy type-gen pipeline (to be re-established in Task 5):
-  `supabase gen types typescript --local` → `better-supabase-types … --enumAsType` →
-  `fix-supabase-json-type.js` → eslint-fix → output `libs/core/src/types/supabase-types.ts`.
-  Source scripts: `legacy/package.json` + `legacy/.scripts/fix-supabase-json-type.js`.
+  Legacy type-gen reference: `legacy/package.json` scripts +
+  `legacy/.scripts/fix-supabase-json-type.js`.
 - CI trigger note: the migration lives on the **`oss-migration`** branch (roadmap assumption
   6). Workflows trigger on PRs targeting that branch; `nrwl/nx-set-shas` gets
   `main-branch-name: oss-migration`. Both switch to `main` when the branch lands.
@@ -209,7 +216,7 @@ root chain, and the CLI version is lockfile-pinned.
 
 ## Task 5 — Re-establish the type-generation pipeline
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-14)
 - **Depends on:** Tasks 2, 4
 
 Port the legacy pipeline (reference: `legacy/package.json` scripts,
@@ -218,10 +225,11 @@ Port the legacy pipeline (reference: `legacy/package.json` scripts,
 1. `gen-types-local`: `supabase gen types typescript --local --schema public` (owned schemas
    only, ADR-004 decision 3 — adopt the exact invocation 002b Task 7 recorded, if available).
 2. `gen-better-types`: `better-supabase-types … --enumAsType` → port
-   `fix-supabase-json-type.js` into the new workspace (e.g. `tools/scripts/`) → eslint-fix →
+   `fix-supabase-json-type.js` to `supabase/scripts/` → eslint-fix →
    output **`libs/core/src/types/supabase-types.ts`** (inside `@nxt/core`).
-3. Commit the generated file; `@nxt/api` imports one generated type from `@nxt/core` so
-   typecheck genuinely consumes it (golden-path requirement).
+3. Commit the generated file; `@nxt/api` imports one generated type from
+   `@nxt/core/types/supabase-types` (package subpath export) so typecheck genuinely consumes it
+   (golden-path requirement).
 
 **Done when:** `pnpm generate-types:local` runs end-to-end against the local stack and
 `nx run-many -t typecheck` is green consuming the committed types.
@@ -481,3 +489,18 @@ passes without noticeable delay.
   `toomanyrequests` on `postgres:17.6.1.141`; CLI retried and succeeded. Informational gotrue
   version warning (local `v2.192.0` vs linked remote `v2.193.0`) — no action taken. Log showed
   `Starting database from backup...` (existing local Docker volume, not a fresh init).
+- 2026-07-14 — [5] — Type-gen pipeline re-established at root. Scripts:
+  `gen-types-local` / `gen-better-types` / `generate-types:local` in root `package.json`.
+  `better-supabase-types@2.7.6` pinned (root devDependency). Json fix ported to
+  `supabase/scripts/fix-supabase-json-type.js` (co-located with `supabase/snippets/` pattern;
+  rejected root `tools/` folder). Intermediate `supabase/generated-types.ts` gitignored.
+  Generated output committed at `libs/core/src/types/supabase-types.ts` (3,576 lines; 002b
+  spot-check passes: `meter_command_batches` present, `directive_*`/`payouts`/`devices` absent,
+  `PLATFORM_OPERATOR` + `rls_check_if_admin_org_member` present). First run needed
+  `libs/core/src/types/` directory created (moot once file is committed).
+- 2026-07-14 — [5] — **Type import surface:** `@nxt/core/types/supabase-types` package subpath
+  export in `libs/core/package.json` (not barrel re-export from root `@nxt/core` — keeps
+  hundreds of generated symbols off the main entry autocomplete; same ergonomics as legacy
+  `@core/types/supabase-types` without tsconfig path aliases). Golden-path probe:
+  `apps/api/.../health.service.ts` imports `OrganizationTypeEnum` via `satisfies` (no `/health`
+  contract change). `nx run core:build` + `nx run-many -t typecheck -p api,core` green.
