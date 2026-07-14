@@ -17,6 +17,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "prepare": "husky",
     "supabase": "supabase",
     "gen-types-local": "pnpm supabase gen types typescript --local --schema public > supabase/generated-types.ts",
     "gen-better-types": "better-supabase-types -i supabase/generated-types.ts -o libs/core/src/types/supabase-types.ts -s --enumAsType && node supabase/scripts/fix-supabase-json-type.js && eslint --fix libs/core/src/types/supabase-types.ts && rm supabase/generated-types.ts",
@@ -24,7 +25,6 @@
   },
   "private": true,
   "devDependencies": {
-    "better-supabase-types": "2.7.6",
     "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "^11.0.0",
     "@nx/eslint": "23.0.2",
@@ -39,12 +39,15 @@
     "@swc/jest": "~0.2.38",
     "@types/jest": "~30.0.0",
     "@types/node": "^22.0.0",
+    "better-supabase-types": "2.7.6",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
+    "husky": "^9.1.7",
     "jest": "~30.3.0",
     "jest-environment-node": "~30.3.0",
     "jest-util": "~30.3.0",
     "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "^17.0.8",
     "nx": "23.0.2",
     "supabase": "2.109.1",
     "ts-jest": "^29.4.0",
@@ -55,5 +58,8 @@
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
     "webpack-dev-server": "^5.2.1"
+  },
+  "lint-staged": {
+    "**/*.ts": "eslint --max-warnings=0 --no-warn-ignored"
   }
 }
