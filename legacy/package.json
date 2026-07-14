@@ -115,9 +115,6 @@
   "optionalDependencies": {
     "fsevents": "^2.3.3"
   },
-  "lint-staged": {
-    "{src,apps,libs,test}/**/*.ts": "eslint --max-warnings=0"
-  },
   "engines": {
     "node": "22.x"
   },

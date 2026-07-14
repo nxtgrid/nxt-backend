@@ -1,1 +1,2 @@
 lint-staged
+pnpm exec nx affected -t typecheck --uncommitted

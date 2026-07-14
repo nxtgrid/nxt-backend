@@ -5,7 +5,7 @@
 plan builds the skeleton), ADR-008 (Phase 1: prove the golden path on hello-world before any
 domain code lands)
 **Created:** 2026-07-08
-**Status:** In progress — Tasks 1–9 complete; Tasks 10–11 remain
+**Status:** In progress — Tasks 1–10 complete; Task 11 remains
 **Depends on:** 002a (repo restructure) complete. Ran in **parallel** with 002b (database
 baseline); **002b interlock reached** (Tasks 4–5 + Task 8 sign-off).
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -37,7 +37,7 @@ mechanism.
 | Deploy baseline | DO App Platform building from a GitHub branch (no graph awareness — accepted) |
 | Dropped hacks | `npm-force-resolutions`, `resolutions`, gitignored lockfile, `fix-node-cpu` — zero forward weight, not ported |
 
-## Current state snapshot (2026-07-14 — updated after Tasks 1–9)
+## Current state snapshot (2026-07-14 — updated after Tasks 1–10)
 
 - **Workspace live at root:** Nx 23.0.2 + pnpm 11.12.0 + Node 24. Projects: `apps/api`
   (`@nxt/api`), `apps/worker` (`@nxt/worker`), `libs/core` (`@nxt/core`). `pnpm-lock.yaml`
@@ -96,12 +96,16 @@ mechanism.
 - **Interlock (Task 8):** clean-clone golden path verified by maintainer — `pnpm install` →
   `pnpm supabase start` → `pnpm generate-types:local` (no diff on `supabase-types.ts`) →
   `nx run-many -t typecheck build -p api,worker,core` all green. Roadmap interlock reached;
-  capability imports (002d…) unblocked; 002c close-out: Tasks 10–11 remain.
+  capability imports (002d…) unblocked; 002c close-out: Task 11 remains.
 - **DO deploy (Task 9):** App Platform buildpack baseline on branch **`oss-migration`** — two
   components (`api` Web Service, `worker` Worker). Build: `corepack enable` + frozen install +
   `nx sync` + `nx build`. Run: `node apps/{api,worker}/dist/main.js`. App-wide env:
   `NODE_ENV=production`, `NX_DAEMON=false` (build). Public `/health` verified; worker heartbeat
   in logs. Runbook: `docs/deployment/digital-ocean-buildpack.md`.
+- **Git hooks (Task 10):** husky **9.1.7** + lint-staged **17.0.8** at root; `prepare`:
+  `"husky"`. Pre-commit: `lint-staged` (ESLint block-only on staged `**/*.ts` via
+  `--max-warnings=0 --no-warn-ignored`; `legacy/**` ignored via ESLint config) then
+  `nx affected -t typecheck --uncommitted`. CI remains the authority for full affected lane.
 
 ## Non-goals (deferred per ADR-006/007 — do not build)
 
@@ -366,15 +370,18 @@ awareness, accepted. Runbook: `docs/deployment/digital-ocean-buildpack.md`.
 
 ## Task 10 — Reintroduce git hooks (roadmap assumption 7)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-14)
 - **Depends on:** Tasks 2, 5 (stable lint/typecheck targets); timing at maintainer discretion
 
 Fresh setup in the new workspace (do not port `legacy/.husky/`): husky + lint-staged as
 devDependencies, `prepare` script, pre-commit running lint-staged (ESLint on staged `.ts`
-files only — fast by construction). Keep it lean; CI remains the authority.
+files) then `nx affected -t typecheck --uncommitted`. **Amended from original ESLint-only
+scope:** maintainer requested typecheck on commit (legacy had global `tsc`; new hook uses Nx
+affected for scoped, graph-aware checks). CI remains the authority for the full affected lane.
 
 **Done when:** a commit with a lint error in a staged file is blocked locally; a clean commit
-passes without noticeable delay.
+passes without noticeable delay — met 2026-07-14 (maintainer verification pending on amended
+typecheck step).
 
 ---
 
@@ -587,3 +594,11 @@ passes without noticeable delay.
   buildpack export failure on `.nx/workspace-data/…/daemon.log`). Zero `NXT_CONFIG_JSON`; bundled
   default config boots both hosts. Public `/health` and worker heartbeat verified. Runbook:
   `docs/deployment/digital-ocean-buildpack.md`.
+- 2026-07-14 — [10] — **Git hooks reintroduced (roadmap assumption 7).** husky **9.1.7** +
+  lint-staged **17.0.8** at root; `prepare`: `"husky"`; `.husky/pre-commit`: `lint-staged` then
+  `pnpm exec nx affected -t typecheck --uncommitted`. lint-staged: staged `**/*.ts` →
+  `eslint --max-warnings=0 --no-warn-ignored` (block-only, no `--fix`; `legacy/**` ignored via
+  ESLint flat config). **Amended from Task 10 ESLint-only draft:** maintainer requested
+  typecheck on commit; chose `nx affected --uncommitted` over legacy global `tsc` or
+  `run-many -p api,worker,core` for graph-aware scope aligned with CI. Not ported:
+  `legacy/.husky/` boilerplate or `tsc -p tsconfig.base.json`.
