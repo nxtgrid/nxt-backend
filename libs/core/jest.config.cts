@@ -17,5 +17,11 @@ module.exports = {
     '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig]
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
+  // Source uses explicit `.js` extensions on relative imports (required by the NodeNext
+  // module resolution used for the real build); strip them so Jest's resolver finds the
+  // sibling `.ts` file instead.
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
   coverageDirectory: 'test-output/jest/coverage'
 };

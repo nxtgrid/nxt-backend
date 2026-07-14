@@ -23,7 +23,11 @@ module.exports = {
       compiler: 'tsc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
-      assets: [],
+      assets: [
+        // Bundled default config (ADR-007 decision 4) — ships next to main.js so a built
+        // image boots in evaluation mode with zero env.
+        { input: '../..', glob: 'config.default.json', output: '.' },
+      ],
       externalDependencies: 'none',
       mergeExternals: true,
       optimization: false,
