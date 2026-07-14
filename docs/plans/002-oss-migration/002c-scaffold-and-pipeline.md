@@ -5,7 +5,7 @@
 plan builds the skeleton), ADR-008 (Phase 1: prove the golden path on hello-world before any
 domain code lands)
 **Created:** 2026-07-08
-**Status:** In progress — Tasks 1–5 complete; Task 6 next
+**Status:** In progress — Tasks 1–6 complete; Task 7 next
 **Depends on:** 002a (repo restructure) complete. Runs in **parallel** with 002b (database
 baseline); Task 8 is the interlock where the two tracks join.
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
@@ -37,7 +37,7 @@ mechanism.
 | Deploy baseline | DO App Platform building from a GitHub branch (no graph awareness — accepted) |
 | Dropped hacks | `npm-force-resolutions`, `resolutions`, gitignored lockfile, `fix-node-cpu` — zero forward weight, not ported |
 
-## Current state snapshot (2026-07-14 — updated after Tasks 1–5)
+## Current state snapshot (2026-07-14 — updated after Tasks 1–6)
 
 - **Workspace live at root:** Nx 23.0.2 + pnpm 11.12.0 + Node 24. Projects: `apps/api`
   (`@nxt/api`), `apps/worker` (`@nxt/worker`), `libs/core` (`@nxt/core`). `pnpm-lock.yaml`
@@ -73,6 +73,10 @@ mechanism.
   `OrganizationTypeEnum` from `@nxt/core/types/supabase-types` (package subpath export in
   `libs/core/package.json` — not a barrel re-export; mirrors legacy `@core/types/supabase-types`
   ergonomics without tsconfig path aliases). `nx run-many -t typecheck -p api,core` green.
+- **Docker (Task 6):** root `Dockerfile` + `.dockerignore`. Parameterized
+  `docker build --build-arg APP=api|worker .` verified — both images boot on default config;
+  `api` `/health` answers from inside the container. Runtime uses Nx prune + hoisted prod
+  `pnpm install` in `apps/${APP}/dist` (not `pnpm deploy` — see decisions log [6]).
 - Legacy stack (reference only, in `legacy/`): Nx 21.2.2, npm, Node 22, webpack, path-alias
   imports (`@core`, `@tiamat`, `@helpers`), `.eslintrc`-era config referenced from `nx.json`.
   Legacy type-gen reference: `legacy/package.json` scripts +
@@ -238,17 +242,18 @@ Port the legacy pipeline (reference: `legacy/package.json` scripts,
 
 ## Task 6 — Dockerfile (parameterized, both hosts)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Complete (2026-07-14)
 - **Depends on:** Task 2
 
 Single multi-stage Dockerfile at root, per ADR-006 decision 7:
 
 - `ARG APP=api` (api | worker).
 - **base:** `node:24-slim` + Corepack + pnpm.
-- **build:** `pnpm install --frozen-lockfile` (BuildKit cache mount on the pnpm store) →
-  `nx build ${APP}`.
-- **runtime:** `pnpm deploy --prod --filter=@nxt/${APP}` for pruned `node_modules`; copy
-  `dist/apps/${APP}`; run as the non-root `node` user. No Chromium in any default image.
+- **build:** manifest-first `pnpm install --frozen-lockfile` (BuildKit cache mount on the pnpm
+  store) → `nx sync` → `nx run ${APP}:prune`.
+- **runtime:** copy `apps/${APP}/dist` (webpack output + pruned lockfile +
+  `workspace_modules/`) → `pnpm install --prod --frozen-lockfile --config.node-linker=hoisted`
+  → run as the non-root `node` user (`node main.js`). No Chromium in any default image.
 
 **Done when:** `docker build --build-arg APP=api .` and `…APP=worker .` both build; both
 containers boot on default config; `api`'s `/health` answers from inside the container.
@@ -314,8 +319,8 @@ Per ADR-006 decision 8 — branch-based DO App Platform deploy, no graph awarene
 
 | Component | Build command | Run command |
 |---|---|---|
-| `api` | `pnpm install && nx build api` | `node dist/apps/api/main.js` |
-| `worker` | `pnpm install && nx build worker` | `node dist/apps/worker/main.js` |
+| `api` | `pnpm install && nx sync && nx build api` | `node apps/api/dist/main.js` |
+| `worker` | `pnpm install && nx sync && nx build worker` | `node apps/worker/dist/main.js` |
 
 - Source branch: `oss-migration` (a non-production DO app; repointed/recreated at landing).
 - Config injection: inline `NXT_CONFIG_JSON` env var (ADR-007 decision 4; DO has no volume
@@ -504,3 +509,16 @@ passes without noticeable delay.
   `@core/types/supabase-types` without tsconfig path aliases). Golden-path probe:
   `apps/api/.../health.service.ts` imports `OrganizationTypeEnum` via `satisfies` (no `/health`
   contract change). `nx run core:build` + `nx run-many -t typecheck -p api,core` green.
+- 2026-07-14 — [6] — **Docker runtime: Nx prune, not `pnpm deploy`.** ADR-006 decision 7 and
+  the original Task 6 text specified `pnpm deploy --prod --filter=@nxt/${APP}`. At execution
+  time, pnpm 11 rejects deploy without `inject-workspace-packages=true` (or `--legacy`). Rather
+  than opt into global injection (dev-DX concerns) or `--legacy` in a greenfield repo, runtime
+  pruning uses the Nx targets already wired in Task 2/3: `nx sync` → `nx run ${APP}:prune`
+  (build + `prune-lockfile` + `copy-workspace-modules`). Runtime stage copies
+  `apps/${APP}/dist/` and runs `pnpm install --prod --frozen-lockfile
+  --config.node-linker=hoisted` there — hoisted linker required so `workspace_modules/@nxt/core`
+  can resolve its own prod deps (e.g. `zod`) under Node ESM resolution. **Output path
+  correction:** webpack emits to `apps/${APP}/dist/` (not legacy `dist/apps/${APP}/`); ADR-006
+  decision 8 / Task 9 DO run commands updated to match. Verified: `docker build
+  --build-arg APP=api|worker .`; both containers boot on default config; `api` `/health` answers
+  inside the container.

@@ -152,7 +152,7 @@ not a build target. No new Nx project is needed per logical worker.
 **Local development.** `nx serve api` and `nx serve worker` are the development commands — identical
 in feel to `nx serve tiamat` today. Chromium/Docker is not required for the inner loop; only
 `supabase start` (local Postgres) is needed. For the two-logical-workers scenario locally:
-`nx build worker --watch` in one terminal; `node dist/apps/worker/main.js` run twice with different
+`nx build worker --watch` in one terminal; `node apps/worker/dist/main.js` run twice with different
 `NXT_CONFIG=` values.
 
 ### 7. Dockerfile (for future image-based deployment)
@@ -166,10 +166,20 @@ ARG APP=api   # api | worker
 Stages:
 
 1. **base** — `node:24-slim` + Corepack + pnpm.
-2. **build** — `pnpm install --frozen-lockfile` (BuildKit cache mount on the pnpm store) →
-   `nx build ${APP}`.
-3. **runtime** — `pnpm deploy --prod --filter=@nxt/${APP}` for a pruned `node_modules`, copy
-   `dist/apps/${APP}`, run as a **non-root user** (`node`).
+2. **build** — manifest-first `pnpm install --frozen-lockfile` (BuildKit cache mount on the pnpm
+   store) → `nx sync` → `nx run ${APP}:prune` (build + pruned lockfile + `workspace_modules/`).
+3. **runtime** — copy `apps/${APP}/dist` (webpack output + pruned manifests); `pnpm install --prod
+   --frozen-lockfile --config.node-linker=hoisted` for prod `node_modules`; run as a **non-root
+   user** (`node`) via `node main.js`.
+
+**Runtime pruning: Nx prune, not `pnpm deploy`.** The original sketch used `pnpm deploy --prod
+--filter=@nxt/${APP}`. pnpm 11 requires `inject-workspace-packages=true` or `--legacy` for deploy
+in a `workspace:*` monorepo; the scaffold uses the Nx prune targets already wired per app
+(`prune-lockfile`, `copy-workspace-modules`) instead. Hoisted linker at runtime is required so
+`workspace_modules/@nxt/core` resolves its own prod deps (e.g. `zod`) under Node ESM.
+
+**Output path:** `@nx/webpack` emits to `apps/${APP}/dist/` (not the legacy `dist/apps/${APP}/`
+layout).
 
 Base image rationale: `node:24-slim` (Debian slim) over Alpine — glibc avoids native-module
 incompatibilities (`pg`, `mongodb`, `mqtt`). Distroless is a future hardening option; it complicates
@@ -183,15 +193,15 @@ image), never part of the lean `api`/`worker` defaults.
 ### 8. Deployment baseline: DigitalOcean from a GitHub branch
 
 **Simple baseline: DO App Platform deploys directly from a GitHub branch.** DO builds the app using
-either the buildpack (build command + run command) or a Dockerfile-in-repo. The specific build method
-is left open and will be determined when the fresh scaffold lands.
+either the buildpack (build command + run command) or the root `Dockerfile` (parameterized via
+`APP=api|worker`). Both paths are valid; Dockerfile-in-repo is verified (002c Task 6).
 
-Expected DO component configuration:
+Expected DO component configuration (buildpack — full workspace checkout, larger artifact):
 
 | Component | Build command | Run command |
 |-----------|---------------|-------------|
-| `api` | `pnpm install && nx build api` | `node dist/apps/api/main.js` |
-| `worker` | `pnpm install && nx build worker` | `node dist/apps/worker/main.js` |
+| `api` | `corepack enable && pnpm install --frozen-lockfile && nx sync && nx build api` | `node apps/api/dist/main.js` |
+| `worker` | `corepack enable && pnpm install --frozen-lockfile && nx sync && nx build worker` | `node apps/worker/dist/main.js` |
 
 **Known tradeoff.** DO's branch-based builder has no Nx-graph awareness; it rebuilds broadly on
 every push. The `affected` benefit from decision 5 applies to **CI validation only** (PR checks),
