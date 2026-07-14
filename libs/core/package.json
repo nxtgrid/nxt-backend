@@ -1,0 +1,43 @@
+{
+  "name": "@nxt/core",
+  "version": "0.0.1",
+  "license": "MPL-2.0",
+  "authors": [
+    {
+      "name": "Bobby Bol",
+      "email": "studio.innua@gmail.com"
+    },
+    {
+      "name": "Tommaso Girotto",
+      "email": "tommaso.girotto91@gmail.com"
+    }
+  ],
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types/supabase-types": {
+      "source": "./src/types/supabase-types.ts",
+      "types": "./dist/types/supabase-types.d.ts",
+      "import": "./dist/types/supabase-types.js",
+      "default": "./dist/types/supabase-types.js"
+    }
+  },
+  "nx": {
+    "name": "core"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "tslib": "^2.3.0",
+    "zod": "^4.4.3"
+  }
+}

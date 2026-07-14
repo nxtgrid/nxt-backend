@@ -1,68 +1,55 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
       "type": "node",
       "request": "launch",
-      "name": "Tiamat",
-      "runtimeExecutable": "nx",
+      "name": "Debug api with Nx",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": [
+        "exec",
+        "nx",
         "serve",
-        "tiamat"
+        "api"
       ],
+      "env": {
+        "NODE_OPTIONS": "--inspect=9229"
+      },
       "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/**/*.js",
+        "${workspaceFolder}/apps/api/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Talos",
-      "runtimeExecutable": "nx",
+      "name": "Debug worker with Nx",
+      "runtimeExecutable": "pnpm",
       "runtimeArgs": [
+        "exec",
+        "nx",
         "serve",
-        "talos",
+        "worker"
       ],
+      "env": {
+        "NODE_OPTIONS": "--inspect=9230"
+      },
       "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/**/*.js",
+        "${workspaceFolder}/apps/worker/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Yeti",
-      "runtimeExecutable": "nx",
-      "runtimeArgs": [
-        "serve",
-        "yeti",
-      ],
-      "console": "integratedTerminal",
-      "outFiles": [
-        "${workspaceFolder}/**/*.js",
-        "!**/node_modules/**"
-      ]
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Loch",
-      "runtimeExecutable": "nx",
-      "runtimeArgs": [
-        "serve",
-        "loch",
-      ],
-      "console": "integratedTerminal",
-      "outFiles": [
-        "${workspaceFolder}/**/*.js",
-        "!**/node_modules/**"
-      ],
-    },
+    }
   ]
 }

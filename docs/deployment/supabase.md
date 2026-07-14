@@ -16,15 +16,16 @@ Check the location too,
 
 ## 4. Connect and apply migrations
 
-From the repo root (pinned CLI: `npx supabase@2.109.1`):
+From the repo root (Supabase CLI pinned in `package.json`; make sure you have run `pnpm install` first.
+Invoke via `pnpm supabase`):
 
 ```bash
-npx supabase@2.109.1 login # If not already logged in
-npx supabase@2.109.1 link --project-ref <your-project-ref>
-npx supabase@2.109.1 db push
+pnpm supabase login # If not already logged in
+pnpm supabase link --project-ref <your-project-ref>
+pnpm supabase db push
 ```
 
-Local development: `npx supabase@2.109.1 start` applies migrations automatically.
+Local development: `pnpm supabase start` applies migrations automatically.
 
 ### Verify Data API grants (optional smoke test)
 

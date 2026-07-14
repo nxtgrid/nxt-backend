@@ -1,0 +1,45 @@
+# Dependencies and build output — reinstalled/rebuilt inside the image.
+node_modules/
+dist/
+tmp/
+out-tsc/
+coverage/
+test-output/
+
+# Nx local cache
+.nx/
+
+# Legacy reference tree — excluded from the graph; not needed to build api/worker.
+legacy/
+
+# VCS and local env
+.git/
+.gitignore
+.env
+.env.*
+_NOTES
+
+# Supabase local state (types are committed; CLI state is not)
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+supabase/.env.*
+supabase/generated-types.ts
+
+# IDE, tooling caches, OS
+.vscode/
+.idea/
+.cache/
+.sass-cache/
+.DS_Store
+Thumbs.db
+*.log
+
+# Docs and plans — not needed at build time
+docs/
+.cursor/
+.claude/
+
+# Docker context meta
+Dockerfile
+.dockerignore
