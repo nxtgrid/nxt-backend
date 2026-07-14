@@ -115,13 +115,14 @@ Step 0 (002a) ─┬─ Track A: Database baseline (002b) ───────�
   image → deploy`) per ADR-006/ADR-008 Phase 1, and establishes the ADR-007 config skeleton.
   Until Track A delivers, the golden-path proof may use a minimal hello-world migration.
 - **Interlock:** the baseline migrations from Track A become the scaffold's canonical
-  `supabase/` content; types are regenerated from them and the type-drift CI guard goes live
-  against the real schema. Whichever track finishes first waits at this join.
+  `supabase/` content. **Adopted in 002c Tasks 4–5** (002b finished first). **Interlock reached
+  2026-07-14** (002c Task 8 clean-clone sign-off). Type-drift CI guard deferred until
+  post-migration (002c Task 7).
 
 **002b interlock deliverables (Track A complete, 2026-07-13):** see
 `002b-database-baseline.md` Task 10 handoff table — init migration at root `supabase/`, PG17,
 CLI pin `2.109.1`, gen-types invocation (`--schema public` only), deviation register, deployment
-doc. **002c Task 8** adopts these.
+doc. **Adopted in 002c Tasks 4–5; interlock reached 2026-07-14** (Task 8 sign-off).
 
 **Hard edges for capability imports (non-negotiable, ADR-008 Phase 3):**
 
@@ -163,7 +164,7 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 |---|---|---|---|
 | 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | Completed |
 | 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | **Completed** (2026-07-13) |
-| 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | **In progress** — Tasks 1–5 complete (2026-07-14); Task 6 next |
+| 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | **In progress** — Tasks 1–8 complete (2026-07-14); Tasks 9–11 remain |
 | 002d | Platform core import | Move platform-core modules into the new workspace (two passes) | Just-in-time — not yet authored |
 | 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10) | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
