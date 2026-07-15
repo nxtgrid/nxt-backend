@@ -75,6 +75,26 @@ onto **thin runtime hosts** (horizontal/operational). Capabilities expose **port
 > capability-flagged optional module. Production monitoring import (**002e**) must not resurrect
 > those tables or the `meters.device_id` FK. Cutover spec: deviation register **#12**.
 
+> **Amended 2026-07-15 (002d — Foundation scope)** — the "platform core (always on)" list above is
+> narrowed to what is genuinely always-on identity/access/infra. **Always-on Foundation** =
+> `auth`, `api-keys`, `organizations`, `members`, `accounts`, `grids` (entity data + core CRUD),
+> `db/supabase`, `logging`. The remaining items originally listed are **not** always-on and move
+> out per **ADR-013** (behavior follows domain ownership):
+> - `agents` — no standalone core module; the agent **entity/type** rides the accounts/identity
+>   graph, but every agent **behavior** (topups, management) is owned by Metering/Payments.
+> - `dcus`, `poles` — metering-specific → **Metering** capability (poles: only a stale entity today).
+> - `websocket` — realtime is a metering after-effect → **Metering** (first realtime emitter).
+> - `routers` — unresolved; provisionally **Production Monitoring**, decided when that capability is
+>   imported.
+> - `download` — deferred; not part of initial core.
+> - Notification **core** (§4) remains platform in principle but its **import is deferred** to the
+>   first capability that writes notifications.
+>
+> `grids` is therefore an always-on entity with a **lean core surface only**; capability-specific
+> grid behavior (e.g. connectivity stats) lives in the owning capability (**ADR-013**). Naming: the
+> always-on layer is referred to as **Foundation** and is a per-host *selection*, not a library —
+> see 002d. Import spec: `docs/plans/002-oss-migration/002d-platform-core-import.md`.
+
 The primary independence boundary is **(1) Production vs (2)+(3) Metering/Payments**, over the shared
 platform core. Production is the clean island (depends only on platform core).
 

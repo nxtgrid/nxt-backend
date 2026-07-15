@@ -17,7 +17,6 @@ You are a senior TypeScript programmer with experience in the NestJS framework a
 - Keep answers concise and direct.
 
 ## Commands
-
 pnpm + Nx 23. Active projects: `api`, `worker`, `core`.
 
 - **Lint bar:** `pnpm exec nx run-many -t lint typecheck build test -p api,worker,core`
@@ -96,6 +95,7 @@ changes, or work clearly outside the domains below.
 | Database migration deployment & governance | 009 |
 | Meter command batches, load shedding, meter grouping | 011 |
 | Company cutover strategy | 012 |
+| Capability vs core boundaries, behavior/module placement | 013 |
 
 ### How to read (progressive)
 

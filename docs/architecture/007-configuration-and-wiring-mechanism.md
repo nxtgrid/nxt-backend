@@ -3,7 +3,10 @@
 **Date:** 2026-06-30
 **Status:** Accepted (mechanism decided; several refinements deliberately deferred — see "Deferred /
 future"). **Amended 2026-07-09** — admin organization becomes DB-native; see "Amendment (2026-07-09)"
-below (supersedes part of decisions 1 and 10).
+below (supersedes part of decisions 1 and 10). **Amended 2026-07-15 (002d)** — the `deployment`
+config group is dropped, the wiring mechanism becomes explicit central per-host composition, and the
+boot model requires DB for Foundation-wired hosts; see "Amendment (2026-07-15)" below (supersedes
+decisions 7 and 10, and the `deployment` subtree of decision 5).
 
 ---
 
@@ -281,6 +284,71 @@ unaffected by this amendment.
 
 ---
 
+## Amendment (2026-07-15) — 002d Foundation import: wiring, `deployment` drop, boot model
+
+Surfaced while planning the platform-core import
+(`docs/plans/002-oss-migration/002d-platform-core-import.md`). Three related changes.
+
+### A. Wiring is explicit central per-host composition (supersedes decision 7)
+
+Decision 7's per-capability **contribution functions** (`xModules(config)`) are **not adopted**.
+The temporary `demoModules(getConfig())` scaffold from 002c is their last vestige and is removed in
+002d. Instead:
+
+- Each host composes its own module list **explicitly and centrally** in its `app.module.ts` using
+  plain named arrays — an `infrastructure` array and a `foundation` array — plus **inline Tier-1
+  conditionals** for capabilities (`...(cfg.capabilities.metering?.enabled ? [MeteringModule] : [])`).
+- There is **no shared "always-on" constant** across hosts: `api` and `worker` each list their own
+  infrastructure/foundation modules, so each host's composition is readable in one place. (`api`'s
+  Foundation is large; `worker`'s is small.)
+- **Per-capability / per-adapter fail-fast stays where decision 9 (Layer 2) put it** — inside the
+  module/adapter's own wiring (`forRoot`/constructor via `requireEnv`), not in a wrapper function.
+- **Extract trigger:** keep composition inline in `app.module.ts` until it gets crowded (~20+
+  imports, or when Tier-2 `forRoot` wiring starts obscuring the Tier-1 booleans), then move it to a
+  co-located `app.composition.ts`. Not a lib.
+
+The **central capability registry** (Deferred / future) remains the eventual home for auto-derived
+host composition and the effective-config report; this amendment does not build it, and the explicit
+arrays refactor into it cleanly if/when it lands.
+
+### B. The `deployment` config group is dropped (supersedes decision 10; closes the 07-09 open item)
+
+The entire `deployment` subtree (`adminOrganizationId`, `systemWalletId`) is **removed from the
+config schema** (decision 5's shape and decision 10 no longer apply). Rationale: every consumer of
+both values lives in a **deferred capability**, so nothing in the Foundation reads either one, and
+keeping empty config surface invites premature coupling.
+
+- **`adminOrganizationId`** — already DB-native since the 2026-07-09 amendment
+  (`organizations.organization_type = 'PLATFORM_OPERATOR'`). Its **backend consumers** (the
+  `payouts.service.ts` / `epicollect` gate) resolve it **DB-side within their owning capability**
+  (Payments / Field Ops) when those capabilities are imported — **not** via a config field. This
+  **closes** the 2026-07-09 "Open / deferred → Backend consumers" item (the answer is: no
+  config-populated field; resolve DB-side per consumer). Foundation auth does **not** compute an
+  admin-org membership flag in 002d (no in-scope reader); when reintroduced it is named
+  `is_admin_org_member` (was `is_nxt_grid_member`).
+- **`systemWalletId`** — returns as **`bankingSystemWalletId`** under `capabilities.payments`
+  (owned by the Payments capability), **not** a resurrected top-level `deployment` group, when
+  Payments is imported.
+- **Frontend resolution** of the admin-org fact remains open (unchanged) — see the 2026-07-09
+  Amendment "Open / deferred → Frontend consumers" and decision 11.
+
+### C. Boot model — Foundation-wired hosts require the database (refines decision 4 "evaluation mode")
+
+Once a host wires Foundation/Supabase infrastructure, it **requires DB connectivity and fails fast
+on missing `SUPABASE_*` env** at boot (`requireEnv` in the Supabase provider). "Evaluation mode"
+(decision 4 — "a bare clone runs") is clarified to mean **capabilities off + a local Supabase**, not
+**DB-less**. Both `api` and `worker` wire Supabase infra in 002d, so both require DB env from then
+on. Per-host env differs: admin-client vars (`SUPABASE_API_URL`, `SUPABASE_SERVICE_ROLE_KEY`) on
+both; `SUPABASE_ANON_KEY` + `SUPABASE_JWT_SECRET` only where auth runs (`api`). `SupabaseService`
+builds its client in a **provider** (no import-time `export const supabase` singleton); the
+query-type-generation shortcut returns later as a **type-only probe** (no runtime client).
+
+**Superseded by this amendment:** decision 7 (contribution functions) in full; decision 10 and the
+`deployment` subtree of decision 5's schema shape; the 2026-07-09 "Backend consumers" open item
+(now resolved as DB-side-per-consumer).
+
+---
+
 ## Consequences
 
 ### Positive
@@ -348,5 +416,7 @@ unaffected by this amendment.
 - The CMS integration lands (formalize generated JSON Schema, URL/build-time delivery, and FE distribution).
 - The frontend config delivery mechanism is designed (resolve how the now-DB-native
   `adminOrganizationId` reaches frontend apps — see Amendment "Open / deferred").
-- Backend consumers of `getConfig().deployment.adminOrganizationId` are touched (002b Task 5/8) —
-  decide DB-populated-config vs. direct-DB-query at that point.
+- ~~Backend consumers of `getConfig().deployment.adminOrganizationId` are touched (002b Task 5/8) —
+  decide DB-populated-config vs. direct-DB-query at that point.~~ **Resolved 2026-07-15 (002d):** the
+  `deployment` group is dropped; backend consumers resolve the admin org **DB-side within their
+  owning capability**. See "Amendment (2026-07-15) → B".
