@@ -1,7 +1,7 @@
 import type { DynamicModule, Type } from '@nestjs/common';
 
-import { requireEnv } from '../../config/require-env.js';
-import type { NxtConfig } from '../../config/schema.js';
+import { requireEnv } from '#config/require-env.js';
+import type { NxtConfig } from '#config/schema.js';
 import { DemoModule } from './demo.module.js';
 
 /**

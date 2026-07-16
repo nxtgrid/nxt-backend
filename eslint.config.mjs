@@ -89,7 +89,13 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: [
+            '^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$',
+            // In-package Node subpath imports (package.json "imports") — not the barrel.
+            '#config/**',
+            '#modules/**',
+            '#types/**',
+          ],
           depConstraints: [
             {
               sourceTag: '*',

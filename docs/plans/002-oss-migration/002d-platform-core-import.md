@@ -431,3 +431,8 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   `location_geom`); `@nxt/core/types/supabase-types-adjusted` subpath export; import convention
   documented (`libs/core/README.md` + module JSDoc); ESLint `no-restricted-imports` blocks
   `Database` from generated subpath; golden-path probes in `health.service.ts`. Next: Task 4.
+- 2026-07-16 — [Task 4 side] In-package imports: `@nxt/<name>` across packages; within a
+  package use Node subpath `"imports"` `#config/`, `#modules/`, `#types/` (not `#/` — invalid
+  for TypeScript; see webpro.nl subpath-imports article). Direct files only — avoids
+  in-package barrel imports. Sibling `./` kept. Jest `moduleNameMapper` + `source`/`default`
+  conditions (`src`/`dist`) on `@nxt/core`.

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { demoCapabilitySchema } from '../modules/demo/demo.schema.js';
+import { demoCapabilitySchema } from '#modules/demo/demo.schema.js';
 
 /**
  * Category (B) data-references: deployment-specific row identifiers.

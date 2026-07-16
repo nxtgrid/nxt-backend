@@ -2,6 +2,16 @@
 
 Shared kernel (`@nxt/core`): config, generated Supabase types, cross-cutting infra.
 
+## Import style
+
+| Scope | Specifier | Notes |
+|---|---|---|
+| Other packages → this one | `@nxt/core`, `@nxt/core/types/…` | Public API via `"exports"` (barrel / subpaths) |
+| Inside this package (cross-folder) | `#config/…`, `#modules/…`, `#types/…` | Package `"imports"` — direct files, not the barrel |
+| Same folder / co-located sibling | relative `./…` | Prefer for local peers |
+
+Example: `import { requireEnv } from '#config/require-env.js'`.
+
 ## Supabase types
 
 | Import | From |

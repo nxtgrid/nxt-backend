@@ -1,4 +1,4 @@
-import type { NxtConfig } from '../../config/schema.js';
+import type { NxtConfig } from '#config/schema.js';
 import { DemoModule } from './demo.module.js';
 import { demoModules } from './demo-modules.js';
 

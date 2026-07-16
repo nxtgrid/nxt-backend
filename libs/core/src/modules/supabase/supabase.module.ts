@@ -2,8 +2,8 @@ import { Global, Injectable, Module } from '@nestjs/common';
 import { createClient, type PostgrestError, type SupabaseClient } from '@supabase/supabase-js';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
-import { requireEnv } from '../../config/require-env.js';
-import type { Database } from '../../types/supabase-types-adjusted.js';
+import { requireEnv } from '#config/require-env.js';
+import type { Database } from '#types/supabase-types-adjusted.js';
 import { isCloudflareHtmlError, throwSupabaseError } from './supabase.errors.js';
 
 export { throwSupabaseError } from './supabase.errors.js';

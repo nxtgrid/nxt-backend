@@ -21,7 +21,12 @@ module.exports = {
   // module resolution used for the real build); strip them so Jest's resolver finds the
   // sibling `.ts` file instead.
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
+    // In-package subpath imports (package.json "imports"); strip `.js` for TS sources.
+    '^#config/(.*)\\.js$': '<rootDir>/src/config/$1',
+    '^#modules/(.*)\\.js$': '<rootDir>/src/modules/$1',
+    '^#types/(.*)\\.js$': '<rootDir>/src/types/$1',
+    // Source uses explicit `.js` extensions on relative imports (NodeNext); strip for Jest.
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   coverageDirectory: 'test-output/jest/coverage'
 };

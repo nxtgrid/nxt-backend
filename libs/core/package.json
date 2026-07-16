@@ -17,6 +17,20 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "imports": {
+    "#config/*.js": {
+      "source": "./src/config/*.ts",
+      "default": "./dist/config/*.js"
+    },
+    "#modules/*.js": {
+      "source": "./src/modules/*.ts",
+      "default": "./dist/modules/*.js"
+    },
+    "#types/*.js": {
+      "source": "./src/types/*.ts",
+      "default": "./dist/types/*.js"
+    }
+  },
   "exports": {
     "./package.json": "./package.json",
     ".": {
