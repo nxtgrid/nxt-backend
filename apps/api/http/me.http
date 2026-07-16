@@ -1,0 +1,11 @@
+# @import ./login.http
+
+### GET /auth/me (platform)
+# @ref loginPlatform
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{loginPlatform.access_token}}
+
+### GET /auth/me (solar)
+# @ref loginSolar
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{loginSolar.access_token}}

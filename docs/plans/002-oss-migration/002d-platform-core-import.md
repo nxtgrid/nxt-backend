@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** In progress — Tasks 1–5 done (2026-07-16); next Task 6 (accounts + api-keys)
+**Status:** In progress — Tasks 1–6 done (2026-07-16; Task 6 docs-only); next Task 7 (auth)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -102,7 +102,7 @@ it, don't silently diverge.
 13. **Verification:** typecheck + a growing **seed** + a single **keep-or-dismiss test spike**;
     **manual maintainer sign-off** is the standing fallback. Request-handling reads shift to the
     **per-request user client** (admin client only pre-auth / privileged); RLS parity is part of
-    the bar. `accounts.findOne` relation-trimming is **decided on the spot** at implementation.
+    the bar. (Superseded: `accounts` is type-only — see Task 6 / decisions log.)
 
 ## Scope
 
@@ -110,7 +110,7 @@ it, don't silently diverge.
 |---|---|---|
 | Infra: Supabase client, HTTP, **new pino logging** (config/types already in `@nxt/core`) | `download` | later (ADR-004 §5 amend) |
 | `auth` (supabase + api-key strategies + guard) | `routers` | Production Monitoring (ADR-004 §5 amend) |
-| `api-keys`, `accounts`, `members` (type-only) | notification-core | first capability that writes notifications |
+| `api-keys` lookup lives in auth (Task 7); `accounts` + `members` (type-only) | notification-core | first capability that writes notifications |
 | `organizations`, `user-admin` (whole) | `websocket` | Metering (first realtime emitter) |
 | `grids` (partial — read/CRUD; metering-coupled methods re-homed) | `agents` | Metering/Payments (entity rides identity graph) |
 | | `dcus`, `poles` | Metering |
@@ -156,11 +156,12 @@ deleted only when fully superseded.** For entangled files, record the destinatio
 | `libs/core/src/modules/supabase.module.ts` | **imported** (Task 4) | `libs/core/src/modules/supabase/`; admin client via `requireEnv`; no singleton; Nest `Logger`; legacy delete at Task 11 |
 | `libs/core/src/modules/logger-module.ts` (+ dead LokiService) | **superseded — delete at Task 11** | Not ported. New `GlobalLoggerModule` is a **no-op slot** (Nest `Logger` / `console.*`); `logger.options.ts` kept for later nestjs-pino restore |
 | `libs/core/src/modules/global-http-module.ts` | **imported** (Task 4) | `libs/core/src/modules/global-http-module.ts`; wired in **both** api + worker infra |
-| `libs/core/src/modules/accounts/**` | to import (Task 6) | rewrite to Supabase; entities dropped |
-| `libs/core/src/modules/api-keys/**` | to import (Task 6) | rewrite to Supabase; entities dropped |
-| `libs/core/src/modules/members/**` | type-only (Task 6) | empty service — no module; entity dropped |
+| `libs/core/src/modules/accounts/**` | **type-only** (Task 6) | no module/service — sole caller was `@TEMPORARY` Account attach on auth user; entity dropped; row types from generated / inferred selects; **delete at Task 11** |
+| `libs/core/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | no standalone Nest module — sole caller is `ApiKeyStrategy`; inline admin-client select there; entity dropped; **delete at Task 11** |
+| `libs/core/src/modules/members/**` | type-only (Task 6) | empty service — no module; entity dropped; **delete at Task 11** |
+| `apps/tiamat/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | legacy host module only wired the core service; **delete at Task 11** |
 | `libs/core/src/modules/organizations/**` + `apps/tiamat/.../organizations/**` | to import (Task 9) | move (already Supabase) |
-| `apps/tiamat/src/modules/auth/**` | to import (Task 7) | move; `AuthenticatedUser`; drop admin-org flag |
+| `apps/tiamat/src/modules/auth/**` | to import (Task 7) | move; `AuthenticatedUser`; drop admin-org flag + embedded `account` |
 | `apps/tiamat/src/modules/user-admin/**` | to import (Task 9) | whole; delete dead test code |
 | `apps/tiamat/src/modules/grids/**` + `libs/core/.../grids/**` | **partial** (Task 10) | grid CRUD/read now; connectivity-stats → **re-home to Metering**; legacy file retained until both halves absorbed |
 | `libs/core/src/types/supabase-types-adjusted.ts` | **reintroduced** (Task 3) | grids+poles geom; `@nxt/core/types/supabase-types-adjusted` subpath; legacy file deleted at Task 11 |
@@ -310,21 +311,20 @@ usable test user; documented in `docs/deployment/supabase.md` (or the local-dev 
 
 ---
 
-## Task 6 — `accounts` + `api-keys` (TypeORM → Supabase rewrites)
+## Task 6 — Disposition only (`accounts` / `members` / `api-keys`)
 
-- [ ] **Status:** Not started
-- **Depends on:** Task 4 (+ Task 5 for verification)
+- [x] **Status:** Done (2026-07-16) — docs/ledger only; awaiting sign-off
+- **Depends on:** Task 4 (+ Task 5 context)
 
-Rewrite both services against the Supabase **admin** client (they run pre-auth, during token
-validation): `accounts.findOne` (nested identity relations) and
-`api-keys.findByKeyAndIsLocked(key, false)` (nested account graph). Drop the TypeORM entities.
-Reconcile entity-vs-generated type gaps (enums, nullability); express computed/aliased fields as
-explicit mapped/response types, not silent entity props. **`accounts.findOne` relation-trimming is
-decided on the spot** (lean to keep what the frontend needs — e.g. wallet — record the call in the
-decisions log). `members` is **type-only** (no module).
+No Nest modules land in this task. Decisions:
 
-**Done when:** both compile against generated types; the seeded reads return the expected nested
-shapes/values (Task 8 covers automated proof or manual sign-off); no ops TypeORM remains in scope.
+- **`accounts` + `members`:** type-only (generated / inferred row types; no services).
+- **`api-keys`:** absorbed into **Task 7** `ApiKeyStrategy` — inject `SupabaseService` admin
+  client and select at the call site (`is_locked` already gone). No `@nxt/core` api-keys module.
+- Legacy TypeORM entities/services stay under `legacy/` until **Task 11** deletes them per ledger
+  (fully superseded once auth ships without them).
+
+**Done when:** ledger + Task 7/8 wording reflect the above; no code changes required in Task 6.
 
 ---
 
@@ -334,12 +334,16 @@ shapes/values (Task 8 covers automated proof or manual sign-off); no ops TypeORM
 - **Depends on:** Task 6
 
 Move the two Passport strategies + `AuthenticationGuard`. Rename `NxtSupabaseUser` →
-**`AuthenticatedUser`**; **drop the admin-org membership flag** (no in-scope reader); keep exposing
-raw `organization_id`. `console.*` → pino; de-brand comments. Validate
+**`AuthenticatedUser`**; **drop the admin-org membership flag** (no in-scope reader); **drop the
+embedded `account` object** (TEMPORARY legacy); keep exposing raw `organization_id` +
+`account_id` / claims. Bearer path does not call an accounts service. **API-key path:** inject
+`SupabaseService` (admin) in `ApiKeyStrategy` and select the key + account graph inline (no
+`ApiKeysService`). `console.*` → Nest `Logger` (pino restore later); de-brand comments. Validate
 `SUPABASE_PUBLISHABLE_KEY` + JWT verification (`SUPABASE_JWKS_URL` preferred;
 `SUPABASE_JWT_SECRET` legacy fallback) via `requireEnv` at auth wiring (`api` only). Restore
-`enableCors()` + a
-global `ValidationPipe` on the `api` bootstrap. Add passport / `jsonwebtoken` deps to `api`.
+`enableCors()` + a global `ValidationPipe` on the `api` bootstrap. Add `@nestjs/passport`,
+`passport`, strategy packages, and `jose` (JWKS) to `api` — not `@nestjs/jwt` /
+`jsonwebtoken`.
 
 **Done when:** `api` authenticates a seeded Supabase JWT (bearer) and an `X-API-KEY`; the guard
 attaches a populated `AuthenticatedUser`; `worker` requires none of the auth secrets.
@@ -353,10 +357,10 @@ attaches a populated `AuthenticatedUser`; `worker` requires none of the auth sec
 - **Executor:** collaborative; **dismiss → maintainer manual sign-off**
 
 A single, self-contained effort — do not muddle across other tasks. Stand up **one** integration
-test (`api-keys.findByKeyAndIsLocked` against local Supabase + seed) and **one** e2e auth test (the
-`X-API-KEY` guard path). Evaluate: adopt as the pattern others copy, **or** dismiss cleanly and
-fall back to maintainer manual sign-off for the remaining modules. If the agent is burning
-excessive tokens or getting stuck, dismiss and hand to manual sign-off.
+test (API-key admin select / strategy lookup against local Supabase + seed) and **one** e2e auth
+test (the `X-API-KEY` guard path). Evaluate: adopt as the pattern others copy, **or** dismiss
+cleanly and fall back to maintainer manual sign-off for the remaining modules. If the agent is
+burning excessive tokens or getting stuck, dismiss and hand to manual sign-off.
 
 **Done when:** the spike runs green (adopted) *or* is explicitly dismissed with the rationale
 recorded and manual sign-off adopted as the standing bar.
@@ -415,8 +419,9 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
 - `api` boots via explicit central composition; `worker` boots with logging + Supabase infra; both
   fail-fast on missing `SUPABASE_*`; `demo`/`demoModules` removed.
 - Foundation imported on the Supabase client (no ops TypeORM; `CoreTypeOrmModule` gone from scope):
-  `auth` (`AuthenticatedUser`, admin-org flag dropped), `api-keys`, `accounts`, `members`
-  (type-only), `organizations`, `user-admin` (whole), `grids` (partial). pino logging live;
+  `auth` (`AuthenticatedUser`, admin-org flag dropped; no embedded `account`; API-key select
+  inline in strategy), `accounts` + `members` (type-only), `organizations`, `user-admin` (whole),
+  `grids` (partial). pino logging live;
   `console.*` replaced within imported modules; user-client-by-default in request handlers.
 - Adjusted types layer live (grids+poles geom) with uniform `Database` import; `deployment` group
   dropped; `grids.timezone` default `UTC` (init migration amended); types regenerated clean.
@@ -498,3 +503,22 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   users with claims + members, api key, solar grid); documented in
   `docs/deployment/supabase.md` §5 as local-only (`pnpm exec supabase db reset`). **Done —
   awaiting sign-off.** Next: Task 6 (`accounts` + `api-keys`).
+- 2026-07-16 — [Task 6 / typing] **Do not** hand-build nested relation response types up front.
+  Typed Supabase client infers select return types. Prefer inference at the call site; write a
+  narrow manual type only when a method’s contract needs it; for complex selects use
+  `QueryData<typeof query>` (see legacy `meter-interactions/lib/supabase.ts`). Reverted an
+  early `*.types.ts` draft that reconstructed joins.
+- 2026-07-16 — [Task 6 / accounts] **`accounts` is type-only** (same posture as `members`). Sole
+  legacy caller was `supabase.strategy` `@TEMPORARY` Account attach; Foundation already uses
+  `account_id` / JWT claims. No `AccountsService` / accounts Nest module in OSS. Task 7: drop
+  `account` from `AuthenticatedUser`.
+- 2026-07-16 — [Task 6 / api-keys] **No standalone `ApiKeysService`.** Sole caller is
+  `ApiKeyStrategy` → absorb into Task 7: inject `SupabaseService` admin client and select at the
+  call site. Task 6 is **docs/ledger only**. Legacy `accounts` / `api-keys` / `members` files
+  remain under `legacy/` until **Task 11** deletes fully superseded Foundation sources.
+- 2026-07-16 — [Task 6] **Done (docs-only) — awaiting sign-off.** Next: Task 7 (`auth`).
+- 2026-07-16 — [Task 7 / deps] Minimal auth packages on `api`: `@nestjs/passport`, `passport`
+  (peer), `passport-http-bearer`, `passport-headerapikey`, `jose` (JWKS + verify),
+  `@supabase/supabase-js` (user client + types on the host). **No** `@nestjs/jwt` /
+  `jsonwebtoken` / `jwks-rsa`. Grafana RS256 endpoint skipped. Small `/auth/me` probe planned
+  for early JWKS verification.

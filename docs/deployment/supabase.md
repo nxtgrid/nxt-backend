@@ -69,3 +69,9 @@ account `organization_id` sync → insert `members`.
 Use the emails/passwords above against the local Auth API / Studio
 (`pnpm exec supabase status` for URLs and keys). Prefer the seeded API key for machine auth
 smoke tests once Task 7 lands.
+
+### REST / httpYac (manual API checks)
+
+File-based requests live under `apps/api/http/` using **httpYac** (`anweber.vscode-httpyac`).
+Shared login via `# @import ./login.http` + `# @ref loginPlatform` — see `apps/api/http/README.md`.
+Uninstall Huachao REST Client if present (conflicts on `.http` files).

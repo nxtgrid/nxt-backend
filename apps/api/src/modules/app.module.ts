@@ -4,13 +4,14 @@ import {
   GlobalLoggerModule,
   GlobalSupabaseModule,
 } from '@nxt/core';
-import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module.js';
+import { HealthModule } from './health/health.module.js';
 
 /** Cross-cutting infra — Logger, Supabase, HTTP. */
 const infrastructure = [ GlobalLoggerModule, GlobalSupabaseModule, GlobalHttpModule ];
 
 /** Always-on Foundation domain for this host. */
-const foundation = [ HealthModule ];
+const foundation = [ AuthModule, HealthModule ];
 
 // Tier-1 capability conditionals (empty until capabilities are imported).
 
