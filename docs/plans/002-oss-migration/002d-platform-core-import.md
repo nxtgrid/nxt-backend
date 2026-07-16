@@ -209,7 +209,7 @@ added (ADR-index row deemed sufficient, per "read-if-relevant, no bloat").
 
 ## Task 2 — Schema: `grids.timezone` default → `UTC`
 
-- [ ] **Status:** Not started
+- [x] **Status:** Done (2026-07-16)
 - **Depends on:** Task 1
 - **Executor:** maintainer (`supabase/**` under CODEOWNERS)
 
@@ -411,7 +411,7 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
 - [x] ADR-007 amended (wiring / deployment-group drop / boot model)
 - [x] Roadmap `002-oss-migration.md`: sub-plan index, standing assumptions (module-split → ADR-013,
       ADR-005 timing, no-cracks governance), notes log
-- [ ] Schema deviation register: `grids.timezone` (Task 2)
+- [x] Schema deviation register: `grids.timezone` (#35, Task 2)
 - [x] Internationalization & de-brand register (created + seeded)
 - [ ] Deployment docs: Supabase required for foundation hosts, Loki-via-stdout, `LOG_LEVEL` (Task 4/5)
 - [ ] Import ledger (this file) kept current (ongoing)
@@ -427,3 +427,6 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   ADR-013, ADR-004 §5 + ADR-007 amendments, AGENTS.md ADR-index row, the
   internationalization & de-brand register, and the roadmap updates (index, no-cracks governance,
   assumptions 2/9/12, single-pass note). Next: Task 2 (`grids.timezone` → UTC — maintainer-owned).
+- 2026-07-16 — [Task 2] Done & signed off (mode B). Init migration amended (`grids.timezone`
+  default → `'UTC'`); schema deviation register #35 + i18n register #1 confirmed; types regenerated
+  clean (empty diff on `supabase-types.ts`). Next: Task 3 (adjusted types layer).
