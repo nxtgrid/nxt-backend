@@ -1,6 +1,15 @@
 # core
 
-This library was generated with [Nx](https://nx.dev).
+Shared kernel (`@nxt/core`): config, generated Supabase types, cross-cutting infra.
+
+## Supabase types
+
+| Import | From |
+|---|---|
+| `Database` (client typing) | `@nxt/core/types/supabase-types-adjusted` |
+| Enums, `Json`, table row/insert/update aliases | `@nxt/core/types/supabase-types` |
+
+Regenerate generated types: `pnpm generate-types:local` (requires `pnpm supabase start`).
 
 ## Building
 

@@ -2,6 +2,7 @@
   "editor.tabSize": 2,
   "search.exclude": {
     "package-lock.json": true,
+    "pnpm-lock.yaml": true,
     "libs/*/migration": true,
     "supabase/migrations": true
   },

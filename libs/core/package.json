@@ -30,6 +30,12 @@
       "types": "./dist/types/supabase-types.d.ts",
       "import": "./dist/types/supabase-types.js",
       "default": "./dist/types/supabase-types.js"
+    },
+    "./types/supabase-types-adjusted": {
+      "source": "./src/types/supabase-types-adjusted.ts",
+      "types": "./dist/types/supabase-types-adjusted.d.ts",
+      "import": "./dist/types/supabase-types-adjusted.js",
+      "default": "./dist/types/supabase-types-adjusted.js"
     }
   },
   "nx": {

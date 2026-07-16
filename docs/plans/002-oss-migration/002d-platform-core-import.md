@@ -161,7 +161,7 @@ deleted only when fully superseded.** For entangled files, record the destinatio
 | `apps/tiamat/src/modules/auth/**` | to import (Task 7) | move; `AuthenticatedUser`; drop admin-org flag |
 | `apps/tiamat/src/modules/user-admin/**` | to import (Task 9) | whole; delete dead test code |
 | `apps/tiamat/src/modules/grids/**` + `libs/core/.../grids/**` | **partial** (Task 10) | grid CRUD/read now; connectivity-stats → **re-home to Metering**; legacy file retained until both halves absorbed |
-| `libs/core/src/types/supabase-types-adjusted.ts` | reintroduce (Task 3) | grids+poles geom; own subpath |
+| `libs/core/src/types/supabase-types-adjusted.ts` | **reintroduced** (Task 3) | grids+poles geom; `@nxt/core/types/supabase-types-adjusted` subpath; legacy file deleted at Task 11 |
 | `libs/helpers/src/*.ts` | per-use, file-granular | `git mv` each file at first import (with its `.spec`) |
 
 ---
@@ -226,7 +226,7 @@ own default or aligns*. Cross-link the i18n register.
 
 ## Task 3 — Reintroduce the adjusted types layer
 
-- [ ] **Status:** Not started
+- [x] **Status:** Done (2026-07-16)
 - **Depends on:** Task 2
 
 1. Add `libs/core/src/types/supabase-types-adjusted.ts` augmenting the generated `Database` with
@@ -427,6 +427,7 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   ADR-013, ADR-004 §5 + ADR-007 amendments, AGENTS.md ADR-index row, the
   internationalization & de-brand register, and the roadmap updates (index, no-cracks governance,
   assumptions 2/9/12, single-pass note). Next: Task 2 (`grids.timezone` → UTC — maintainer-owned).
-- 2026-07-16 — [Task 2] Done & signed off (mode B). Init migration amended (`grids.timezone`
-  default → `'UTC'`); schema deviation register #35 + i18n register #1 confirmed; types regenerated
-  clean (empty diff on `supabase-types.ts`). Next: Task 3 (adjusted types layer).
+- 2026-07-16 — [Task 3] Done. Reintroduced `supabase-types-adjusted.ts` (grids+poles
+  `location_geom`); `@nxt/core/types/supabase-types-adjusted` subpath export; import convention
+  documented (`libs/core/README.md` + module JSDoc); ESLint `no-restricted-imports` blocks
+  `Database` from generated subpath; golden-path probes in `health.service.ts`. Next: Task 4.

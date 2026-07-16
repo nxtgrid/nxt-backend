@@ -41,6 +41,19 @@ const teamRules = {
       varsIgnorePattern: '^_',
     },
   ],
+  'no-restricted-imports': [
+    'error',
+    {
+      paths: [
+        {
+          name: '@nxt/core/types/supabase-types',
+          importNames: ['Database'],
+          message:
+            'Import Database from @nxt/core/types/supabase-types-adjusted; use supabase-types for enums and row aliases only.',
+        },
+      ],
+    },
+  ],
 };
 
 export default [
