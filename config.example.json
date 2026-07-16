@@ -1,14 +1,8 @@
 {
   "$schemaVersion": "1",
-  "deployment": {
-    "adminOrganizationId": 1,
-    "systemWalletId": 1
-  },
   "public": {
     "platformName": "Acme Mini-Grid"
   },
-  "capabilities": {
-    "demo": { "enabled": true }
-  },
+  "capabilities": {},
   "integrations": {}
 }

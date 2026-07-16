@@ -1,23 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { getPackageInfo } from '@nxt/core';
-import type { Database } from '@nxt/core/types/supabase-types-adjusted';
-import type { OrganizationTypeEnum } from '@nxt/core/types/supabase-types';
+import { SupabaseService } from '@nxt/core';
 
 @Injectable()
 export class HealthService {
-  /** Golden-path probe: enums from generated subpath. */
-  static readonly platformOperatorType =
-    'PLATFORM_OPERATOR' satisfies OrganizationTypeEnum;
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  /** Golden-path probe: Database from adjusted subpath (PostGIS geom typing). */
-  static readonly gridGeomProbe = {
-    type: 'Point',
-    coordinates: [ 0, 0 ],
-  } satisfies NonNullable<
-    Database['public']['Tables']['grids']['Row']['location_geom']
-  >;
+  async getHealth(): Promise<{ status: 'ok' }> {
+    await this.supabaseService.adminClient
+      .from('organizations')
+      .select('id')
+      .limit(1)
+      .then(response => this.supabaseService.handleResponse(response));
 
-  getHealth(): { name: string; version: string } {
-    return getPackageInfo();
+    return { status: 'ok' };
   }
 }

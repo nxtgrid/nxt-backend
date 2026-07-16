@@ -1,6 +1,5 @@
-import { Global, Injectable, Module } from '@nestjs/common';
+import { Global, Injectable, Logger, Module } from '@nestjs/common';
 import { createClient, type PostgrestError, type SupabaseClient } from '@supabase/supabase-js';
-import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 import { requireEnv } from '#config/require-env.js';
 import type { Database } from '#types/supabase-types-adjusted.js';
@@ -17,13 +16,19 @@ interface SupabaseResponse<T> {
 @Injectable()
 export class SupabaseService {
   readonly adminClient: SupabaseClient<Database>;
+  private readonly logger = new Logger(SupabaseService.name);
 
-  constructor(
-    @InjectPinoLogger(SupabaseService.name) private readonly logger: PinoLogger,
-  ) {
+  constructor() {
     this.adminClient = createClient<Database>(
-      requireEnv('SUPABASE_API_URL'),
-      requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SECRET_KEY'),
+      {
+        auth: {
+          // Server-side admin client: no end-user session to persist or refresh.
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      },
     );
   }
 

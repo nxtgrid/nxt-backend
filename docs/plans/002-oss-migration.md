@@ -288,3 +288,6 @@ cutover. Weigh each rename individually; record all of them.
   "no-cracks" governance and standing assumption 12 (module-split → ADR-013); updated assumptions 2
   (ADR-005 = explicit 002e prerequisite) and 9 (deployment group dropped). Foundation noted as a
   single-pass exception to the dual-pass import model.
+- 2026-07-16 — **002d Task 4 done** (infra + explicit composition): Supabase provider, HTTP on both
+  hosts, Nest `Logger` + `GlobalLoggerModule` stub (nestjs-pino deferred), demo + `deployment`
+  config group removed, env rename (`SUPABASE_URL` / `SUPABASE_SECRET_KEY`). Next: Task 5 seed.

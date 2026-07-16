@@ -6,11 +6,15 @@ Shared kernel (`@nxt/core`): config, generated Supabase types, cross-cutting inf
 
 | Scope | Specifier | Notes |
 |---|---|---|
-| Other packages → this one | `@nxt/core`, `@nxt/core/types/…` | Public API via `"exports"` (barrel / subpaths) |
-| Inside this package (cross-folder) | `#config/…`, `#modules/…`, `#types/…` | Package `"imports"` — direct files, not the barrel |
+| Bootstrap / config | `@nxt/core/config` | `loadConfig` / `getConfig` / `setConfig` / `requireEnv` — **no Nest modules** |
+| Nest infra & helpers | `@nxt/core` | Logger, Global*Module, constants — not config |
+| Generated / adjusted types | `@nxt/core/types/…` | Public type subpaths |
+| Inside this package (cross-folder) | `#config/…`, `#modules/…`, `#types/…` | Package `"imports"` — direct files |
 | Same folder / co-located sibling | relative `./…` | Prefer for local peers |
 
-Example: `import { requireEnv } from '#config/require-env.js'`.
+Do **not** import config from the fat `@nxt/core` barrel (it is not re-exported there).
+
+Example (in-package): `import { requireEnv } from '#config/require-env.js'`.
 
 ## Supabase types
 

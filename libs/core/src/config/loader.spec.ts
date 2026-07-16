@@ -10,7 +10,6 @@ const INVALID_SCHEMA_VERSION_FIXTURE = join(FIXTURES_DIR, 'invalid-schema-versio
 
 const INLINE_JSON = JSON.stringify({
   $schemaVersion: '1',
-  deployment: {},
   public: { platformName: 'From NXT_CONFIG_JSON' },
   capabilities: {},
   integrations: {},

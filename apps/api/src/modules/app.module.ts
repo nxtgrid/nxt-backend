@@ -1,10 +1,20 @@
 import { Module } from '@nestjs/common';
-import { demoModules, getConfig } from '@nxt/core';
+import {
+  GlobalHttpModule,
+  GlobalLoggerModule,
+  GlobalSupabaseModule,
+} from '@nxt/core';
 import { HealthModule } from './health/health.module';
 
-const alwaysOn = [ HealthModule ];
+/** Cross-cutting infra — Logger, Supabase, HTTP. */
+const infrastructure = [ GlobalLoggerModule, GlobalSupabaseModule, GlobalHttpModule ];
+
+/** Always-on Foundation domain for this host. */
+const foundation = [ HealthModule ];
+
+// Tier-1 capability conditionals (empty until capabilities are imported).
 
 @Module({
-  imports: [ ...alwaysOn, ...demoModules(getConfig()) ],
+  imports: [ ...infrastructure, ...foundation ],
 })
 export class AppModule {}

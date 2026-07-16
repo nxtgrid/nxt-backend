@@ -1,11 +1,11 @@
 import type { NxtConfig } from '#config/schema.js';
 import { getConfig } from '#config/index.js';
-// Import peer dependency 'pino-http' for linting pass
-import type {} from 'pino-http';
 
 /**
  * Soft default; override with `LOG_LEVEL` (e.g. `debug`, `warn`).
  * Not fail-fast — logging must not block boot the way secrets do.
+ *
+ * Used when nestjs-pino is restored via `GlobalLoggerModule` — see that module’s JSDoc.
  */
 const DEFAULT_LOG_LEVEL = 'info';
 
@@ -16,19 +16,13 @@ interface PinoTransportTarget {
 }
 
 /**
- * Pretty-print when not production, or when `LOG_PRETTY` is a truthy env string
- * (`1`, `true`, `yes`). Production images ship JSON to stdout; `pino-pretty` is a
- * devDependency and is only loaded on this path.
+ * Pretty-print only when `LOG_PRETTY` is a truthy env string (`1`, `true`, `yes`).
+ * Off by default. Under webpack serve, pino transport workers need externals /
+ * pino-webpack-plugin or pretty will log once and then stall.
  */
 export function shouldPrettyPrint(): boolean {
   const prettyFlag = process.env.LOG_PRETTY?.trim().toLowerCase();
-  if (prettyFlag === '1' || prettyFlag === 'true' || prettyFlag === 'yes') {
-    return true;
-  }
-  if (prettyFlag === '0' || prettyFlag === 'false' || prettyFlag === 'no') {
-    return false;
-  }
-  return process.env.NODE_ENV !== 'production';
+  return prettyFlag === '1' || prettyFlag === 'true' || prettyFlag === 'yes';
 }
 
 /**
@@ -41,7 +35,7 @@ export function shouldPrettyPrint(): boolean {
  * - `integrations.sentry` + `SENTRY_DSN` — Sentry transport / SDK (later).
  *
  * Until those integration flags exist on the schema, this only adds the optional
- * `pino-pretty` target for local/dev readability.
+ * `pino-pretty` target when `LOG_PRETTY` is set.
  */
 export function assembleLogTransports(config: NxtConfig = getConfig()): PinoTransportTarget[] {
   const targets: PinoTransportTarget[] = [];
@@ -69,13 +63,17 @@ export function assembleLogTransports(config: NxtConfig = getConfig()): PinoTran
   return targets;
 }
 
-/** Options passed to nestjs-pino / pino-http. */
+/**
+ * Options for nestjs-pino / pino-http — wire from `GlobalLoggerModule` on restore.
+ * HTTP auto-logging stays off permanently unless product requirements change.
+ */
 export function buildPinoHttpOptions(config: NxtConfig = getConfig()): Record<string, unknown> {
   const level = process.env.LOG_LEVEL?.trim() || DEFAULT_LOG_LEVEL;
   const targets = assembleLogTransports(config);
 
   return {
     level,
+    autoLogging: false,
     ...(targets.length > 0 ? { transport: { targets } } : {}),
   };
 }

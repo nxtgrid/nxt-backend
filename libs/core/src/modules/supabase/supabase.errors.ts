@@ -1,5 +1,4 @@
-import { HttpException } from '@nestjs/common';
-import type { PinoLogger } from 'nestjs-pino';
+import { HttpException, type Logger } from '@nestjs/common';
 
 interface ErrorWithMessage {
   message: unknown;
@@ -31,12 +30,14 @@ function resolveErrorMessage(error: unknown): string {
   return JSON.stringify(error);
 }
 
-/** Logs via pino, then throws an HTTP exception — exported for auth and other Foundation consumers. */
+/** Logs then throws an HTTP exception — exported for auth and other Foundation consumers. */
 export function throwSupabaseError(
   error: unknown,
   status: number | undefined,
-  logger: PinoLogger,
+  logger: Logger,
 ): never {
-  logger.error({ error, status }, '[SUPABASE RESPONSE ERROR]');
+  logger.error(
+    `[SUPABASE RESPONSE ERROR] status=${ status ?? 'unknown' } ${ resolveErrorMessage(error) }`,
+  );
   throw new HttpException(resolveErrorMessage(error), status ?? 500);
 }

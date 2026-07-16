@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** Authored 2026-07-15 — execution not started
+**Status:** In progress — Tasks 1–4 done (2026-07-16); next Task 5 (seed)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -74,14 +74,16 @@ it, don't silently diverge.
    amendment (Task 1).
 8. **Supabase infra:** `SupabaseService` builds the admin client in a **provider** with
    `requireEnv` (fail-fast at boot); **no `export const supabase` singleton**. Per-host env
-   validated at each provider's wiring — admin client (`SUPABASE_API_URL`,
-   `SUPABASE_SERVICE_ROLE_KEY`) both hosts; `SUPABASE_ANON_KEY` + `SUPABASE_JWT_SECRET` in auth
+   validated at each provider's wiring — admin client (`SUPABASE_URL`,
+   `SUPABASE_SECRET_KEY`) both hosts; `SUPABASE_PUBLISHABLE_KEY` + JWT verification
+   (`SUPABASE_JWKS_URL` preferred; `SUPABASE_JWT_SECRET` legacy fallback) in auth
    (`api` only). The query-type shortcut returns later via a **type-only probe** (no runtime
    client). Cloudflare-5xx handling and `SUPABASE_QUERY_LIMIT` kept as-is.
-9. **Logging:** **`nestjs-pino`** in `@nxt/core`, structured JSON to stdout (dev pretty-print),
-   `LOG_LEVEL` env (soft default `info`), **config-assembled transports** with Loki/Sentry as
-   deferred **Tier-3** integrations (documented `LOKI_URL` / `SENTRY_DSN` slots, Loki-via-stdout
-   documented as the free path). `console.*` replaced **only within imported Foundation modules**.
+9. **Logging:** Nest built-in `Logger` for now; **`GlobalLoggerModule` kept as a no-op slot**
+   in host `infrastructure` for a later `nestjs-pino` restore (option builders in
+   `logger.options.ts`). Structured JSON / pretty / Loki-Sentry remain Tier-3. No HTTP
+   auto-logging when pino returns (`autoLogging: false`). `console.*` fine for local
+   debug; replace within imported Foundation modules when structured logging returns.
 10. **Types:** the **adjusted layer is reintroduced from the get-go** —
     `libs/core/src/types/supabase-types-adjusted.ts` augments the generated `Database` with the
     PostGIS `location_geom` types for `grids` **and** `poles`, exposed at its own subpath
@@ -151,9 +153,9 @@ deleted only when fully superseded.** For entangled files, record the destinatio
 
 | Legacy source | Disposition | Notes |
 |---|---|---|
-| `libs/core/src/modules/supabase.module.ts` | to import (Task 4) | provider refactor; drop `export const supabase`; type-only-probe forward pattern |
-| `libs/core/src/modules/logger-module.ts` (+ dead LokiService) | **superseded — delete** | replaced by pino (Task 4); not ported |
-| `libs/core/src/modules/global-http-module.ts` | to import (Task 4) | as-is / minimal |
+| `libs/core/src/modules/supabase.module.ts` | **imported** (Task 4) | `libs/core/src/modules/supabase/`; admin client via `requireEnv`; no singleton; Nest `Logger`; legacy delete at Task 11 |
+| `libs/core/src/modules/logger-module.ts` (+ dead LokiService) | **superseded — delete at Task 11** | Not ported. New `GlobalLoggerModule` is a **no-op slot** (Nest `Logger` / `console.*`); `logger.options.ts` kept for later nestjs-pino restore |
+| `libs/core/src/modules/global-http-module.ts` | **imported** (Task 4) | `libs/core/src/modules/global-http-module.ts`; wired in **both** api + worker infra |
 | `libs/core/src/modules/accounts/**` | to import (Task 6) | rewrite to Supabase; entities dropped |
 | `libs/core/src/modules/api-keys/**` | to import (Task 6) | rewrite to Supabase; entities dropped |
 | `libs/core/src/modules/members/**` | type-only (Task 6) | empty service — no module; entity dropped |
@@ -242,35 +244,43 @@ green; the import convention is documented (and lint-guarded if adopted).
 
 ---
 
-## Task 4 — Infra + explicit composition (Supabase provider, pino logging, demo removal)
+## Task 4 — Infra + explicit composition (Supabase provider, logging slot, demo removal)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Done (2026-07-16)
 - **Depends on:** Task 3
 
 The foundational infra task (rule 1). Both hosts boot on real infra.
 
 1. **Supabase infra** in `@nxt/core`: `SupabaseService` builds the admin client in its constructor
-   via `requireEnv('SUPABASE_API_URL')` + `requireEnv('SUPABASE_SERVICE_ROLE_KEY')`; **remove the
+   via `requireEnv('SUPABASE_URL')` + `requireEnv('SUPABASE_SECRET_KEY')`; **remove the
    `export const supabase` singleton**. Port `handleResponse` / `throwSupabaseError` /
-   Cloudflare-5xx handling as-is but route logging through pino. Keep `SUPABASE_QUERY_LIMIT` a
-   plain constant. (The query-type-shortcut `lib/supabase.ts` files are in deferred capabilities;
-   the **type-only probe** pattern is documented for their return — nothing to build here.)
-2. **HTTP infra:** port `global-http-module.ts` (minimal).
-3. **Logging** in `@nxt/core`: `nestjs-pino` module — structured JSON to stdout, dev pretty-print
-   (gated by `NODE_ENV`/`LOG_PRETTY`), `LOG_LEVEL` env (soft default `info`), transport list
-   **assembled from config** with documented (unbuilt) Loki/Sentry Tier-3 slots. Retire
-   `logger-module.ts`/`LokiService` (not ported). Wire as the Nest logger in each `main.ts`.
+   Cloudflare-5xx handling as-is but route logging through Nest `Logger` (pino deferred). Keep
+   `SUPABASE_QUERY_LIMIT` a plain constant. (The query-type-shortcut `lib/supabase.ts` files are in
+   deferred capabilities; the **type-only probe** pattern is documented for their return — nothing
+   to build here.)
+2. **HTTP infra:** port `global-http-module.ts` (minimal); wired in **both** hosts.
+3. **Logging** in `@nxt/core`: Nest built-in `Logger` for now; keep `GlobalLoggerModule` as a
+   no-op slot in host `infrastructure` (+ `logger.options.ts` for nestjs-pino restore).
+   Structured JSON / pretty / Loki–Sentry remain Tier-3. Retire legacy
+   `logger-module.ts`/`LokiService` (not ported; delete at Task 11).
 4. **Explicit composition:** replace `demoModules()` in both `app.module.ts` with plain named
    `infrastructure` / `foundation` arrays + inline Tier-1 conditionals (empty capability set for
-   now). `api` infra = Logger + Supabase + HTTP; `worker` infra = Logger + Supabase (+ existing
+   now). `api` infra = Logger + Supabase + HTTP; `worker` infra = Logger + Supabase + HTTP (+
    schedule/heartbeat). **Remove the `demo` capability** (`modules/demo/`, `demoModules` export,
    `demo` from `capabilities` schema) and the `deployment` group from `config/schema.ts` +
    `config.example.json` / `config.default.json`.
-5. Update `.env.example` with per-host Supabase + `LOG_LEVEL` documentation.
+5. Update `.env.example` (root + per-host) with Supabase + logging documentation.
 
 **Done when:** both hosts boot on default config against a local Supabase; missing `SUPABASE_*`
-fails fast with a clear `MISSING …`; logs are structured JSON (pretty in dev); `demo`/`deployment`
+fails fast with a clear `MISSING …`; logs use Nest `Logger` (`GlobalLoggerModule` stub ready for
+pino); `demo`/`deployment`
 are gone; `nx run-many -t lint typecheck build test -p api,worker,core` green.
+
+**Done (2026-07-16):** Supabase provider + HTTP + explicit `infrastructure`/`foundation` composition
+on both hosts; demo + `deployment` removed; env layout + renamed Supabase vars; nestjs-pino tried
+then deferred (webpack transport workers / console DX) with `GlobalLoggerModule` stub retained;
+scaffold golden-path proofs removed (`getPackageInfo`, health type probes); `/health` keeps a
+lightweight Supabase probe. Lint bar green. Deployment-docs polish left for Task 5 alongside seed.
 
 ---
 
@@ -314,8 +324,10 @@ shapes/values (Task 8 covers automated proof or manual sign-off); no ops TypeORM
 
 Move the two Passport strategies + `AuthenticationGuard`. Rename `NxtSupabaseUser` →
 **`AuthenticatedUser`**; **drop the admin-org membership flag** (no in-scope reader); keep exposing
-raw `organization_id`. `console.*` → pino; de-brand comments. Validate `SUPABASE_ANON_KEY` +
-`SUPABASE_JWT_SECRET` via `requireEnv` at auth wiring (`api` only). Restore `enableCors()` + a
+raw `organization_id`. `console.*` → pino; de-brand comments. Validate
+`SUPABASE_PUBLISHABLE_KEY` + JWT verification (`SUPABASE_JWKS_URL` preferred;
+`SUPABASE_JWT_SECRET` legacy fallback) via `requireEnv` at auth wiring (`api` only). Restore
+`enableCors()` + a
 global `ValidationPipe` on the `api` bootstrap. Add passport / `jsonwebtoken` deps to `api`.
 
 **Done when:** `api` authenticates a seeded Supabase JWT (bearer) and an `X-API-KEY`; the guard
@@ -413,8 +425,9 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
       ADR-005 timing, no-cracks governance), notes log
 - [x] Schema deviation register: `grids.timezone` (#35, Task 2)
 - [x] Internationalization & de-brand register (created + seeded)
-- [ ] Deployment docs: Supabase required for foundation hosts, Loki-via-stdout, `LOG_LEVEL` (Task 4/5)
-- [ ] Import ledger (this file) kept current (ongoing)
+- [ ] Deployment docs: Supabase required for foundation hosts, seed/bootstrap (Task 5; env
+      examples already updated in Task 4)
+- [x] Import ledger (this file) kept current for Task 4 infra rows
 
 ## Notes & decisions log
 
@@ -436,3 +449,37 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   for TypeScript; see webpro.nl subpath-imports article). Direct files only — avoids
   in-package barrel imports. Sibling `./` kept. Jest `moduleNameMapper` + `source`/`default`
   conditions (`src`/`dist`) on `@nxt/core`.
+- 2026-07-16 — [Task 4] Worker infra includes `GlobalHttpModule` (same as api) — workers are
+  integration-heavy; plan’s “api-only HTTP” narrowed at implementation.
+- 2026-07-16 — [Task 4] Config lives only at `@nxt/core/config` (not re-exported from the fat
+  `@nxt/core` barrel). Bootstrap must not pull Nest modules when loading config. ESLint
+  `no-restricted-imports` blocks config symbols from `@nxt/core`. `GlobalLoggerModule` keeps
+  `forRootAsync` so option factories run at Nest init, after `loadConfig()`.
+- 2026-07-16 — [Task 4] Prefer `constructor(logger: PinoLogger)` + `setContext` over
+  `@InjectPinoLogger(Service.name)`: nestjs-pino snapshots decorated tokens at
+  `LoggerModule.forRoot*` eval time; importing `GlobalLoggerModule` from another module file
+  (or barrel order) can register providers before those decorators run → missing
+  `PinoLogger:ServiceName`. `GlobalSupabaseModule` imports `GlobalLoggerModule` for DI.
+- 2026-07-16 — [Task 4 / env] Local env files: root `.env` = shared; `apps/<host>/.env` =
+  host-specific. Nx loads project then workspace `.env` on `nx serve`/`build` (no
+  `dotenv-safe`; no mandatory `@nestjs/config` for local). Examples:
+  `.env.example`, `apps/api/.env.example`, `apps/worker/.env.example`. Production still
+  injects env via the platform. ADR-007 layer-2 `requireEnv` unchanged.
+- 2026-07-16 — [Task 4 / env] Supabase env names → current terminology:
+  `SUPABASE_URL` + `SUPABASE_SECRET_KEY` (admin client, both hosts);
+  `SUPABASE_PUBLISHABLE_KEY` + `SUPABASE_JWKS_URL` (auth, api / Task 7);
+  `SUPABASE_JWT_SECRET` kept as documented legacy HS256 fallback only.
+  Local CLI may still print anon/service_role labels; values work under either naming.
+  Admin `createClient` options: `persistSession: false`, `autoRefreshToken: false`.
+- 2026-07-16 — [Task 4 / logging] Keep nestjs-pino; `autoLogging: false` always (no HTTP
+  request dumps). `LOG_PRETTY` opt-in only (default off) so `console.*` stays usable next
+  to JSON Nest/Pino logs.
+- 2026-07-16 — [Task 4 / logging] Deferred nestjs-pino: webpack serve + transport workers
+  break pretty (“log once then silence”); console DX suffered. `GlobalLoggerModule` is a
+  no-op stub still wired in both hosts’ `infrastructure`; `logger.options.ts` retained for
+  one-place restore. Hosts use Nest `Logger` / `console.*` until structured logging returns.
+- 2026-07-16 — [Task 4 / 4.4c] Dropped `deployment` from config schema + default/example +
+  fixtures/specs. Removed scaffold golden-path proofs (`getPackageInfo`, type probes on
+  HealthService); `/health` keeps a lightweight Supabase `organizations` probe.
+- 2026-07-16 — [Task 4] **Done & signed off.** Infra + composition complete (see Task 4 Done
+  block). Next: Task 5 (seed harness).

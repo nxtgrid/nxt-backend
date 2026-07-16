@@ -3,7 +3,6 @@ import type { NxtConfig } from './schema.js';
 
 const testConfig: NxtConfig = Object.freeze({
   $schemaVersion: '1',
-  deployment: {},
   public: { platformName: 'Test' },
   capabilities: {},
   integrations: {},

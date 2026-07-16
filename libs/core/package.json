@@ -39,6 +39,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./config": {
+      "source": "./src/config/index.ts",
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js",
+      "default": "./dist/config/index.js"
+    },
     "./types/supabase-types": {
       "source": "./src/types/supabase-types.ts",
       "types": "./dist/types/supabase-types.d.ts",
@@ -56,14 +62,10 @@
     "name": "core"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.0",
     "@supabase/supabase-js": "^2.103.3",
-    "nestjs-pino": "^4.4.0",
-    "pino-http": "^10.5.0",
     "tslib": "^2.3.0",
     "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "pino-pretty": "^13.1.0"
   }
 }

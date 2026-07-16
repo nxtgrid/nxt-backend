@@ -51,6 +51,19 @@ const teamRules = {
           message:
             'Import Database from @nxt/core/types/supabase-types-adjusted; use supabase-types for enums and row aliases only.',
         },
+        {
+          name: '@nxt/core',
+          importNames: [
+            'getConfig',
+            'loadConfig',
+            'setConfig',
+            'requireEnv',
+            'NxtConfig',
+            'LoadConfigOptions',
+          ],
+          message:
+            'Import config from @nxt/core/config — the fat @nxt/core barrel must not load Nest modules during bootstrap.',
+        },
       ],
     },
   ],
