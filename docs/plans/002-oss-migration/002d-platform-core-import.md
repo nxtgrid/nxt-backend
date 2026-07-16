@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** In progress — Tasks 1–4 done (2026-07-16); next Task 5 (seed)
+**Status:** In progress — Tasks 1–5 done (2026-07-16); next Task 6 (accounts + api-keys)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -286,7 +286,7 @@ lightweight Supabase probe. Lint bar green. Deployment-docs polish left for Task
 
 ## Task 5 — Seed harness
 
-- [ ] **Status:** Not started
+- [x] **Status:** Done (2026-07-16) — awaiting sign-off
 - **Depends on:** Task 3 (schema/types stable)
 
 Establish `supabase/seed.sql` (or a seed script) that grows per import. 002d fixtures: an
@@ -296,6 +296,17 @@ organization_id) for auth/e2e. Doubles as the local-dev bootstrap.
 
 **Done when:** a fresh `pnpm supabase start` + seed yields a coherent Foundation dataset and a
 usable test user; documented in `docs/deployment/supabase.md` (or the local-dev doc).
+
+**Done:**
+- `supabase/seed.sql` wired via `config.toml` `[db.seed]`; loop is `pnpm exec supabase db reset`
+  (local only — not for remote/prod).
+- Fixtures: PLATFORM_OPERATOR + SOLAR_DEVELOPER orgs/wallets; two claimed auth users
+  (`superadmin@nxt-platform.com` / `SUPERADMIN`, `admin@nxt-solar.com` / `DEVELOPER`);
+  `api_keys` `dev-api-key-platform-superadmin`; grid **Demo Solar Grid** on org 2.
+- Invite-path mirrored: auth insert → `handle_new_user` → `app_metadata` update →
+  `handle_update_user` → `members` insert.
+- `docs/deployment/supabase.md` §4–5 updated (local seed + env pointer; dashboard bootstrap
+  replaced for local).
 
 ---
 
@@ -425,7 +436,7 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
       ADR-005 timing, no-cracks governance), notes log
 - [x] Schema deviation register: `grids.timezone` (#35, Task 2)
 - [x] Internationalization & de-brand register (created + seeded)
-- [ ] Deployment docs: Supabase required for foundation hosts, seed/bootstrap (Task 5; env
+- [x] Deployment docs: Supabase required for foundation hosts, seed/bootstrap (Task 5; env
       examples already updated in Task 4)
 - [x] Import ledger (this file) kept current for Task 4 infra rows
 
@@ -483,3 +494,7 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   HealthService); `/health` keeps a lightweight Supabase `organizations` probe.
 - 2026-07-16 — [Task 4] **Done & signed off.** Infra + composition complete (see Task 4 Done
   block). Next: Task 5 (seed harness).
+- 2026-07-16 — [Task 5] Seed harness established: `supabase/seed.sql` (orgs/wallets, two auth
+  users with claims + members, api key, solar grid); documented in
+  `docs/deployment/supabase.md` §5 as local-only (`pnpm exec supabase db reset`). **Done —
+  awaiting sign-off.** Next: Task 6 (`accounts` + `api-keys`).

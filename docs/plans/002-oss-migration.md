@@ -291,3 +291,5 @@ cutover. Weigh each rename individually; record all of them.
 - 2026-07-16 — **002d Task 4 done** (infra + explicit composition): Supabase provider, HTTP on both
   hosts, Nest `Logger` + `GlobalLoggerModule` stub (nestjs-pino deferred), demo + `deployment`
   config group removed, env rename (`SUPABASE_URL` / `SUPABASE_SECRET_KEY`). Next: Task 5 seed.
+- 2026-07-16 — **002d Task 5 done** (seed harness): local `supabase/seed.sql` +
+  `docs/deployment/supabase.md` §5. Next: Task 6 (`accounts` + `api-keys`).
