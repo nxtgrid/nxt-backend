@@ -19,6 +19,14 @@ import { UpdateGridInput } from '@core/modules/grids/dto/update-grid.input';
 import { getConnectivityStats } from './queries/getConnectivityStats.query';
 import { SupabaseService } from '@core/modules/supabase.module';
 
+/**
+ * 002d Task 10/11 — Nest grids HTTP not ported to OSS Foundation (table/RLS/seed only).
+ * `GET /grids/:id` removed from controller at Task 11. Retain this service until Metering absorbs:
+ * - getMeteringHardwareConnectivityStatsByGridId → Metering (pending)
+ * - recalculateCabinCreditDepletion* → Metering (pending; also unused in-repo)
+ * Call-site Supabase selects replace shared findOne/update for new code; ops-DB write
+ * funnel through api is dropped.
+ */
 @Injectable()
 export class GridsService extends CoreGridsService {
   constructor(

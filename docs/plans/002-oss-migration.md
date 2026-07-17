@@ -190,8 +190,8 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | Completed |
 | 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | **Completed** (2026-07-13) |
 | 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | **Completed** (2026-07-14) |
-| 002d | Platform core import (Foundation) | Import the always-on Foundation (auth, api-keys, accounts, members, organizations, user-admin, grids) over infra (Supabase provider, HTTP, pino logging); retire ops-DB TypeORM; drop `deployment` config group; explicit per-host composition | **In progress** — authored 2026-07-15 |
-| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10) | Just-in-time — not yet authored |
+| 002d | Platform core import (Foundation) | Import the always-on Foundation (auth, api-keys, accounts, members, organizations, user-admin, grids) over infra (Supabase provider, HTTP, logging); retire ops-DB TypeORM; drop `deployment` config group; explicit per-host composition | **Completed** (2026-07-17) |
+| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10). **Prerequisite:** lock **ADR-005** (inter-host communication) before/at authoring | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
 | (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement. Strategy-level decisions (host flip mechanics, rollback stance, maintenance window) recorded early in **ADR-012** — reconcile with it when authoring | Just-in-time — not yet authored |
 
@@ -299,6 +299,11 @@ cutover. Weigh each rename individually; record all of them.
 - 2026-07-17 — **002d Task 8 adopted** (test spike): `apps/api/test/` layout; unit default /
   integration+e2e opt-in; ApiKeyStrategy + thin X-API-KEY e2e green. Next: Task 9.
 - 2026-07-17 — **002d Task 8 signed off.** Next: Task 9 (`organizations` + `user-admin`).
-- 2026-07-17 — **002d Task 9 in progress:** Nest `organizations` skipped (dead); `user-admin`
-  imported (whole-method admin); `CreateCustomerDto` in `@nxt/core`. Near-future: ADR-014 §5.3
-  (API-key → RLS-bound user client) before more machine data paths. Verify / sign-off open.
+- 2026-07-17 — **002d Task 9 signed off:** Nest `organizations` skipped; `user-admin` imported
+  (whole-method admin); `CreateCustomerDto` in `@nxt/core`; `handleSingle` + Cloudflare→503.
+  Near-future: ADR-014 §5.3 API-key → RLS-bound user client. Next was Task 10 (`grids`).
+- 2026-07-17 — **002d Task 10 signed off:** Nest `grids` skipped (table/RLS/seed stay). Next:
+  Task 11 (close-out; grids = annotate service + remove `GET /:id` only).
+- 2026-07-17 — **002d Completed** (Task 11 close-out): legacy Foundation deletes per ledger;
+  grids annotated + `GET /:id` removed; lint bar green; `demo`/`deployment` gone. Next: author
+  **002e** (Energy Production Monitoring) — **lock ADR-005 first**.

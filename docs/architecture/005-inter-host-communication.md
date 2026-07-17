@@ -1,7 +1,8 @@
 # ADR-005: Inter-Host Communication
 
 **Date:** 2026-06-26
-**Status:** Open (deferred from ADR-004; to be resolved in a dedicated session)
+**Status:** Open — **explicit prerequisite of authoring 002e** (Energy Production Monitoring).
+002d (Foundation) completed 2026-07-17 without needing a lock; resolve before/at 002e authoring.
 
 ---
 
