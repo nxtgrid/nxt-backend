@@ -154,8 +154,10 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
   extraction and must be paid down alongside.
 
 ## Out of Scope / Deferred to Follow-up ADRs
-- **ADR-005 — Inter-host communication:** shared-DB vs HTTP mesh vs internal event bus (today both a
-  shared DB and a bidirectional HTTP mesh are in use).
+- **ADR-005 — Inter-host communication:** **Accepted (2026-07-17).** Independent hosts; shared DBs
+  carry state; residual sync HTTP (prefer worker→`api`); async via per-capability DB jobs; retire
+  the bidirectional `*_API` mesh; no broker as inter-host bus. See
+  `docs/architecture/005-inter-host-communication.md`.
 - **ADR-006 — Monorepo tooling & CI/CD:** Nx suitability / fresh setup, affected-only builds, remote
   caching, per-host build & deploy, replacing the DigitalOcean-coupled stub workflow.
 - **ADR-007 — Configuration & wiring mechanism:** config file format, conditional NestJS dynamic-module

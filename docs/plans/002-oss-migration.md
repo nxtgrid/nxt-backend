@@ -1,7 +1,7 @@
 # Open-Source Migration — Roadmap
 
-**Decisions:** ADR-004 (architecture), ADR-005 (open — see decision points), ADR-006 (tooling/CI),
-ADR-007 (config), ADR-008 (migration strategy), ADR-009 (migration governance)
+**Decisions:** ADR-004 (architecture), ADR-005 (inter-host communication — Accepted 2026-07-17),
+ADR-006 (tooling/CI), ADR-007 (config), ADR-008 (migration strategy), ADR-009 (migration governance)
 **Plan number:** 002 (family)
 **Created:** 2026-07-08
 **Status:** In progress
@@ -191,7 +191,7 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | **Completed** (2026-07-13) |
 | 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | **Completed** (2026-07-14) |
 | 002d | Platform core import (Foundation) | Import the always-on Foundation (auth, api-keys, accounts, members, organizations, user-admin, grids) over infra (Supabase provider, HTTP, logging); retire ops-DB TypeORM; drop `deployment` config group; explicit per-host composition | **Completed** (2026-07-17) |
-| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10). **Prerequisite:** lock **ADR-005** (inter-host communication) before/at authoring | Just-in-time — not yet authored |
+| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10). **Prerequisite:** **ADR-005** (Accepted 2026-07-17) | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
 | (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement. Strategy-level decisions (host flip mechanics, rollback stance, maintenance window) recorded early in **ADR-012** — reconcile with it when authoring | Just-in-time — not yet authored |
 
@@ -200,7 +200,7 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 | # | Item | Standing position | Resolves when |
 |---|---|---|---|
 | 1 | **Device-messaging (plan 001 / ADR-010)** | Runs as a parallel effort; this migration treats device-messaging as **arriving as an external service**. The Metering import sub-plan depends on plan 001 being (near) complete | Checked when the Metering sub-plan is authored |
-| 2 | **ADR-005 inter-host communication** | Deliberately open. Groundwork (002a–002c) does not need it; 002d wires `worker`'s Foundation infra (Supabase) but gives it no cross-host capability traffic, so it is still not needed. Much of the current HTTP mesh collapses into in-process calls in the modular monolith | **Explicit prerequisite of authoring 002e** (Production Monitoring) — the first sub-plan that gives `worker` a real capability. Lock ADR-005 before/at 002e authoring |
+| 2 | **ADR-005 inter-host communication** | **Accepted (2026-07-17).** Independent hosts; shared DBs carry state; residual sync HTTP (prefer worker→`api`, ADR-014 auth); async via per-capability DB jobs; retire bidirectional `*_API` mesh; no broker / `LISTEN`/`NOTIFY` baseline; capability-owned ops writes (ADR-013); device-messaging = integrable HTTP+callbacks (ADR-010) | **Done** — apply during 002e+ capability imports |
 | 3 | **TimescaleDB schema** | Out of the 002b baseline (Supabase primary DB only). Belongs to the Production Monitoring capability import, where its consumers live | 002e authoring |
 | 4 | **Production schema = migrations** | Production has had no schema changes outside `supabase/migrations`. Certified by read-only drift check at 002b Task 1 (2026-07-08) | Done (002b Task 1) |
 | 5 | **Adopter requirements surface during execution** | Outside requirements (renames, omissions, additions) are discovered *while executing* sub-plans, not gathered up-front — and always recorded (see below) | Continuous |
@@ -234,6 +234,7 @@ cutover. Weigh each rename individually; record all of them.
 ## Related documents
 
 - **ADR-004** — target architecture; capability map; three-tier flags.
+- **ADR-005** — inter-host communication (Accepted 2026-07-17); apply from 002e onward.
 - **ADR-006** — tooling/CI decisions executed by 002c.
 - **ADR-007** — config mechanism executed by 002c (skeleton) and each capability import (flags).
 - **ADR-008** — the four-phase strategy this roadmap operationalizes.
@@ -305,5 +306,9 @@ cutover. Weigh each rename individually; record all of them.
 - 2026-07-17 — **002d Task 10 signed off:** Nest `grids` skipped (table/RLS/seed stay). Next:
   Task 11 (close-out; grids = annotate service + remove `GET /:id` only).
 - 2026-07-17 — **002d Completed** (Task 11 close-out): legacy Foundation deletes per ledger;
-  grids annotated + `GET /:id` removed; lint bar green; `demo`/`deployment` gone. Next: author
-  **002e** (Energy Production Monitoring) — **lock ADR-005 first**.
+  grids annotated + `GET /:id` removed; lint bar green; `demo`/`deployment` gone. Next was:
+  lock ADR-005, then author **002e**.
+- 2026-07-17 — **ADR-005 Accepted** (inter-host communication). Independent hosts + shared DBs;
+  residual HTTP prefer worker→`api` (ADR-014); async per-capability DB jobs; retire `*_API` mesh;
+  no broker/`LISTEN` baseline; capability-owned ops writes; device-messaging = HTTP+callbacks.
+  Assumption 2 → Done. Next: author **002e** (Energy Production Monitoring).

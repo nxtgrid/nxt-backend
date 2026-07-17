@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** **Completed** (2026-07-17) — Tasks 1–11 done; next 002e (ADR-005 prerequisite)
+**Status:** **Completed** (2026-07-17) — Tasks 1–11 done; next 002e (ADR-005 Accepted 2026-07-17)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -123,7 +123,8 @@ it, don't silently diverge.
 
 - Any capability module (production, metering, payments, notifications, field-ops, automation).
 - An auth-provider port / pluggable-auth SPI (ADR-001 trigger governs).
-- ADR-005 inter-host communication — **prerequisite of authoring 002e**, not resolved here.
+- ADR-005 inter-host communication — was out of scope here (002e prerequisite); **Accepted
+  2026-07-17** on the parent roadmap.
 - Loki/Sentry transports (Tier-3, deferred — only the config-assembled slots are left open).
 - Re-enabling the CI type-drift guard (stays deferred per 002c Task 7).
 - A full integration-test harness on spec (only the single scoped spike — Task 8).
@@ -460,7 +461,8 @@ cleanup of `findOne` / `GET /:id`; no Nest `grids` module in `@nxt/core` / `api`
   download remain until their owners absorb them).
 - Finalize the import ledger, schema deviation register, and i18n register.
 - Verify the lint bar green across `api`, `worker`, `core`, and any imported `helpers` files.
-- Roadmap: 002d → Completed; 002e next (ADR-005 as its authoring prerequisite).
+- Roadmap: 002d → Completed; 002e next (ADR-005 was still the authoring prerequisite at close-out;
+  Accepted later the same day).
 - Confirm `demo` and the `deployment` config group are fully gone.
 
 **Done when:** the done/exit bar (below) is met and recorded.
@@ -468,7 +470,7 @@ cleanup of `findOne` / `GET /:id`; no Nest `grids` module in `@nxt/core` / `api`
 **Landed (close-out):** Legacy Foundation deletes per ledger; grids annotated + `GET /:id`
 removed; `demo`/`deployment` confirmed gone; lint bar green
 (`nx run-many -t lint typecheck build test -p api,worker,core`); roadmap 002d → Completed;
-ADR-005 remains open as **002e authoring prerequisite**.
+ADR-005 was still open at 002d close-out; **Accepted 2026-07-17** before 002e authoring.
 
 ---
 
@@ -638,5 +640,6 @@ ADR-005 remains open as **002e authoring prerequisite**.
   controller kept minus `GET /:id`; unwired deleted Foundation modules from tiamat `AppModule`.
   Legacy `@core` barrel trimmed.
 - 2026-07-17 — [Task 11] **Done & signed off.** Exit bar met: lint bar green; `demo`/`deployment`
-  gone; ledger finalized; roadmap 002d → **Completed**. Next family step: author **002e** after
-  locking **ADR-005**.
+  gone; ledger finalized; roadmap 002d → **Completed**. Next family step was: lock ADR-005, then
+  author **002e**.
+- 2026-07-17 — **ADR-005 Accepted** (recorded on parent roadmap). 002e authoring unblocked.
