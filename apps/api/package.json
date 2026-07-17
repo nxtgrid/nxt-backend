@@ -87,8 +87,25 @@
           }
         }
       },
-      "test": {
-        "executor": "nx:noop"
+      "test-integration": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "^build"
+        ],
+        "options": {
+          "cwd": "apps/api",
+          "command": "jest --config jest.integration.config.cts"
+        }
+      },
+      "test-e2e": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "^build"
+        ],
+        "options": {
+          "cwd": "apps/api",
+          "command": "jest --config jest.e2e.config.cts"
+        }
       }
     }
   },
@@ -112,6 +129,8 @@
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
     "@types/passport": "^1.0.17",
-    "@types/passport-http-bearer": "^1.0.42"
+    "@types/passport-http-bearer": "^1.0.42",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.2.2"
   }
 }

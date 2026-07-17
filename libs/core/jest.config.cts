@@ -17,6 +17,8 @@ module.exports = {
     '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig]
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
+  // Libs: unit only under test/unit/ (integration/e2e live on host apps).
+  testMatch: [ '<rootDir>/test/unit/**/*.(spec|test).ts' ],
   // Source uses explicit `.js` extensions on relative imports (required by the NodeNext
   // module resolution used for the real build); strip them so Jest's resolver finds the
   // sibling `.ts` file instead.

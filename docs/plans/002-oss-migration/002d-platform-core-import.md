@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** In progress — Tasks 1–7 done (2026-07-17); next Task 8 (scoped test spike)
+**Status:** In progress — Tasks 1–8 signed off (2026-07-17); next Task 9 (`organizations` + `user-admin`)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -357,7 +357,7 @@ attaches a populated `AuthenticatedUser`; `worker` requires none of the auth sec
 
 ## Task 8 — Scoped test spike (keep-or-dismiss)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Done — **adopted** & signed off (2026-07-17)
 - **Depends on:** Tasks 5, 7
 - **Executor:** collaborative; **dismiss → maintainer manual sign-off**
 
@@ -366,6 +366,22 @@ test (API-key admin select / strategy lookup against local Supabase + seed) and 
 test (the `X-API-KEY` guard path). Evaluate: adopt as the pattern others copy, **or** dismiss
 cleanly and fall back to maintainer manual sign-off for the remaining modules. If the agent is
 burning excessive tokens or getting stuck, dismiss and hand to manual sign-off.
+
+**Adopted pattern (copy this):**
+
+- Tests under `apps/api/test/` only (not co-located with `src/`): `unit/`, `integration/`, `e2e/`,
+  `helpers/`. Same for libs: `libs/core/test/unit/` only (libs stay unit-only; no integration/e2e
+  in the shared kernel — those belong on host apps).
+- **Default** `nx test api` = **unit only** (stack-free; part of the lint bar).
+- Opt-in: `nx run api:test-integration` / `nx run api:test-e2e` (local Supabase + seed; skip if
+  `SUPABASE_*` missing). See `docs/deployment/supabase.md` § automated tests.
+- Integration: Nest testing module + real admin client against seed (e.g. `ApiKeyStrategy`).
+- E2E today: **thin** HTTP slice for the path under test (real guard/controller/API-key strategy;
+  stub bearer). **Not** full `AppModule` — Jest CJS cannot load ESM-only `jose` via
+  `SupabaseStrategy`. Do **not** proliferate thin modules; full-app e2e is a follow-up when an
+  ESM/Jest harness exists. Bearer JWT remains httpYac until then.
+- Remaining Foundation modules: use this pattern where it fits; otherwise maintainer manual
+  sign-off (httpYac).
 
 **Done when:** the spike runs green (adopted) *or* is explicitly dismissed with the rationale
 recorded and manual sign-off adopted as the standing bar.
@@ -539,3 +555,11 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
 - 2026-07-17 — [Task 7] **Done — awaiting sign-off.** Maintainer verified seeded bearer +
   `X-API-KEY` via httpYac `/auth/me`. Next: Task 8 (scoped test spike keep-or-dismiss).
 - 2026-07-17 — [Task 7] **Signed off.** Next: Task 8.
+- 2026-07-17 — [Task 8] **Adopted** (keep). Layout: `apps/api/test/{unit,integration,e2e,helpers}`;
+  default `nx test api` = unit only; `api:test-integration` / `api:test-e2e` opt-in + skip without
+  `SUPABASE_*`. Spike green: ApiKeyStrategy integration + thin `GET /auth/me` X-API-KEY e2e (not
+  full `AppModule` — `jose` ESM/Jest). Full-app e2e deferred; don’t proliferate thin e2e modules.
+  Bearer → httpYac. Next: Task 9.
+- 2026-07-17 — [Task 8] **Signed off.** Next: Task 9 (`organizations` + `user-admin`).
+- 2026-07-17 — [Task 8 / follow-up] `libs/core` specs moved to `libs/core/test/unit/` (mirrors api;
+  libs = unit-only by convention).

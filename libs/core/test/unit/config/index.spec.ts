@@ -1,5 +1,5 @@
-import { getConfig, setConfig } from './index.js';
-import type { NxtConfig } from './schema.js';
+import { getConfig, setConfig } from '../../../src/config/index.js';
+import type { NxtConfig } from '../../../src/config/schema.js';
 
 const testConfig: NxtConfig = Object.freeze({
   $schemaVersion: '1',

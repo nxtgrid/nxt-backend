@@ -1,7 +1,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadConfig } from './loader.js';
+import { loadConfig } from '../../../src/config/loader.js';
 
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__');
 const FROM_PATH_FIXTURE = join(FIXTURES_DIR, 'from-path.config.json');

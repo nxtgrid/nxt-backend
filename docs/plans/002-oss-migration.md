@@ -296,3 +296,6 @@ cutover. Weigh each rename individually; record all of them.
 - 2026-07-17 — **002d Task 7 signed off** (auth): Passport strategies + guard, `AuthenticatedUser`,
   JWKS/`jose`, inline API-key select, `/auth/me` + httpYac, ADR-014, CORS/`ValidationPipe`.
   Seed verify (bearer + `X-API-KEY`) passed. Next: Task 8 (scoped test spike).
+- 2026-07-17 — **002d Task 8 adopted** (test spike): `apps/api/test/` layout; unit default /
+  integration+e2e opt-in; ApiKeyStrategy + thin X-API-KEY e2e green. Next: Task 9.
+- 2026-07-17 — **002d Task 8 signed off.** Next: Task 9 (`organizations` + `user-admin`).

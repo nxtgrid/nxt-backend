@@ -77,3 +77,15 @@ smoke tests (`X-API-KEY` / httpYac under `apps/api/http/`). Api auth also needs
 File-based requests live under `apps/api/http/` using **httpYac** (`anweber.vscode-httpyac`).
 Shared login via `# @import ./login.http` + `# @ref loginPlatform` — see `apps/api/http/README.md`.
 Uninstall Huachao REST Client if present (conflicts on `.http` files).
+
+### Automated tests (`api`)
+
+Specs live under `apps/api/test/` (not co-located with `src/`):
+
+| Target | Command | Needs local Supabase + seed? |
+|--------|---------|------------------------------|
+| Unit (default / lint bar) | `pnpm exec nx test api` | No |
+| Integration | `pnpm exec nx run api:test-integration` | Yes |
+| E2E | `pnpm exec nx run api:test-e2e` | Yes |
+
+Suites under integration/e2e skip when `SUPABASE_URL` / `SUPABASE_SECRET_KEY` are missing.
