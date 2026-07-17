@@ -50,6 +50,9 @@ export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy) {
       );
     }
 
+    // Near-future (ADR-014 §5.3): attach an `authenticated` user client with this
+    // account's JWT claims so machine callers can exercise RLS. Until then, handlers
+    // that need a DB client after API-key auth fall through to service_role (high privilege).
     return {
       email: account.email ?? '',
       full_name: account.full_name ?? '',

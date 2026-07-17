@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** In progress — Tasks 1–8 signed off (2026-07-17); next Task 9 (`organizations` + `user-admin`)
+**Status:** In progress — Tasks 1–8 signed off (2026-07-17); Task 9 in progress (`user-admin`; Nest `organizations` skipped)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -44,9 +44,9 @@ These were resolved during authoring. Execute to them; if reality contradicts on
 it, don't silently diverge.
 
 1. **Scope (see table below).** Foundation = infra + `auth`, `api-keys`, `accounts`,
-   `members` (type-only), `organizations`, `user-admin` (whole), `grids` (partial). Deferred /
-   re-homed: `download`, `routers`, notification-core, `websocket`, `agents`, `dcus`, `poles`.
-   These are **amendments to ADR-004 §5** (Task 1).
+   `members` (type-only), org **table** (Nest module skipped — Task 9), `user-admin` (whole),
+   `grids` (partial). Deferred / re-homed: `download`, `routers`, notification-core, `websocket`,
+   `agents`, `dcus`, `poles`. These are **amendments to ADR-004 §5** (Task 1).
 2. **Operations-DB TypeORM is dropped entirely.** No ops-DB `*.entity.ts`, no `CoreTypeOrmModule`
    in Foundation. Services are (re-)expressed against the Supabase client using generated
    `supabase-types`. Timeseries TypeORM is untouched (decided at Monitoring, 002e).
@@ -111,7 +111,7 @@ it, don't silently diverge.
 | Infra: Supabase client, HTTP, **new pino logging** (config/types already in `@nxt/core`) | `download` | later (ADR-004 §5 amend) |
 | `auth` (supabase + api-key strategies + guard) | `routers` | Production Monitoring (ADR-004 §5 amend) |
 | `api-keys` lookup lives in auth (Task 7); `accounts` + `members` (type-only) | notification-core | first capability that writes notifications |
-| `organizations`, `user-admin` (whole) | `websocket` | Metering (first realtime emitter) |
+| `user-admin` (whole); org **table** (no Nest module) | `websocket` | Metering (first realtime emitter) |
 | `grids` (partial — read/CRUD; metering-coupled methods re-homed) | `agents` | Metering/Payments (entity rides identity graph) |
 | | `dcus`, `poles` | Metering |
 
@@ -160,9 +160,10 @@ deleted only when fully superseded.** For entangled files, record the destinatio
 | `libs/core/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | no Nest module — lookup inlined in `apps/api/.../auth/api-key.strategy.ts` (admin select); entity dropped; **delete at Task 11** |
 | `libs/core/src/modules/members/**` | type-only (Task 6) | empty service — no module; entity dropped; **delete at Task 11** |
 | `apps/tiamat/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | legacy host module only wired the core service; **delete at Task 11** |
-| `libs/core/src/modules/organizations/**` + `apps/tiamat/.../organizations/**` | to import (Task 9) | move (already Supabase) |
+| `libs/core/src/modules/organizations/**` + `apps/tiamat/.../organizations/**` | **skipped — delete at Task 11** (Task 9) | Nest module/service dead (only consumer was a commented-out GET). Org **table** + RLS remain Foundation data; `/health` probes the table directly |
+| `libs/core/src/modules/customers/dto/create-customer.dto.ts` | **imported** (Task 9) | `libs/core/.../customers/dto/create-customer.dto.ts` (shared api + worker); not the customers module |
 | `apps/tiamat/src/modules/auth/**` | **imported** (Task 7) | `apps/api/src/modules/auth/` — `AuthenticatedUser` (no admin-org flag, no embedded `account`); JWKS/`jose`; dual guard; CORS + `ValidationPipe` on api bootstrap; **delete legacy at Task 11** |
-| `apps/tiamat/src/modules/user-admin/**` | to import (Task 9) | whole; delete dead test code |
+| `apps/tiamat/src/modules/user-admin/**` | **imported** (Task 9) | `apps/api/.../user-admin/`; whole (members + agents + customers); dead test-user block not ported; whole-method admin client; **delete legacy at Task 11** |
 | `apps/tiamat/src/modules/grids/**` + `libs/core/.../grids/**` | **partial** (Task 10) | grid CRUD/read now; connectivity-stats → **re-home to Metering**; legacy file retained until both halves absorbed |
 | `libs/core/src/types/supabase-types-adjusted.ts` | **reintroduced** (Task 3) | grids+poles geom; `@nxt/core/types/supabase-types-adjusted` subpath; legacy file deleted at Task 11 |
 | `libs/helpers/src/*.ts` | per-use, file-granular | `git mv` each file at first import (with its `.spec`) |
@@ -390,16 +391,25 @@ recorded and manual sign-off adopted as the standing bar.
 
 ## Task 9 — `organizations` + `user-admin`
 
-- [ ] **Status:** Not started
+- [ ] **Status:** In progress — code landed (2026-07-17); records updated; awaiting verify / sign-off
 - **Depends on:** Task 7
 
-Move `organizations` (already Supabase) and `user-admin` **whole** (members + agents + customers —
-the recorded user-admin-specific exception). Delete the dead commented test-user code; de-brand
-comments. Shift request-handling reads to the **per-request user client** where the operation acts
-as the user (RLS-exercising); admin client only where genuinely privileged. Bring their DTOs.
+Import `user-admin` **whole** (members + agents + customers — the recorded user-admin-specific
+exception). Delete the dead commented test-user code; de-brand comments. Bring DTOs
+(`CreateCustomerDto` in `@nxt/core` for worker reuse; other DTOs on the api module).
 
-**Done when:** endpoints compile and behave against the seed (automated per Task 8 outcome, or
-manual sign-off); RLS parity confirmed for user-client reads.
+**Nest `organizations` skipped:** legacy service had a single `findOne` and the only controller
+route was commented out; nothing else injected the service. Org table stays Foundation data
+(seed, RLS, health probe). Legacy Nest org files → delete at Task 11.
+
+**Client policy (Task 9):** `user-admin` uses the **admin client for the whole method** (Auth Admin
+APIs + privileged follow-on writes). Do not mix user-client reads mid-flow here. API-key callers
+still have no RLS-bound user client — **near-future:** ADR-014 §5.3 (attach `authenticated` client
+after key validation) before growing more machine-callable data paths. User-client-by-default
+returns with real read endpoints (Task 10 `grids`).
+
+**Done when:** endpoints compile and behave against the seed (maintainer httpYac / manual
+sign-off; Task 8 pattern optional); ledger + i18n register updated.
 
 ---
 
@@ -441,9 +451,10 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   fail-fast on missing `SUPABASE_*`; `demo`/`demoModules` removed.
 - Foundation imported on the Supabase client (no ops TypeORM; `CoreTypeOrmModule` gone from scope):
   `auth` (`AuthenticatedUser`, admin-org flag dropped; no embedded `account`; API-key select
-  inline in strategy), `accounts` + `members` (type-only), `organizations`, `user-admin` (whole),
-  `grids` (partial). pino logging live;
-  `console.*` replaced within imported modules; user-client-by-default in request handlers.
+  inline in strategy), `accounts` + `members` (type-only), org **table** (no Nest module),
+  `user-admin` (whole; admin-client privileged surface), `grids` (partial). pino logging live;
+  `console.*` replaced within imported modules; user-client-by-default on request-handler reads
+  (except whole-method admin privileged surfaces like `user-admin`).
 - Adjusted types layer live (grids+poles geom) with uniform `Database` import; `deployment` group
   dropped; `grids.timezone` default `UTC` (init migration amended); types regenerated clean.
 - Verification: lint bar green; seed established (fixtures + claimed test user); the test spike run
@@ -464,7 +475,7 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
 - [x] Internationalization & de-brand register (created + seeded; Task 7 auth rows updated)
 - [x] Deployment docs: Supabase required for foundation hosts, seed/bootstrap (Task 5; env
       examples already updated in Task 4)
-- [x] Import ledger (this file) kept current through Task 7 auth / api-keys rows
+- [x] Import ledger (this file) kept current through Task 9 (`user-admin` + org Nest skip)
 
 ## Notes & decisions log
 
@@ -563,3 +574,11 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
 - 2026-07-17 — [Task 8] **Signed off.** Next: Task 9 (`organizations` + `user-admin`).
 - 2026-07-17 — [Task 8 / follow-up] `libs/core` specs moved to `libs/core/test/unit/` (mirrors api;
   libs = unit-only by convention).
+- 2026-07-17 — [Task 9] Nest **`organizations` skipped** (dead surface). `user-admin` imported to
+  `apps/api` with whole-method admin client; `CreateCustomerDto` in `@nxt/core` (`class-validator`
+  dep on core for shared DTO). Dead test-user block not ported. Maintainer local serve smoke OK.
+- 2026-07-17 — [Task 9 / API keys] Confirmed gap: API-key auth attaches claims but **no**
+  per-request user client → machine handlers that need PostgREST fall through to `service_role`.
+  **Near-future (before more machine data paths):** implement ADR-014 §5.3 — after key validation,
+  attach an `authenticated` client with the account’s JWT claims. Privileged Auth Admin surfaces
+  (`user-admin`) stay whole-method admin regardless. Comment left on `ApiKeyStrategy`.

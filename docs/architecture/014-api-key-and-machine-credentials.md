@@ -100,10 +100,14 @@ scale: every new tool must remember checks; agents can be steered into over-fetc
    integrations. Dedicated service accounts; seed platform key stays **local/dev only**.
 2. **Route allowlist:** API-key (and later scoped) principals may only hit approved surfaces
    (e.g. MCP / machine routes), not the full human API by default.
-3. **RLS-bound machine sessions:** After API-key (or token-exchange) auth, request handlers use a
-   user-scoped Supabase client with that principal’s claims — **not** admin — except true
-   privileged steps. (Clarifies: “subject to RLS” is false today for API keys if handlers use
-   `service_role`.)
+3. **RLS-bound machine sessions (near-future — do next for API-key hardening):** After API-key
+   (or token-exchange) auth, attach a user-scoped Supabase client with that principal’s JWT
+   claims (`AuthenticatedUser.supabase`) so request handlers can exercise RLS — **not** admin —
+   except true privileged steps. Today `ApiKeyStrategy` returns claims only (no client);
+   machine handlers that need PostgREST fall through to `service_role` (high privilege). Confirmed
+   during 002d Task 9 (`user-admin` / create-customer machine callers). Land this **before**
+   growing more machine-callable data paths (e.g. Task 10 grids reads). Privileged Auth Admin
+   surfaces may stay whole-method admin regardless.
 4. **Scopes on `api_keys`:** Persist and enforce scopes in Nest (guard/interceptor). Taxonomy
    owned by Foundation + each capability that exposes machine APIs.
 5. **Optional later:** Short-lived token exchange (key → JWT with scopes + expiry); separate MCP
@@ -134,3 +138,5 @@ MCP tenancy.
 - Seed key `dev-api-key-platform-superadmin` is for local Foundation auth tests only.
 - Manual API checks: `apps/api/http/` (httpYac); prefer bearer for human-shaped tests.
 - Related omission: schema deviation register #2 / #3 (Grafana / Make roles).
+- 2026-07-17 — §5.3 elevated to **near-future** after 002d Task 9: pointer also on
+  `apps/api/.../auth/api-key.strategy.ts` and 002d decisions log.
