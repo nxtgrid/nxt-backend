@@ -1,4 +1,9 @@
-import { HttpException, type Logger } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
+
+/** Structural logger — avoids pnpm dual `@nestjs/common` peer identity mismatches. */
+interface ErrorLogger {
+  error(message: string, ...optionalParams: unknown[]): void;
+}
 
 interface ErrorWithMessage {
   message: unknown;
@@ -34,7 +39,7 @@ function resolveErrorMessage(error: unknown): string {
 export function throwSupabaseError(
   error: unknown,
   status: number | undefined,
-  logger: Logger,
+  logger: ErrorLogger,
 ): never {
   logger.error(
     `[SUPABASE RESPONSE ERROR] status=${ status ?? 'unknown' } ${ resolveErrorMessage(error) }`,

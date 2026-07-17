@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { loadConfig } from '@nxt/core/config';
 
 async function bootstrap() {
@@ -10,6 +10,14 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
+
+  app.enableCors();
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: false },
+    }),
+  );
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

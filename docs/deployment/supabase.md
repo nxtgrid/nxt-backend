@@ -68,7 +68,9 @@ account `organization_id` sync → insert `members`.
 
 Use the emails/passwords above against the local Auth API / Studio
 (`pnpm exec supabase status` for URLs and keys). Prefer the seeded API key for machine auth
-smoke tests once Task 7 lands.
+smoke tests (`X-API-KEY` / httpYac under `apps/api/http/`). Api auth also needs
+`SUPABASE_PUBLISHABLE_KEY` plus `SUPABASE_JWKS_URL` (or `SUPABASE_JWT_SECRET`) in
+`apps/api/.env` — see `apps/api/.env.example`.
 
 ### REST / httpYac (manual API checks)
 
