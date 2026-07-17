@@ -293,3 +293,6 @@ cutover. Weigh each rename individually; record all of them.
   config group removed, env rename (`SUPABASE_URL` / `SUPABASE_SECRET_KEY`). Next: Task 5 seed.
 - 2026-07-16 — **002d Task 5 done** (seed harness): local `supabase/seed.sql` +
   `docs/deployment/supabase.md` §5. Next: Task 6 (`accounts` + `api-keys`).
+- 2026-07-17 — **002d Task 7 signed off** (auth): Passport strategies + guard, `AuthenticatedUser`,
+  JWKS/`jose`, inline API-key select, `/auth/me` + httpYac, ADR-014, CORS/`ValidationPipe`.
+  Seed verify (bearer + `X-API-KEY`) passed. Next: Task 8 (scoped test spike).

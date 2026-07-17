@@ -32,8 +32,8 @@ Two flavors live here:
 | # | Location | Finding | Kind | Disposition | Cross-ref | Status |
 |---|---|---|---|---|---|---|
 | 1 | `grids.timezone` column default (002b init migration; legacy `grid.entity.ts` `'Africa/Lagos'`) | Timezone defaults to Lagos — a Nigeria assumption baked into the **schema**, not just code | i18n | **neutralized** — default changed to `'UTC'` in the init migration (002d Task 2). New inserts only; existing company grids keep stored values | Schema deviation register #35 | confirmed |
-| 2 | `legacy/apps/tiamat/src/modules/auth/nxt-supabase-user.ts` — type `NxtSupabaseUser` | Brand-named auth user type (`Nxt…`) | de-brand | **neutralized** — renamed `AuthenticatedUser` on import (002d Task 7) | 002d Task 7 | candidate |
-| 3 | `legacy/apps/tiamat/src/modules/auth/supabase.strategy.ts` — comment "let all NXT Grid pass" + `console.info` | Brand reference in comment; also the (deferred) admin-org membership flag `is_nxt_grid_member` | de-brand | **neutralized** — comment cleaned on import; flag **deferred** (no in-scope reader), reintroduced as `is_admin_org_member` with its consumer | 002d Task 7; ADR-007 Amendment 2026-07-15 §B | candidate |
+| 2 | `legacy/apps/tiamat/src/modules/auth/nxt-supabase-user.ts` — type `NxtSupabaseUser` | Brand-named auth user type (`Nxt…`) | de-brand | **neutralized** — `apps/api/src/modules/auth/authenticated-user.ts` exports `AuthenticatedUser` (002d Task 7) | 002d Task 7 | confirmed |
+| 3 | `legacy/apps/tiamat/src/modules/auth/supabase.strategy.ts` — comment "let all NXT Grid pass" + `console.info` | Brand reference in comment; also the (deferred) admin-org membership flag `is_nxt_grid_member` | de-brand | **neutralized** — brand comment not ported; Nest `Logger` instead of `console.*`; flag **deferred** (no in-scope reader), reintroduce as `is_admin_org_member` with its consumer | 002d Task 7; ADR-007 Amendment 2026-07-15 §B | confirmed |
 | 4 | `legacy/apps/tiamat/src/modules/user-admin/user-admin.service.ts` — commented-out test-user block (`bobby.bol@nxtgrid.co`, `+31…` phone) + "Create a NXT Grid member" comment | Brand emails/phone in dead code; brand reference in comment | de-brand | **neutralized** — dead block deleted (not ported); comment de-branded on import (002d Task 9) | 002d Task 9 | candidate |
 | 5 | `organizations` (no `timezone` column today) | An org-level timezone would be the natural i18n home once multi-region operators exist (grids currently carry timezone) | i18n | **noted** — future candidate; no action in 002d | — | candidate |
 
@@ -49,3 +49,6 @@ Two flavors live here:
 - 2026-07-16 — [002d Task 2] Init migration amended (`grids.timezone` default → `'UTC'`); schema
   deviation register #35 added. Maintainer sign-off 2026-07-16 after `db reset` +
   `generate-types:local` (empty diff on `supabase-types.ts` as expected).
+- 2026-07-17 — [002d Task 7] Auth de-brand rows #2–#3 updated with OSS destinations. Status stays
+  `candidate` until Task 7 seed verify + maintainer sign-off (then → `confirmed`).
+- 2026-07-17 — [002d Task 7] Seed verify passed (maintainer); rows #2–#3 → `confirmed`.

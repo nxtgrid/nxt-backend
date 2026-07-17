@@ -5,7 +5,7 @@
 amended by this plan), ADR-008 (Phase 3 incremental import), **ADR-013** (capability-owned
 behavior over shared core entities — *authored by this plan*, Task 1)
 **Created:** 2026-07-15
-**Status:** In progress — Tasks 1–6 done (2026-07-16; Task 6 docs-only); next Task 7 (auth)
+**Status:** In progress — Tasks 1–7 done (2026-07-17); next Task 8 (scoped test spike)
 **Depends on:** 002b (database baseline) and 002c (scaffold, pipeline & config skeleton) complete;
 interlock reached 2026-07-14.
 **Execution model:** collaborative — division of labor is decided **per task/subtask as we go**
@@ -157,11 +157,11 @@ deleted only when fully superseded.** For entangled files, record the destinatio
 | `libs/core/src/modules/logger-module.ts` (+ dead LokiService) | **superseded — delete at Task 11** | Not ported. New `GlobalLoggerModule` is a **no-op slot** (Nest `Logger` / `console.*`); `logger.options.ts` kept for later nestjs-pino restore |
 | `libs/core/src/modules/global-http-module.ts` | **imported** (Task 4) | `libs/core/src/modules/global-http-module.ts`; wired in **both** api + worker infra |
 | `libs/core/src/modules/accounts/**` | **type-only** (Task 6) | no module/service — sole caller was `@TEMPORARY` Account attach on auth user; entity dropped; row types from generated / inferred selects; **delete at Task 11** |
-| `libs/core/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | no standalone Nest module — sole caller is `ApiKeyStrategy`; inline admin-client select there; entity dropped; **delete at Task 11** |
+| `libs/core/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | no Nest module — lookup inlined in `apps/api/.../auth/api-key.strategy.ts` (admin select); entity dropped; **delete at Task 11** |
 | `libs/core/src/modules/members/**` | type-only (Task 6) | empty service — no module; entity dropped; **delete at Task 11** |
 | `apps/tiamat/src/modules/api-keys/**` | **absorbed into auth** (Task 7) | legacy host module only wired the core service; **delete at Task 11** |
 | `libs/core/src/modules/organizations/**` + `apps/tiamat/.../organizations/**` | to import (Task 9) | move (already Supabase) |
-| `apps/tiamat/src/modules/auth/**` | to import (Task 7) | move; `AuthenticatedUser`; drop admin-org flag + embedded `account` |
+| `apps/tiamat/src/modules/auth/**` | **imported** (Task 7) | `apps/api/src/modules/auth/` — `AuthenticatedUser` (no admin-org flag, no embedded `account`); JWKS/`jose`; dual guard; CORS + `ValidationPipe` on api bootstrap; **delete legacy at Task 11** |
 | `apps/tiamat/src/modules/user-admin/**` | to import (Task 9) | whole; delete dead test code |
 | `apps/tiamat/src/modules/grids/**` + `libs/core/.../grids/**` | **partial** (Task 10) | grid CRUD/read now; connectivity-stats → **re-home to Metering**; legacy file retained until both halves absorbed |
 | `libs/core/src/types/supabase-types-adjusted.ts` | **reintroduced** (Task 3) | grids+poles geom; `@nxt/core/types/supabase-types-adjusted` subpath; legacy file deleted at Task 11 |
@@ -330,7 +330,7 @@ No Nest modules land in this task. Decisions:
 
 ## Task 7 — `auth`
 
-- [ ] **Status:** Not started
+- [x] **Status:** Done & signed off (2026-07-17)
 - **Depends on:** Task 6
 
 Move the two Passport strategies + `AuthenticationGuard`. Rename `NxtSupabaseUser` →
@@ -344,6 +344,11 @@ embedded `account` object** (TEMPORARY legacy); keep exposing raw `organization_
 `enableCors()` + a global `ValidationPipe` on the `api` bootstrap. Add `@nestjs/passport`,
 `passport`, strategy packages, and `jose` (JWKS) to `api` — not `@nestjs/jwt` /
 `jsonwebtoken`.
+
+**Landed:** `apps/api/src/modules/auth/*` (strategies, guard, module, `/auth/me`); httpYac under
+`apps/api/http/`; ADR-014; bootstrap CORS + `ValidationPipe`; ledger + i18n register updated.
+**Verified:** seeded bearer JWT + `X-API-KEY` against local Supabase (maintainer, httpYac /
+`/auth/me`).
 
 **Done when:** `api` authenticates a seeded Supabase JWT (bearer) and an `X-API-KEY`; the guard
 attaches a populated `AuthenticatedUser`; `worker` requires none of the auth secrets.
@@ -440,10 +445,10 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
 - [x] Roadmap `002-oss-migration.md`: sub-plan index, standing assumptions (module-split → ADR-013,
       ADR-005 timing, no-cracks governance), notes log
 - [x] Schema deviation register: `grids.timezone` (#35, Task 2)
-- [x] Internationalization & de-brand register (created + seeded)
+- [x] Internationalization & de-brand register (created + seeded; Task 7 auth rows updated)
 - [x] Deployment docs: Supabase required for foundation hosts, seed/bootstrap (Task 5; env
       examples already updated in Task 4)
-- [x] Import ledger (this file) kept current for Task 4 infra rows
+- [x] Import ledger (this file) kept current through Task 7 auth / api-keys rows
 
 ## Notes & decisions log
 
@@ -525,3 +530,12 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   `@supabase/supabase-js` (user client + types on the host). **No** `@nestjs/jwt` /
   `jsonwebtoken` / `jwks-rsa`. Grafana RS256 endpoint skipped. Small `/auth/me` probe planned
   for early JWKS verification.
+- 2026-07-17 — [Task 7 / bootstrap] `enableCors()` + global `ValidationPipe` on `api` only;
+  `class-validator` / `class-transformer` on `@nxt/api` only (not core/worker — avoids dragging
+  Nest optional peers into every host). `throwSupabaseError` takes a structural logger so pnpm
+  dual `@nestjs/common` peer installs do not break typecheck across packages.
+- 2026-07-17 — [Task 7 / ledger] Auth marked **imported**; api-keys rows note inline strategy
+  destination. i18n/de-brand register #2–#3 updated (destinations). Seed verify still open.
+- 2026-07-17 — [Task 7] **Done — awaiting sign-off.** Maintainer verified seeded bearer +
+  `X-API-KEY` via httpYac `/auth/me`. Next: Task 8 (scoped test spike keep-or-dismiss).
+- 2026-07-17 — [Task 7] **Signed off.** Next: Task 8.
