@@ -517,6 +517,9 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   call site. Task 6 is **docs/ledger only**. Legacy `accounts` / `api-keys` / `members` files
   remain under `legacy/` until **Task 11** deletes fully superseded Foundation sources.
 - 2026-07-16 — [Task 6] **Done (docs-only) — awaiting sign-off.** Next: Task 7 (`auth`).
+- 2026-07-17 — [Task 7 / security] ADR-014 authored: machine credentials (API keys, scopes,
+  Postgres readonly roles vs Supabase JWT roles, MCP team vs customer tenancy, hardening order).
+  Public by design (architecture for adopters); no secrets.
 - 2026-07-16 — [Task 7 / deps] Minimal auth packages on `api`: `@nestjs/passport`, `passport`
   (peer), `passport-http-bearer`, `passport-headerapikey`, `jose` (JWKS + verify),
   `@supabase/supabase-js` (user client + types on the host). **No** `@nestjs/jwt` /
