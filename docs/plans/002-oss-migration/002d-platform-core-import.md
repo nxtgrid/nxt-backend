@@ -582,3 +582,10 @@ imported with the pending re-home; no `dcus`/`meters` dependency pulled into 002
   **Near-future (before more machine data paths):** implement ADR-014 §5.3 — after key validation,
   attach an `authenticated` client with the account’s JWT claims. Privileged Auth Admin surfaces
   (`user-admin`) stay whole-method admin regardless. Comment left on `ApiKeyStrategy`.
+- 2026-07-17 — [Task 9 / Supabase helpers] `SupabaseService.handleSingle` for `.single()` (value or
+  throw); `handleResponse` stays permissive for `.maybeSingle()` / lists. Cloudflare HTML 5xx
+  **throws** (no soft-`null`); `isCloudflareHtmlError` (file-local) collapses the HTML body to a
+  one-liner and maps to **503 Service Unavailable** — amends Task 4 soft-return. Rationale: legacy
+  soft-`null` was a panic brake when handlers/jobs were not throw-ready; empty-data lied about
+  outages and broke `.single()` contracts. Retries for this infra class = **far-future** (not in
+  002d).

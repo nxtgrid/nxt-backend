@@ -41,6 +41,16 @@ interface AccountEmbed {
   organization_id: number;
 }
 
+const logger = new Logger('UserAdminService');
+
+const handleUserResponse = (res: UserResponse) => {
+  const { data, error } = res;
+  if (error) {
+    throwSupabaseError(error, undefined, logger);
+  }
+  return data.user;
+};
+
 /**
  * Privileged user administration (members, agents, customers).
  *
@@ -50,24 +60,7 @@ interface AccountEmbed {
  */
 @Injectable()
 export class UserAdminService {
-  private readonly logger = new Logger(UserAdminService.name);
-
   constructor(private readonly supabase: SupabaseService) {}
-
-  private handleUserResponse(res: UserResponse) {
-    const { data, error } = res;
-    if (error) {
-      throwSupabaseError(error, undefined, this.logger);
-    }
-    return data.user;
-  }
-
-  private requireRow<T>(row: T | null, context: string): T {
-    if (row == null) {
-      throw new NotFoundException(`${ context }: no row returned`);
-    }
-    return row;
-  }
 
   async inviteMember(
     {
@@ -85,17 +78,14 @@ export class UserAdminService {
     const user_metadata: SupabaseUserMetadata = { full_name: full_name.trim() };
     const user = await this.supabase.adminClient.auth.admin
       .inviteUserByEmail(email, { data: user_metadata, redirectTo })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
-    const account = this.requireRow(
-      await this.supabase.adminClient
-        .from('accounts')
-        .select('id')
-        .eq('supabase_id', user.id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'inviteMember account',
-    );
+    const account = await this.supabase.adminClient
+      .from('accounts')
+      .select('id')
+      .eq('supabase_id', user.id)
+      .single()
+      .then(this.supabase.handleSingle);
 
     const app_metadata: SupabaseAppMetadata = {
       account_id: account.id,
@@ -105,21 +95,18 @@ export class UserAdminService {
     };
     await this.supabase.adminClient.auth.admin
       .updateUserById(user.id, { app_metadata })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
-    const member = this.requireRow(
-      await this.supabase.adminClient
-        .from('members')
-        .insert({
-          account_id: account.id,
-          member_type,
-          busy_commissioning_id,
-        })
-        .select()
-        .single()
-        .then(this.supabase.handleResponse),
-      'inviteMember member',
-    );
+    const member = await this.supabase.adminClient
+      .from('members')
+      .insert({
+        account_id: account.id,
+        member_type,
+        busy_commissioning_id,
+      })
+      .select()
+      .single()
+      .then(this.supabase.handleSingle);
 
     const message = `${ author.full_name } invited a new member ${ full_name } (${ email }) with ${ member_type } role`;
     void this.supabase.adminClient
@@ -149,29 +136,26 @@ export class UserAdminService {
   ) {
     await author.validate();
 
-    const member = this.requireRow(
-      await this.supabase.adminClient
-        .from('members')
-        .update({
-          member_type,
-          training_level,
-          busy_commissioning_id,
-          subscribed_to_telegram_revenue_notifications,
-          hidden,
-        })
-        .eq('id', id)
-        .select('id, account:accounts(id, supabase_id, organization_id)')
-        .single()
-        .then(this.supabase.handleResponse),
-      'updateMember',
-    );
+    const member = await this.supabase.adminClient
+      .from('members')
+      .update({
+        member_type,
+        training_level,
+        busy_commissioning_id,
+        subscribed_to_telegram_revenue_notifications,
+        hidden,
+      })
+      .eq('id', id)
+      .select('id, account:accounts(id, supabase_id, organization_id)')
+      .single()
+      .then(this.supabase.handleSingle);
 
     const account = member.account as unknown as AccountEmbed;
     const user_metadata: SupabaseUserMetadata = { full_name: full_name.trim() };
     const app_metadata: Partial<SupabaseAppMetadata> = { member_type };
     await this.supabase.adminClient.auth.admin
       .updateUserById(account.supabase_id, { user_metadata, app_metadata })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
     const message = `${ author.full_name } made updates to member ${ full_name }`;
     void this.supabase.adminClient
@@ -193,16 +177,12 @@ export class UserAdminService {
   ) {
     await author.validate();
 
-    const grid = this.requireRow(
-      await this.supabase.adminClient
-        .from('grids')
-        .select('organization_id')
-        .eq('id', grid_id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'createAgent grid',
-    );
-    const { organization_id } = grid;
+    const { organization_id } = await this.supabase.adminClient
+      .from('grids')
+      .select('organization_id')
+      .eq('id', grid_id)
+      .single()
+      .then(this.supabase.handleSingle);
 
     const user_metadata: SupabaseUserMetadata = { full_name: full_name.trim() };
     const user = await this.supabase.adminClient.auth.admin
@@ -213,17 +193,14 @@ export class UserAdminService {
         email_confirm: true,
         user_metadata,
       })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
-    const account = this.requireRow(
-      await this.supabase.adminClient
-        .from('accounts')
-        .select('id')
-        .eq('supabase_id', user.id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'createAgent account',
-    );
+    const account = await this.supabase.adminClient
+      .from('accounts')
+      .select('id')
+      .eq('supabase_id', user.id)
+      .single()
+      .then(this.supabase.handleSingle);
 
     const app_metadata: SupabaseAppMetadata = {
       account_id: account.id,
@@ -235,18 +212,15 @@ export class UserAdminService {
       app_metadata,
     });
 
-    const agent = this.requireRow(
-      await this.supabase.adminClient
-        .from('agents')
-        .insert({
-          account_id: account.id,
-          grid_id,
-        })
-        .select()
-        .single()
-        .then(this.supabase.handleResponse),
-      'createAgent agent',
-    );
+    const agent = await this.supabase.adminClient
+      .from('agents')
+      .insert({
+        account_id: account.id,
+        grid_id,
+      })
+      .select()
+      .single()
+      .then(this.supabase.handleSingle);
 
     await this.supabase.adminClient
       .from('wallets')
@@ -274,21 +248,18 @@ export class UserAdminService {
   ) {
     await author.validate();
 
-    const agent = this.requireRow(
-      await this.supabase.adminClient
-        .from('agents')
-        .select('id, account:accounts(id, supabase_id, organization_id), grid_id')
-        .eq('id', id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'updateAgent',
-    );
+    const agent = await this.supabase.adminClient
+      .from('agents')
+      .select('id, account:accounts(id, supabase_id, organization_id), grid_id')
+      .eq('id', id)
+      .single()
+      .then(this.supabase.handleSingle);
 
     const account = agent.account as unknown as AccountEmbed;
     const user_metadata: SupabaseUserMetadata = { full_name: full_name.trim() };
     await this.supabase.adminClient.auth.admin
       .updateUserById(account.supabase_id, { phone, email, user_metadata })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
     const message = `${ author.full_name } updated agent ${ full_name }`;
     void this.supabase.adminClient
@@ -315,16 +286,12 @@ export class UserAdminService {
     // Many customers cannot provide contact details — synthesize an email so Auth can create the user.
     const resolvedEmail = email ? email : phone ? undefined : `${ randomUUID() }@gmail.com`;
 
-    const grid = this.requireRow(
-      await this.supabase.adminClient
-        .from('grids')
-        .select('organization_id')
-        .eq('id', grid_id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'createCustomer grid',
-    );
-    const { organization_id } = grid;
+    const { organization_id } = await this.supabase.adminClient
+      .from('grids')
+      .select('organization_id')
+      .eq('id', grid_id)
+      .single()
+      .then(this.supabase.handleSingle);
 
     const user_metadata: SupabaseUserMetadata = { full_name: full_name.trim() };
     const user = await this.supabase.adminClient.auth.admin
@@ -335,17 +302,14 @@ export class UserAdminService {
         email_confirm: true,
         user_metadata,
       })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
-    const account = this.requireRow(
-      await this.supabase.adminClient
-        .from('accounts')
-        .select('id')
-        .eq('supabase_id', user.id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'createCustomer account',
-    );
+    const account = await this.supabase.adminClient
+      .from('accounts')
+      .select('id')
+      .eq('supabase_id', user.id)
+      .single()
+      .then(this.supabase.handleSingle);
 
     const app_metadata: SupabaseAppMetadata = {
       account_id: account.id,
@@ -357,27 +321,24 @@ export class UserAdminService {
       app_metadata,
     });
 
-    const customer = this.requireRow(
-      await this.supabase.adminClient
-        .from('customers')
-        .insert({
-          account_id: account.id,
-          grid_id,
-          ...pick([
-            'latitude',
-            'longitude',
-            'is_hidden_from_reporting',
-            'lives_primarily_in_the_community',
-            'generator_owned',
-            'gender',
-            'total_connection_fee',
-          ], createCustomerInput),
-        })
-        .select('*, account:accounts(*)')
-        .single()
-        .then(this.supabase.handleResponse),
-      'createCustomer customer',
-    );
+    const customer = await this.supabase.adminClient
+      .from('customers')
+      .insert({
+        account_id: account.id,
+        grid_id,
+        ...pick([
+          'latitude',
+          'longitude',
+          'is_hidden_from_reporting',
+          'lives_primarily_in_the_community',
+          'generator_owned',
+          'gender',
+          'total_connection_fee',
+        ], createCustomerInput),
+      })
+      .select('*, account:accounts(*)')
+      .single()
+      .then(this.supabase.handleSingle);
 
     const message = `${ author.full_name } created a new customer ${ full_name }`;
     void this.supabase.adminClient
@@ -408,22 +369,19 @@ export class UserAdminService {
   ) {
     await author.validate();
 
-    const customer = this.requireRow(
-      await this.supabase.adminClient
-        .from('customers')
-        .update({ latitude, longitude, is_hidden_from_reporting })
-        .eq('id', id)
-        .select('id, grid_id, account:accounts(id, supabase_id, organization_id)')
-        .single()
-        .then(this.supabase.handleResponse),
-      'updateCustomer',
-    );
+    const customer = await this.supabase.adminClient
+      .from('customers')
+      .update({ latitude, longitude, is_hidden_from_reporting })
+      .eq('id', id)
+      .select('id, grid_id, account:accounts(id, supabase_id, organization_id)')
+      .single()
+      .then(this.supabase.handleSingle);
 
     const account = customer.account as unknown as AccountEmbed;
     const user_metadata: SupabaseUserMetadata = { full_name: full_name.trim() };
     await this.supabase.adminClient.auth.admin
       .updateUserById(account.supabase_id, { phone, email, user_metadata })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
     const message = `${ author.full_name } updated customer ${ full_name }`;
     void this.supabase.adminClient
@@ -463,31 +421,24 @@ export class UserAdminService {
 
     const hasGrid = table === 'agents' || table === 'customers';
 
-    const row = this.requireRow(
-      await this.supabase.adminClient
-        .from(table)
-        .select(hasGrid ? 'account_id, grid_id' : 'account_id')
-        .eq('id', id)
-        .single()
-        .then(this.supabase.handleResponse),
-      'deleteAccount entity',
-    ) as {
-      account_id: number;
-      grid_id?: number | null;
-    };
+    const { account_id, grid_id } = await this.supabase.adminClient
+      .from(table)
+      .select(hasGrid ? 'account_id, grid_id' : 'account_id')
+      .eq('id', id)
+      .single()
+      .then(this.supabase.handleSingle)
+      .then(row => row as unknown as {
+        account_id: number;
+        grid_id?: number | null;
+      });
 
-    const { account_id, grid_id } = row;
-
-    const account = this.requireRow(
-      await this.supabase.adminClient
-        .from('accounts')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', account_id)
-        .select('supabase_id, full_name, organization_id')
-        .single()
-        .then(this.supabase.handleResponse),
-      'deleteAccount account',
-    );
+    const account = await this.supabase.adminClient
+      .from('accounts')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', account_id)
+      .select('supabase_id, full_name, organization_id')
+      .single()
+      .then(this.supabase.handleSingle);
 
     if (!account.supabase_id) {
       throw new NotFoundException('deleteAccount: account has no supabase_id');
@@ -495,7 +446,7 @@ export class UserAdminService {
 
     await this.supabase.adminClient.auth.admin
       .updateUserById(account.supabase_id, { ban_duration: '876000h' })
-      .then(res => this.handleUserResponse(res));
+      .then(handleUserResponse);
 
     const entity = table.slice(0, -1);
     const message = `${ author.full_name } deleted ${ entity } ${ account.full_name }`;

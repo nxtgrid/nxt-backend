@@ -1,9 +1,15 @@
-import { Global, Injectable, Logger, Module } from '@nestjs/common';
+import {
+  Global,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  Module,
+} from '@nestjs/common';
 import { createClient, type PostgrestError, type SupabaseClient } from '@supabase/supabase-js';
 
 import { requireEnv } from '#config/require-env.js';
 import type { Database } from '#types/supabase-types-adjusted.js';
-import { isCloudflareHtmlError, throwSupabaseError } from './supabase.errors.js';
+import { throwSupabaseError } from './supabase.errors.js';
 
 export { throwSupabaseError } from './supabase.errors.js';
 
@@ -32,28 +38,49 @@ export class SupabaseService {
     );
   }
 
-  HANDLE_RESPONSE_UNTYPED({ data, error, status }: SupabaseResponse<unknown>): unknown {
+  /**
+   * Permissive: for `.maybeSingle()`, multi-row selects, etc.
+   * Errors (including Cloudflare HTML 5xx) throw — never soft-return null.
+   */
+  HANDLE_RESPONSE_UNTYPED = ({
+    data,
+    error,
+    status,
+  }: SupabaseResponse<unknown>): unknown => {
     if (error) {
-      if (isCloudflareHtmlError(error)) {
-        this.logger.warn('Supabase service unavailable (5xx), returning null data');
-        return null;
-      }
       throwSupabaseError(error, status, this.logger);
     }
     return data;
-  }
+  };
 
-  handleResponse<T>({ data, error, status }: SupabaseResponse<T>): T {
+  /**
+   * Permissive: for `.maybeSingle()`, multi-row selects, etc.
+   * `data` may be null when zero rows. Errors throw (no Cloudflare soft-null).
+   */
+  handleResponse = <T>({ data, error, status }: SupabaseResponse<T>): T => {
     if (error) {
-      // @TOCHECK :: See if this is sustainable, or whether we need to throw an error (and catch everywhere)
-      if (isCloudflareHtmlError(error)) {
-        this.logger.warn('Supabase service unavailable (5xx), returning null data');
-        return null as T;
-      }
       throwSupabaseError(error, status, this.logger);
     }
     return data;
-  }
+  };
+
+  /**
+   * Strict: use after `.single()` only — value or throw.
+   * PostgREST usually sets `error` on 0 rows; null `data` without error is treated as invariant break (500).
+   */
+  handleSingle = <T>({
+    data,
+    error,
+    status,
+  }: SupabaseResponse<T>): NonNullable<T> => {
+    if (error) {
+      throwSupabaseError(error, status, this.logger);
+    }
+    if (data == null) {
+      throw new InternalServerErrorException('Expected a single row, got none');
+    }
+    return data;
+  };
 }
 
 @Global()
