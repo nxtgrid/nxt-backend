@@ -1,2 +1,9 @@
 # Frozen reference tree — not part of the active Nx workspace (see legacy/README.md)
 legacy
+
+# Non-runtime files — @nx/js:node watches the whole project when build is
+# nx:run-commands; ignore these so `nx serve` does not restart on docs / httpYac edits.
+docs
+**/*.http
+**/*.md
+apps/*/http

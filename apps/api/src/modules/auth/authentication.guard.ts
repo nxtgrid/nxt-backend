@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 /**
- * Bearer JWT via `supabase` strategy. `headerapikey` is added when ApiKeyStrategy lands.
+ * Accepts either a Supabase bearer JWT (`supabase`) or an `X-API-KEY` header
+ * (`headerapikey`).
  */
 @Injectable()
-export class AuthenticationGuard extends AuthGuard('supabase') {}
+export class AuthenticationGuard extends AuthGuard([ 'supabase', 'headerapikey' ]) {}

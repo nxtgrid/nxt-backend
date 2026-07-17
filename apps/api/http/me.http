@@ -9,3 +9,7 @@ Authorization: Bearer {{loginPlatform.access_token}}
 # @ref loginSolar
 GET {{baseUrl}}/auth/me
 Authorization: Bearer {{loginSolar.access_token}}
+
+### GET /auth/me (X-API-KEY — seeded platform key)
+GET {{baseUrl}}/auth/me
+X-API-KEY: {{devApiKey}}
