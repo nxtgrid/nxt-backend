@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { UserResponse } from '@supabase/supabase-js';
+import { pick } from 'ramda';
 import {
   CreateCustomerDto,
   SupabaseService,
@@ -362,14 +363,15 @@ export class UserAdminService {
         .insert({
           account_id: account.id,
           grid_id,
-          latitude: createCustomerInput.latitude,
-          longitude: createCustomerInput.longitude,
-          is_hidden_from_reporting: createCustomerInput.is_hidden_from_reporting,
-          lives_primarily_in_the_community:
-            createCustomerInput.lives_primarily_in_the_community,
-          generator_owned: createCustomerInput.generator_owned,
-          gender: createCustomerInput.gender,
-          total_connection_fee: createCustomerInput.total_connection_fee,
+          ...pick([
+            'latitude',
+            'longitude',
+            'is_hidden_from_reporting',
+            'lives_primarily_in_the_community',
+            'generator_owned',
+            'gender',
+            'total_connection_fee',
+          ], createCustomerInput),
         })
         .select('*, account:accounts(*)')
         .single()

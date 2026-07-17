@@ -24,6 +24,7 @@ force-refresh), then the API call uses `{{loginPlatform.access_token}}`.
 | `.httpyac.js` | Shared local URLs + seeded emails/passwords |
 | `login.http` | Named Supabase password grants (`loginPlatform`, `loginSolar`) |
 | `me.http` | Imports login, refs it, calls `GET /auth/me` |
+| `user-admin.http` | Task 9: create/update/delete customer, agent, member (+ API-key create-customer) |
 
 ## Seeded users
 
@@ -42,3 +43,11 @@ New endpoint file pattern:
 GET {{baseUrl}}/…
 Authorization: Bearer {{loginPlatform.access_token}}
 ```
+
+## `user-admin.http` notes
+
+- Seed already covers this: solar org **2**, grid **1**, platform API key. No seed change needed.
+- Run requests **top-down** when a step needs a prior `# @name` id (create → update → delete).
+- Creates real Auth users; timestamps keep emails unique. If Auth/phone collides, reset:
+  `pnpm exec supabase db reset`.
+- Machine smoke: **Create customer (X-API-KEY)** — privileged admin path (no user client yet).
