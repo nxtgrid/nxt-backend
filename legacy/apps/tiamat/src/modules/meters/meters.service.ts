@@ -16,6 +16,7 @@ import { Meter } from '@core/modules/meters/entities/meter.entity';
 // DTOs
 import { AssignMeterDto } from './dto/assign-meter.dto';
 import { ApiTokenGenerationDto } from './dto/token-generation.dto';
+import { BatchTokenGenerationDto } from './dto/batch-token-generation.dto';
 import { CreateMeterFromInventoryDto } from './dto/create-meter-from-inventory.dto';
 
 // Services
@@ -23,11 +24,12 @@ import { MetersService as CoreMetersService } from '@core/modules/meters/meters.
 import { ConnectionsService } from '@tiamat/modules/connections/connections.service';
 import { SupabaseService } from '@core/modules/supabase.module';
 import { MeterInstallsService } from '../meter-installs/meter-installs.service';
+import { CalinLorawanInstallService } from '../meter-installs/adapters/calin-lorawan/_install.service';
 
 // Queries
 import { NxtSupabaseUser } from '../auth/nxt-supabase-user';
 import { CommunicationProtocolEnum, InsertMeter } from '@core/types/supabase-types';
-import { MeterInteractionsService } from '../meter-interactions/meter-interactions.service';
+import { MeterForInteractionHandling, MeterInteractionsService } from '../meter-interactions/meter-interactions.service';
 import { MeterUninstallsService } from '../meter-installs/meter-uninstalls.service';
 import { UpdateMeterInput } from '@core/modules/meters/dto/update-meter.input';
 import { pluckIdsFrom } from '@helpers/array-helpers';
@@ -48,6 +50,7 @@ export class MetersService extends CoreMetersService {
     private readonly meterInteractionsService: MeterInteractionsService,
     private readonly meterInstallsService: MeterInstallsService,
     private readonly meterUninstallsService: MeterUninstallsService,
+    private readonly calinLorawanInstallService: CalinLorawanInstallService,
   ) {
     super(metersRepository);
   }
@@ -350,20 +353,24 @@ export class MetersService extends CoreMetersService {
     });
   }
 
-  // Takes a meter import CSV file with a list of meters.
-  // It checks for meters that are already existing. If a meter
-  // already exists, then it simply marks it as in test mode.
-  // If a meter does not exists, it creates an install session.
-  // Once that is done, an emtpy commissioning
-  // is created (which means that the meter is immediately accessible
-  // from the frontend). Once a meter is no longer needed in testing,
-  // only the is_test_mode_on property is updated.
-  async importTestMeters(file: Express.Multer.File, author: NxtSupabaseUser): Promise<void> {
+  // Takes a meter import CSV file (`external_reference,decoder_key` per line)
+  // and brings the meters into the system as CALIN LoRaWAN test meters.
+  //
+  // - Existing CALIN meters are flipped to `is_test_mode_on: true`.
+  // - Missing meters are inserted as "orphan" rows (no connection/dcu/grid/org)
+  //   so they can exist outside any organization.
+  //
+  // Uses the service-role client throughout so test meters can be created and
+  // updated regardless of the author's RLS scope. Network-server registration
+  // (ChirpStack) and install/commissioning are separate steps.
+  async importTestMeters(file: Express.Multer.File, author: NxtSupabaseUser) {
+    await author.validate();
+
     // We parse the file content into meter objects
     const _meters = await this.parseMeterFileContent(file);
     const meterReferences: string[] = _meters.map(({ external_reference }) => external_reference);
 
-    const { client: supabase, handleResponse } = author.supabase;
+    const { adminClient: supabase, handleResponse } = this.supabaseService;
 
     // Fetch the meters from database
     const _existingMeters = await supabase
@@ -374,43 +381,73 @@ export class MetersService extends CoreMetersService {
       .then(handleResponse);
     const existingMeterReferences = _existingMeters.map(({ external_reference }) => external_reference);
 
-    // Mark the existing meters as being in test mode
-    await supabase
-      .from('meters')
-      .update({ is_test_mode_on: true })
-      .in('external_reference', existingMeterReferences)
-      .then(handleResponse);
+    if(existingMeterReferences.length) {
+      await supabase
+        .from('meters')
+        .update({ is_test_mode_on: true })
+        .in('external_reference', existingMeterReferences)
+        .then(handleResponse);
+    }
 
-    // Find the references of the meters that are not included in the existing meter list
-    const newMeterReferences = meterReferences.filter(ref => !existingMeterReferences.includes(ref));
+    const metersToInsert: InsertMeter[] = _meters
+      .filter(({ external_reference }) => !existingMeterReferences.includes(external_reference))
+      .map(({ external_reference, decoder_key }) => ({
+        external_reference,
+        external_system: 'CALIN',
+        communication_protocol: 'CALIN_LORAWAN',
+        meter_phase: 'SINGLE_PHASE',
+        decoder_key,
+        is_test_mode_on: true,
+      }));
 
-    // Once we know the meters that need to be created, then
-    // we can add them to database with is_test_mode_on enabled
-    const metersToInsert: InsertMeter[] = newMeterReferences.map(external_reference => ({
-      external_reference,
-      external_system: 'CALIN',
-      communication_protocol: 'CALIN_LORAWAN',
-      is_test_mode_on: true,
-    }));
+    const createdMeters: { id: number; external_reference: string }[] = metersToInsert.length
+      ? await supabase
+        .from('meters')
+        .insert(metersToInsert)
+        .select('id, external_reference')
+        .then(handleResponse)
+      : [];
 
-    // @TODO :: Check where to go from here
-    // Looks like an install without commissioning?
-    console.info('[IMPORT TEST METERS] These meters were not imported', metersToInsert);
-    return;
+    // Register every freshly-created meter with the LoRaWAN network server.
+    // The install adapter is no-op safe: registerDevice resolves to
+    // `is_new_registration: false` when the device already exists in ChirpStack,
+    // and the application-key call logs and resolves on failure.
+    const created = await Promise.all(
+      createdMeters.map(async meter => {
+        try {
+          await this.calinLorawanInstallService.registerOnNetworkServer({
+            external_reference: meter.external_reference,
+            meter_phase: 'SINGLE_PHASE',
+          });
+          return { ...meter, network_server_registered: true };
+        }
+        catch (err) {
+          console.error(`[IMPORT TEST METERS] Failed to register meter ${ meter.external_reference } with ChirpStack`, err);
+          return { ...meter, network_server_registered: false };
+        }
+      }),
+    );
+
+    console.info(`[IMPORT TEST METERS] Marked ${ existingMeterReferences.length } existing meter(s) as test mode, created ${ created.length } new orphan meter(s).`);
+
+    return {
+      updated: existingMeterReferences,
+      created,
+    };
   }
 
-  async getOfflineClearTamperTokens(file: Express.Multer.File): Promise<string> {
+  async getOfflineBatchTokens(file: Express.Multer.File, dto: BatchTokenGenerationDto): Promise<string> {
     const _meters = await this.parseMeterFileContent(file);
     const meterReferences = _meters.map(({ external_reference }) => external_reference);
 
     const meterTokens = [];
-    for(const external_reference of meterReferences) {
+    for (const external_reference of meterReferences) {
       try {
-        const { token } = await this.generateToken(external_reference, { meter_interaction_type: 'CLEAR_TAMPER' });
+        const { token } = await this.generateToken(external_reference, dto);
         meterTokens.push({ token, external_reference });
       }
       // eslint-disable-next-line
-      catch(_err){}
+      catch (_err) {}
     }
 
     const uuid = uuidv4();
@@ -428,7 +465,11 @@ export class MetersService extends CoreMetersService {
     });
   }
 
-  async generateToken(meterExternalReference: string, generateTokenDto: ApiTokenGenerationDto): Promise<{ token: string; }> {
+  // Fetches a meter by external reference in the shape needed by the
+  // meter-interactions pipeline. Orphan meters (no connection) surface
+  // `grid_id: null`, which the device-message pipeline routes to the
+  // LoRaWAN `unassigned` queue.
+  private async findMeterForInteraction(externalReference: string): Promise<MeterForInteractionHandling> {
     const meter = await this.supabaseService.adminClient
       .from('meters')
       .select(`
@@ -440,34 +481,6 @@ export class MetersService extends CoreMetersService {
         version,
         decoder_key,
         last_seen_at,
-        dcu_id,
-        ...connections(
-          ...customers(
-            grid_id
-          )
-        )
-      `)
-      .eq('external_reference', meterExternalReference)
-      .maybeSingle()
-      .then(this.supabaseService.handleResponse)
-    ;
-    if (!meter) throw new NotFoundException(`Meter ${ meterExternalReference } not found`);
-
-    return this.meterInteractionsService.generateTokenForMeter(generateTokenDto, meter);
-  }
-
-  async deliverPreexistingToken(externalReference: string, token: string) {
-    const meter = await this.supabaseService.adminClient
-      .from('meters')
-      .select(`
-        id,
-        external_reference,
-        last_sts_token_issued_at,
-        communication_protocol,
-        decoder_key,
-        last_seen_at,
-        meter_phase,
-        version,
         dcu_id,
         ...connections(
           ...customers(
@@ -479,11 +492,23 @@ export class MetersService extends CoreMetersService {
       .maybeSingle()
       .then(this.supabaseService.handleResponse)
     ;
-    if(!meter) throw new NotFoundException(`Couldn't find meter with external reference ${ externalReference }`);
+    if (!meter) throw new NotFoundException(`Meter ${ externalReference } not found`);
 
+    return {
+      ...meter,
+      grid_id: meter.grid_id ?? null,
+    };
+  }
+
+  async generateToken(meterExternalReference: string, generateTokenDto: ApiTokenGenerationDto): Promise<{ token: string; }> {
+    const meter = await this.findMeterForInteraction(meterExternalReference);
+    return this.meterInteractionsService.generateTokenForMeter(generateTokenDto, meter);
+  }
+
+  async deliverPreexistingToken(externalReference: string, token: string) {
+    const meter = await this.findMeterForInteraction(externalReference);
     const safeToken = token.replace(/\s/g, '');
 
-    // @TODO :: Unify meter fetching from external reference maybe?
     return this.meterInteractionsService.createOneForMeter({
       meter_id: meter.id,
       meter_interaction_type: 'DELIVER_PREEXISTING_TOKEN',

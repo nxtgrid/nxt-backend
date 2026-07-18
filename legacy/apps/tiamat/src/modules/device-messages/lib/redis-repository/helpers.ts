@@ -5,7 +5,7 @@
  * These helpers handle conversion between DeviceMessage objects and Redis format.
  */
 
-import { fromPairs, splitEvery } from 'ramda';
+import { fromPairs, isNotNil, splitEvery } from 'ramda';
 import { CreateDeviceMessageDto } from '../../dto/create-device-message.dto';
 import {
   DeviceMessage,
@@ -27,13 +27,17 @@ export const rawHashToObject = (raw: string[]): Record<string, string> => {
 /**
  * Serialize a CreateDeviceMessageDto for Redis hash storage.
  * Complex objects (device, request_data) are JSON-stringified.
+ *
+ * `grid_id` is omitted when null/undefined to avoid Redis coercing it to ""
+ * (which would then deserialize back as `NaN`). Orphan messages keep the
+ * field absent from the hash entirely.
  */
 export const serializeDeviceMessageDto = (dto: CreateDeviceMessageDto) => ({
   message_type: dto.message_type,
   priority: dto.priority,
-  grid_id: dto.grid_id,
   device: JSON.stringify(dto.device),
 
+  ...(isNotNil(dto.grid_id) && { grid_id: dto.grid_id }),
   ...(dto.meter_interaction_id && { meter_interaction_id: dto.meter_interaction_id }),
   ...(dto.request_data && { request_data: JSON.stringify(dto.request_data) }),
   ...(dto.phase && { phase: dto.phase }),
@@ -59,7 +63,9 @@ export const deserializeMessage = (id: string, raw: Record<string, string>): Dev
 
     // Required numbers
     priority: parseInt(raw.priority),
-    grid_id: parseInt(raw.grid_id),
+
+    // `grid_id` is optional on the wire — orphan messages omit it on serialize.
+    grid_id: 'grid_id' in raw ? parseInt(raw.grid_id) : null,
 
     // Required JSON
     device: raw.device ? JSON.parse(raw.device) as DeviceMessageDevice : null,

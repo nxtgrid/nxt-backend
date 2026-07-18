@@ -13,8 +13,10 @@ export type CreateDeviceMessageDto = {
 
   phase?: PhaseEnum;
 
-  // For distribution logic (a grid equals a network)
-  grid_id: number;
+  // For distribution logic (a grid equals a network).
+  // `null` means the meter is not bound to any grid (e.g. orphan / test meters);
+  // such messages are routed to a dedicated `unassigned` LoRaWAN queue.
+  grid_id: number | null;
 
   // Reference for/to the 'upper' layers
   meter_interaction_id?: number;

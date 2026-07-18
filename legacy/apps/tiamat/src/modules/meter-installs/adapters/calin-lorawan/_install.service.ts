@@ -8,7 +8,7 @@ export class CalinLorawanInstallService {
     const devEui = dto.external_reference.padStart(16, '0');
     const { is_new_registration } = await chirpStackRepo.registerDevice(devEui, dto.external_reference);
     // If this is a freshly new registration, add the application key
-    if(is_new_registration) await chirpStackRepo.generateApplicationKeyForDevice(devEui);
+    if(is_new_registration) await chirpStackRepo.setApplicationKeyForDevice(devEui);
 
     return { deferUntilAsynchronousCallback: false };
   }

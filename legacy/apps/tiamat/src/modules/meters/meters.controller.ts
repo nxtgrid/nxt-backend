@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpException, Param, Post, Query, Res, StreamableFile, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Response } from 'express';
 import { MetersService } from './meters.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { createReadStream } from 'fs';
@@ -9,6 +10,7 @@ import { CurrentUser, NxtSupabaseUser } from '../auth/nxt-supabase-user';
 import { AssignMeterDto } from './dto/assign-meter.dto';
 import { ApiTokenDeliveryDto } from './dto/token-delivery.dto';
 import { ApiTokenGenerationDto } from './dto/token-generation.dto';
+import { BatchTokenGenerationDto } from './dto/batch-token-generation.dto';
 
 @Controller('meters')
 export class MetersController {
@@ -46,14 +48,14 @@ export class MetersController {
   }
 
   @UseGuards(AuthenticationGuard)
-  @Post('offline-clear-tamper-tokens')
+  @Post('offline-batch-tokens')
   @UseInterceptors(FileInterceptor('file'))
-  async getClearTamperTokens(
+  async getBatchTokens(
     @UploadedFile() uploadedFile: Express.Multer.File,
-    @Res({ passthrough: true }) res,
-  ) {
-    // We wait for the imports to be added, not to be processed
-    const filePath = await this.service.getOfflineClearTamperTokens(uploadedFile);
+    @Body() body: BatchTokenGenerationDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const filePath = await this.service.getOfflineBatchTokens(uploadedFile, body);
 
     const file = createReadStream(filePath);
     res.set({

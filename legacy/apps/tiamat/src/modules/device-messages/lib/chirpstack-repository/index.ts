@@ -70,7 +70,7 @@ export const chirpStackRepo = {
     });
   },
 
-  generateApplicationKeyForDevice(devEui: string): Promise<{ success: boolean }> {
+  setApplicationKeyForDevice(devEui: string): Promise<{ success: boolean }> {
     const deviceKeys = new DeviceKeys();
     deviceKeys.setDevEui(devEui);
     deviceKeys.setNwkKey(CHIRPSTACK_APP_KEY);

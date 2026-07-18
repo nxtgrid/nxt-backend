@@ -18,6 +18,6 @@ import { CalinApiV2InstallService } from './adapters/calin-api-v2/_install.servi
     CalinApiV2InstallService,
   ],
   controllers: [ MeterInstallsController ],
-  exports: [ MeterInstallsService, MeterUninstallsService ],
+  exports: [ MeterInstallsService, MeterUninstallsService, CalinLorawanInstallService ],
 })
 export class MeterInstallsModule {}

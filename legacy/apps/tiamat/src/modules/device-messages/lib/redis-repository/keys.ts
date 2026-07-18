@@ -1,5 +1,12 @@
+import { isNil } from 'ramda';
 import { PhaseEnum } from '@core/types/device-messaging';
 import { DeviceMessageDevice, NetworkServerImplementation } from '../types';
+
+/**
+ * Bucket reserved for LoRaWAN messages whose meter is not bound to any grid
+ * (e.g. orphan / test meters imported via `/meters/testing/import`).
+ */
+export const LORAWAN_UNASSIGNED_BUCKET = 'unassigned';
 
 export const redisKeys = {
   /**
@@ -15,12 +22,18 @@ export const redisKeys = {
    *    This queue is ordered by a) priority and b) first-in-first-out
    *    Current keys:
    *      - queue:lorawan_network:[grid_id]
+   *      - queue:lorawan_network:unassigned  (orphan / test meters)
    *      - queue:gateway:[gateway_id]
   **/
-  queueInitial: (dto: { device: DeviceMessageDevice, grid_id: number }) => {
+  queueInitial: (dto: { device: DeviceMessageDevice, grid_id: number | null }) => {
     // We have to always construct it like this: `'queue' : bottleneck : id of the bottleneck`
-    // The LoRaWAN bottleneck is grid, so the queue is the lorawan network queue with grid id
-    if(dto.device.protocol === 'LORAWAN') return `queue:lorawan_network:${ dto.grid_id }`;
+    // The LoRaWAN bottleneck is grid, so the queue is the lorawan network queue with grid id.
+    // Orphan meters (no grid) get their own bucket to keep keys clean and isolate test traffic
+    // from production grid throttling.
+    if(dto.device.protocol === 'LORAWAN') {
+      const bucket = isNil(dto.grid_id) ? LORAWAN_UNASSIGNED_BUCKET : dto.grid_id;
+      return `queue:lorawan_network:${ bucket }`;
+    }
     if(
       dto.device.protocol === 'API_V1' &&
       dto.device.manufacturer === 'CALIN'

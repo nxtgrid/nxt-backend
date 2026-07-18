@@ -62,9 +62,11 @@ export class GridDigitalTwinService implements OnModuleInit {
 
   /**
    * Get the cached digital twin state for a grid, including its gateways.
-   * Returns undefined if the grid is not tracked or the cache hasn't loaded yet.
+   * Returns undefined if the grid is not tracked, the cache hasn't loaded
+   * yet, or the meter has no grid bound (orphan / test meter).
    */
-  getGridTwin(gridId: number): GridDigitalTwin | undefined {
+  getGridTwin(gridId: number | null | undefined): GridDigitalTwin | undefined {
+    if (gridId == null) return undefined;
     return this.gridMap.get(gridId);
   }
 

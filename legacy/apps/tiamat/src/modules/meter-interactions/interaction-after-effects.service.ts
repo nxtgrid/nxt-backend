@@ -17,7 +17,8 @@ type MeterForAfterEffects = FullMeterInteractionForAfterEffects['meter'];
 type MeterInteractionForAfterEffects = Omit<FullMeterInteractionForAfterEffects, 'meter'>
 
 type MeterForPreDispatchEffects = {
-  grid_id: number;
+  // `null` when the meter is not bound to a grid (orphan / test meter).
+  grid_id: number | null;
   external_reference: string;
   dcu_id?: number;
 }
@@ -246,8 +247,8 @@ export class InteractionAfterEffectsService {
       version: meter.version,
       last_seen_at: now,
       decoder_key: meter.decoder_key,
-      grid_id: meter.connection?.customer.grid.id,
-      dcu_id: meter.dcu.id,
+      grid_id: meter.connection?.customer?.grid?.id ?? null,
+      dcu_id: meter.dcu?.id,
     };
 
     this.meterInteractionsService.createOneForMeter(
@@ -324,12 +325,40 @@ export class InteractionAfterEffectsService {
     ;
   }
 
-  // @AUTOJOIN :: When an unknown meter joins, we could save it to our database
-  public welcomeNewFriend(joinInteraction) {
-    console.info('[METER-INTERACTION AFTER-EFFECTS] Welcome new friend!', joinInteraction);
-    // @TODO :: We can pre-install a meter here, add it to our database.
-    // We could technically already register it with ChirpStack, do we need to?
-    // Or only generate application key, if already registered?
+  /**
+   * Persist an unknown LoRaWAN meter that has just joined the network.
+   *
+   * A successful JOIN_NETWORK webhook from ChirpStack implies the device is
+   * already provisioned in the LNS with a valid AppKey (otherwise OTAA would
+   * have failed). We just have to learn about it on our side.
+   *
+   * The meter is created as an "orphan" (no connection / dcu / grid / org).
+   * READ_REPORTs that follow will populate telemetry through the normal
+   * unsolicited-event pipeline. `decoder_key` is unknown at this point, so
+   * STS-token interactions will not work until one is attached out of band.
+   *
+   * Idempotent via upsert on the existing composite unique index
+   * `(external_reference, external_system)`, in case two JOIN events race.
+   *
+   * The JOIN_NETWORK event itself is not recorded as a `meter_interactions`
+   * row — same policy as for already-known meters (the next READ_REPORT will
+   * mark the meter as successfully communicating).
+   */
+  public async welcomeNewFriend(externalReference: string): Promise<void> {
+    const { adminClient: supabase, handleResponse } = this.supabaseService;
+
+    await supabase
+      .from('meters')
+      .upsert({
+        external_reference: externalReference,
+        external_system: 'CALIN',
+        communication_protocol: 'CALIN_LORAWAN',
+        meter_phase: 'SINGLE_PHASE',
+      }, { onConflict: 'external_reference,external_system' })
+      .then(handleResponse)
+    ;
+
+    console.info(`[METER-INTERACTION AFTER-EFFECTS] Auto-imported meter ${ externalReference } from LoRaWAN JOIN event`);
   }
 
   public onCreate(meter_interaction: MeterInteractionForPreDispatchEffects, meter: MeterForPreDispatchEffects) {
@@ -373,6 +402,10 @@ export class InteractionAfterEffectsService {
     { id, updated_at, meter_interaction_type, meter_interaction_status }: MeterInteractionForPreDispatchEffects,
     meter: MeterForPreDispatchEffects,
   ): Promise<void> {
+    // Orphan / test meters aren't joined to any grid room, so there's nobody
+    // to emit to. Skip silently to keep the log clean.
+    if (!meter.grid_id) return;
+
     try {
       // Fetch dcu external_reference if dcu_id exists
       let dcuExternalReference: string | null = null;

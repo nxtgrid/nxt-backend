@@ -32,7 +32,9 @@ export type MeterForInteractionHandling = {
   version: string;
   last_seen_at: string | null;
   decoder_key: string;
-  grid_id: number;
+  // `null` when the meter is not bound to a grid (orphan / test meter).
+  // The device-message pipeline routes such meters to a dedicated LoRaWAN queue.
+  grid_id: number | null;
   dcu_id?: number;
 }
 
@@ -683,13 +685,12 @@ export class MeterInteractionsService implements OnModuleInit {
       ;
 
       if(!meter) {
-        // @AUTOJOIN :: When an unknown meter joins, we could save it to our database
+        // Unknown meter: only the LoRaWAN JOIN_NETWORK event auto-imports.
+        // READ_REPORTs without a prior JOIN are unexpected (the meter would
+        // have had to join before sending data) and stay as a warning so a
+        // human can investigate.
         if(message.message_type === 'JOIN_NETWORK') {
-          this.interactionAfterEffectsService.welcomeNewFriend({
-            meter_interaction_type: message.message_type,
-            meter_interaction_status: 'SUCCESSFUL',
-            result_value: message.response.data,
-          });
+          await this.interactionAfterEffectsService.welcomeNewFriend(message.device.external_reference);
         }
         else {
           console.warn(`
