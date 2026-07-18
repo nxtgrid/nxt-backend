@@ -327,7 +327,7 @@ CREATE TABLE public.accounts (
     telegram_id character varying,
     telegram_link_token character varying,
     deleted_at timestamp(3) without time zone,
-    supabase_id uuid,
+    supabase_id uuid NOT NULL,
     organization_id integer
 );
 

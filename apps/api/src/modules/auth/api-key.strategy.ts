@@ -12,7 +12,7 @@ export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy) {
   }
 
   async validate(apiKey: string): Promise<AuthenticatedUser> {
-    const row = await this.supabase.adminClient
+    const apiKeyWithDetails = await this.supabase.adminClient
       .from('api_keys')
       .select(`
         id,
@@ -35,15 +35,14 @@ export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy) {
       .then(this.supabase.handleResponse)
     ;
 
-    const account = row?.account;
+    const account = apiKeyWithDetails?.account;
     if (!account || account.deleted_at) {
       throw new UnauthorizedException(
         'The API key used does not have a corresponding account',
       );
     }
 
-    const member = account.member;
-    const organization = account.organization;
+    const { member, organization } = account;
     if (!member?.member_type || organization?.id == null) {
       throw new UnauthorizedException(
         'The API key account is missing member or organization claims',
@@ -60,7 +59,7 @@ export class ApiKeyStrategy extends PassportStrategy(HeaderAPIKeyStrategy) {
       member_type: member.member_type,
       account_id: account.id,
       organization_id: organization.id,
-      supabase_id: account.supabase_id ?? '',
+      supabase_id: account.supabase_id,
       async validate() { return {}; },
     };
   }
