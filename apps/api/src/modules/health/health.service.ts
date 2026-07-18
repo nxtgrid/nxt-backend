@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { getPackageInfo } from '@nxt/core';
-import type { OrganizationTypeEnum } from '@nxt/core/types/supabase-types';
+import { SupabaseService } from '@nxt/core';
 
 @Injectable()
 export class HealthService {
-  /** Golden-path probe: typecheck consumes generated Supabase types via @nxt/core subpath. */
-  static readonly platformOperatorType =
-    'PLATFORM_OPERATOR' satisfies OrganizationTypeEnum;
+  constructor(private readonly supabaseService: SupabaseService) {}
 
-  getHealth(): { name: string; version: string } {
-    return getPackageInfo();
+  async getHealth(): Promise<{ status: 'ok' }> {
+    await this.supabaseService.adminClient
+      .from('organizations')
+      .select('id')
+      .limit(1)
+      .then(response => this.supabaseService.handleResponse(response));
+
+    return { status: 'ok' };
   }
 }

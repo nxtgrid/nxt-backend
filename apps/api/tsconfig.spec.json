@@ -5,16 +5,16 @@
     "types": [
       "jest",
       "node"
-    ],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    ]
   },
   "include": [
     "jest.config.ts",
     "jest.config.cts",
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts",
-    "src/**/*.d.ts"
+    "jest.integration.config.cts",
+    "jest.e2e.config.cts",
+    "jest.shared.cjs",
+    "src/**/*.d.ts",
+    "test/**/*.ts"
   ],
   "references": [
     {

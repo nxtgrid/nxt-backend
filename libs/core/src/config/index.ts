@@ -26,3 +26,4 @@ export function getConfig(): NxtConfig {
 export { loadConfig } from './loader.js';
 export type { LoadConfigOptions } from './loader.js';
 export type { NxtConfig } from './schema.js';
+export { requireEnv } from './require-env.js';

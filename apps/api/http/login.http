@@ -1,0 +1,26 @@
+# Shared Supabase password-grant logins (seeded users).
+# Imported by endpoint files via `# @import ./login.http` + `# @ref …`
+
+@publishableKey = {{$dotenv SUPABASE_PUBLISHABLE_KEY}}
+
+### Login — platform superadmin
+# @name loginPlatform
+POST {{supabaseUrl}}/auth/v1/token?grant_type=password
+apikey: {{publishableKey}}
+Content-Type: application/json
+
+{
+  "email": "{{platformEmail}}",
+  "password": "{{platformPassword}}"
+}
+
+### Login — solar developer admin
+# @name loginSolar
+POST {{supabaseUrl}}/auth/v1/token?grant_type=password
+apikey: {{publishableKey}}
+Content-Type: application/json
+
+{
+  "email": "{{solarEmail}}",
+  "password": "{{solarPassword}}"
+}

@@ -41,6 +41,32 @@ const teamRules = {
       varsIgnorePattern: '^_',
     },
   ],
+  'no-restricted-imports': [
+    'error',
+    {
+      paths: [
+        {
+          name: '@nxt/core/types/supabase-types',
+          importNames: ['Database'],
+          message:
+            'Import Database from @nxt/core/types/supabase-types-adjusted; use supabase-types for enums and row aliases only.',
+        },
+        {
+          name: '@nxt/core',
+          importNames: [
+            'getConfig',
+            'loadConfig',
+            'setConfig',
+            'requireEnv',
+            'NxtConfig',
+            'LoadConfigOptions',
+          ],
+          message:
+            'Import config from @nxt/core/config — the fat @nxt/core barrel must not load Nest modules during bootstrap.',
+        },
+      ],
+    },
+  ],
 };
 
 export default [
@@ -76,7 +102,13 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: [
+            '^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$',
+            // In-package Node subpath imports (package.json "imports") — not the barrel.
+            '#config/**',
+            '#modules/**',
+            '#types/**',
+          ],
           depConstraints: [
             {
               sourceTag: '*',

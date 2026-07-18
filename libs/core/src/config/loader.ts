@@ -17,7 +17,7 @@ export interface LoadConfigOptions {
 }
 
 /**
- * Resolves, parses, validates, freezes, and stores the deployment configuration. Must run
+ * Resolves, parses, validates, freezes, and stores the host configuration. Must run
  * before `NestFactory.create` (ADR-007 decision 3) — nothing may read `getConfig()` earlier.
  *
  * Precedence: `NXT_CONFIG_JSON` (inline) → `NXT_CONFIG_URL` (fetch — reserved slot, not

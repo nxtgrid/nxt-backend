@@ -327,7 +327,7 @@ CREATE TABLE public.accounts (
     telegram_id character varying,
     telegram_link_token character varying,
     deleted_at timestamp(3) without time zone,
-    supabase_id uuid,
+    supabase_id uuid NOT NULL,
     organization_id integer
 );
 
@@ -545,7 +545,7 @@ CREATE TABLE public.grids (
     is_hps_on boolean DEFAULT false NOT NULL,
     is_hps_on_updated_at timestamp(3) with time zone,
     walkthrough_external_id character varying,
-    timezone character varying DEFAULT 'Africa/Lagos'::character varying NOT NULL,
+    timezone character varying DEFAULT 'UTC'::character varying NOT NULL,
     kwp double precision DEFAULT '0'::double precision NOT NULL,
     kwh double precision DEFAULT '0'::double precision NOT NULL,
     kwp_tariff double precision DEFAULT '0'::double precision NOT NULL,

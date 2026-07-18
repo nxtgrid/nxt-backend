@@ -96,6 +96,7 @@ changes, or work clearly outside the domains below.
 | Meter command batches, load shedding, meter grouping | 011 |
 | Company cutover strategy | 012 |
 | Capability vs core boundaries, behavior/module placement | 013 |
+| Machine credentials — API keys, scopes, Postgres roles, MCP | 014 |
 
 ### How to read (progressive)
 

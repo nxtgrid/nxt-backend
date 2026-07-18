@@ -12,7 +12,7 @@ export type Database = {
           id: number;
           organization_id: number | null;
           phone: string | null;
-          supabase_id: string | null;
+          supabase_id: string;
           telegram_id: string | null;
           telegram_link_token: string | null;
         };
@@ -24,7 +24,7 @@ export type Database = {
           id?: number;
           organization_id?: number | null;
           phone?: string | null;
-          supabase_id?: string | null;
+          supabase_id: string;
           telegram_id?: string | null;
           telegram_link_token?: string | null;
         };
@@ -36,7 +36,7 @@ export type Database = {
           id?: number;
           organization_id?: number | null;
           phone?: string | null;
-          supabase_id?: string | null;
+          supabase_id?: string;
           telegram_id?: string | null;
           telegram_link_token?: string | null;
         };

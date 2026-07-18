@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { Grid } from './entities/grid.entity';
 // import { ExternalSystemEnum } from '@core/types/supabase-types';
 
+/**
+ * 002d Task 10/11 — not ported to OSS Foundation Nest. Grid table stays Foundation data;
+ * new hosts query at the call site. Retain until Metering / legacy absorption completes.
+ * findAll / findByOrganizationId* had no in-repo callers; findOne kept for legacy injectors.
+ */
 @Injectable()
 export class GridsService {
   constructor(

@@ -1,8 +1,9 @@
-export { getPackageInfo } from './modules/platform/package-info.js';
-
-export { getConfig, loadConfig, setConfig } from './config/index.js';
-export type { LoadConfigOptions, NxtConfig } from './config/index.js';
-export { requireEnv } from './config/require-env.js';
-
-export { demoModules } from './modules/demo/demo-modules.js';
-
+export { SUPABASE_QUERY_LIMIT } from './constants.js';
+export { CreateCustomerDto } from './modules/customers/dto/create-customer.dto.js';
+export { GlobalHttpModule } from './modules/global-http-module.js';
+export { GlobalLoggerModule } from './modules/logger/logger.module.js';
+export {
+  GlobalSupabaseModule,
+  SupabaseService,
+  throwSupabaseError,
+} from './modules/supabase/supabase.module.js';

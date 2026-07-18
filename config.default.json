@@ -1,6 +1,5 @@
 {
   "$schemaVersion": "1",
-  "deployment": {},
   "public": {
     "platformName": "NXT Grid Platform"
   },

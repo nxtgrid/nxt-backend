@@ -5,9 +5,7 @@
     "types": [
       "jest",
       "node"
-    ],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    ]
   },
   "include": [
     "jest.config.ts",

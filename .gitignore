@@ -18,8 +18,7 @@ coverage/
 # Environment & secrets
 .env
 .env.*
-!.env.example
-!supabase/.env.example
+!**/.env.example
 
 # Supabase local state (root chain + legacy reference)
 supabase/generated-types.ts

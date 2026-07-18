@@ -338,8 +338,9 @@ Once a host wires Foundation/Supabase infrastructure, it **requires DB connectiv
 on missing `SUPABASE_*` env** at boot (`requireEnv` in the Supabase provider). "Evaluation mode"
 (decision 4 — "a bare clone runs") is clarified to mean **capabilities off + a local Supabase**, not
 **DB-less**. Both `api` and `worker` wire Supabase infra in 002d, so both require DB env from then
-on. Per-host env differs: admin-client vars (`SUPABASE_API_URL`, `SUPABASE_SERVICE_ROLE_KEY`) on
-both; `SUPABASE_ANON_KEY` + `SUPABASE_JWT_SECRET` only where auth runs (`api`). `SupabaseService`
+on. Per-host env differs: admin-client vars (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`) on
+both; `SUPABASE_PUBLISHABLE_KEY` + JWT verification (`SUPABASE_JWKS_URL` preferred;
+`SUPABASE_JWT_SECRET` legacy fallback) only where auth runs (`api`). `SupabaseService`
 builds its client in a **provider** (no import-time `export const supabase` singleton); the
 query-type-generation shortcut returns later as a **type-only probe** (no runtime client).
 

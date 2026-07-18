@@ -1,9 +1,0 @@
-{
-  "$schemaVersion": "1",
-  "deployment": {},
-  "public": {
-    "platformName": "From bundled default"
-  },
-  "capabilities": {},
-  "integrations": {}
-}

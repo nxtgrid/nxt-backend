@@ -21,8 +21,9 @@ available/considered when ADR-008 was authored:
 - **Host consolidation:** the 4 legacy apps (`tiamat`, `talos`, `loch`, `yeti`) collapse into **2**
   runtime hosts per ADR-004/ADR-005 — `api` (`tiamat` + folded-in `talos`) and `worker`
   (background/collector domains, `loch` + `yeti`). Cutover is a 2-deployable flip, not a 4-app one.
-- **The database is the primary integration mechanism** (ADR-005: "the database is effectively the
-  integration bus today"). The HTTP mesh between apps is secondary and shrinks as hosts merge.
+- **The database is the primary integration mechanism** (ADR-005 Accepted: shared DBs carry state;
+  residual HTTP is exceptional and prefer worker→`api`). The legacy bidirectional HTTP mesh is
+  retired as a pattern and shrinks further as hosts merge.
   Beyond the backend, **all 5 frontends** (each with a single `VITE_API_URL` *and* direct
   `VITE_SUPABASE_URL`/anon-key access, bypassing the API), **Grafana** (`grafana_readonly` role),
   and **Make.com** (`make_readonly` role + grid webhook triggers) all depend directly on the same
@@ -104,8 +105,8 @@ sub-plans describe reality rather than speculation.
    (one point, covers all 5 frontends) → activate pre-staged Grafana/Make.com updates → smoke test
    → resume traffic.
 5. Post-cutover: bake period with elevated monitoring, then decommission old infra, retire the
-   private repo (ADR-008 exit condition), resolve ADR-005's open inter-host-mesh question, close out
-   the roadmap.
+   private repo (ADR-008 exit condition), close out the roadmap. (ADR-005 inter-host policy was
+   locked 2026-07-17 — flip coordination stays DB-primary with residual HTTP under that ADR.)
 
 ## Consequences
 
@@ -140,8 +141,9 @@ sub-plans describe reality rather than speculation.
 
 - The just-in-time "Parity verification & company cutover" sub-plan is authored — reconcile this
   ADR's illustrative sequence with it; the sub-plan supersedes it where they conflict.
-- ADR-005's open inter-host communication question is decided — affects whether `api`/`worker` need
-  coordination beyond the shared database during the flip.
+- ADR-005 was Accepted (2026-07-17) — flip coordination remains DB-primary; residual HTTP follows
+  that ADR (prefer worker→`api`; no mandatory broker). Revisit only if a recorded exception
+  changes cutover sequencing.
 - The maintenance-window tolerance changes (e.g., a new integration is added that cannot tolerate
   any downtime), invalidating decision 6.
 - **NXT Grid production Postgres major-version lag** — OSS baseline targets **Postgres 17** (002b
@@ -154,7 +156,8 @@ sub-plans describe reality rather than speculation.
 
 - **ADR-004** — target architecture; the `api`/`worker` host consolidation this ADR's flip mechanics
   depend on.
-- **ADR-005** — inter-host communication; database-as-integration-bus context.
+- **ADR-005** — inter-host communication (Accepted); shared DBs + residual HTTP policy for
+  `api`/`worker` during and after cutover.
 - **ADR-008** — migration strategy; the exit condition this ADR operationalizes.
 - **ADR-009** — migration deployment & governance; the safety rails (PITR, forward-only) this ADR
   builds on.

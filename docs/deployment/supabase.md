@@ -16,55 +16,76 @@ Check the location too,
 
 ## 4. Connect and apply migrations
 
-From the repo root (Supabase CLI pinned in `package.json`; make sure you have run `pnpm install` first.
-Invoke via `pnpm supabase`):
+From the repo root (Supabase CLI pinned in `package.json`; make sure you have run `pnpm install`
+first). Prefer `pnpm exec supabase` so you always hit the pinned binary:
 
 ```bash
-pnpm supabase login # If not already logged in
-pnpm supabase link --project-ref <your-project-ref>
-pnpm supabase db push
+pnpm exec supabase login # If not already logged in
+pnpm exec supabase link --project-ref <your-project-ref>
+pnpm exec supabase db push
 ```
 
-Local development: `pnpm supabase start` applies migrations automatically.
-
-### Verify Data API grants (optional smoke test)
-
-After `db push`, confirm explicit table grants work (register #33) — dashboard “Data API enabled”
-alone is not enough:
+### Local development
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" \
-  -H "apikey: <SECRET_OR_SERVICE_ROLE_KEY>" \
-  -H "Authorization: Bearer <SECRET_OR_SERVICE_ROLE_KEY>" \
-  "https://<project-ref>.supabase.co/rest/v1/organizations?select=id&limit=1"
+pnpm exec supabase start   # applies migrations on a fresh local DB
+pnpm exec supabase db reset  # recreates DB, re-applies migrations, then runs seed.sql
 ```
 
-Expect **200** (empty `[]` is fine before bootstrap).
+`supabase/config.toml` has `[db.seed]` enabled with `sql_paths = ["./seed.sql"]`. Seed runs on
+**`db reset`**, not on every plain `start` against an already-initialized volume.
 
-**API keys (Supabase dashboard):** Settings → API Keys. New projects show **publishable** and
-**secret** keys by default. The familiar **anon** / **service_role** JWT pair lives under the
-**Legacy API Keys** tab — use either the secret key or legacy `service_role` for the curl above.
+## 5. Local-dev seed (Foundation bootstrap)
 
-## 5. Bootstrap data
+Migrations ship **schema only**. For **local development**, Foundation fixtures live in
+`supabase/seed.sql` and grow as capability imports land. This seed is **not** for remote/prod —
+production still needs an operator-specific one-time bootstrap outside this file.
 
-Once per fresh database we need to enter the minimum viable amount of data to get up and running.
-Concretely, this means: 
-- The operator `organization`
-- A `wallet` for that organization
-- A supabase `user` (which automatically creates a row in the accounts table too)
-- Make that user a `SUPERADMIN` `member` of the operator organization
+### Reset and seed
 
-### Bootstrap Operator (Admin) Organization
-Migrations ship schema only. Before the app is usable, add **one platform operator organization**
-and **its wallet** (1:1 via `wallets.organization_id`). Only one `PLATFORM_OPERATOR` org is
-allowed.
+```bash
+pnpm exec supabase db reset
+```
 
-**Dashboard** — Table Editor → `organizations`: insert a row with `organization_type = PLATFORM_OPERATOR`. Then `wallets`: insert a row with `organization_id` set to that org's `id`.
+That drops the local DB, applies migrations, then runs `supabase/seed.sql`.
 
-### Bootstrap Superadmin Organization Member 
-In the Supabase dashboard, go to Authentication → Users → Add user → Create new user. Enter your
-email and password and check **Auto Confirm User**.
+### What the seed creates
 
-If you now go to 'Table editor' -> 'accounts' you see that your account is created. Update the `organization_id` column with the id of your Platform Operator Organization.
+| Fixture | Details |
+|---------|---------|
+| Orgs | `1` **NXT Platform Operator** (`PLATFORM_OPERATOR`) + wallet; `2` **NXT Solar Developer** (`SOLAR_DEVELOPER`) + wallet |
+| Auth users | `superadmin@nxt-platform.com` / `superadmin`; `admin@nxt-solar.com` / `admin` (confirmed; fixed UUIDs in seed) |
+| Accounts | Created by `handle_new_user` on auth insert; `organization_id` set via `handle_update_user` when `app_metadata` is applied |
+| Claims | JWT `app_metadata`: `account_id`, `account_type` (`MEMBER`), `member_type`, `organization_id` |
+| Members | Platform → `SUPERADMIN` (org 1); Solar → `DEVELOPER` (org 2) |
+| API key | `dev-api-key-platform-superadmin` on the platform superadmin account (`X-API-KEY` / auth tests) |
+| Grid | **Demo Solar Grid** on org 2 |
 
-After this you can make yourself the SUPERADMIN member of the organization, by going to 'Table editor' -> 'members' -> Insert -> 'Insert row'. Make sure you select `SUPERADMIN` as `member_type` and `account_id` to the `id` of the account that was just created.
+Invite flow mirrored in SQL: insert auth user → account trigger → update `raw_app_meta_data` →
+account `organization_id` sync → insert `members`.
+
+### Sign-in (local)
+
+Use the emails/passwords above against the local Auth API / Studio
+(`pnpm exec supabase status` for URLs and keys). Prefer the seeded API key for machine auth
+smoke tests (`X-API-KEY` / httpYac under `apps/api/http/`). Api auth also needs
+`SUPABASE_PUBLISHABLE_KEY` plus `SUPABASE_JWKS_URL` (or `SUPABASE_JWT_SECRET`) in
+`apps/api/.env` — see `apps/api/.env.example`.
+
+### REST / httpYac (manual API checks)
+
+File-based requests live under `apps/api/http/` using **httpYac** (`anweber.vscode-httpyac`).
+Shared login via `# @import ./login.http` + `# @ref loginPlatform` — see `apps/api/http/README.md`.
+Uninstall Huachao REST Client if present (conflicts on `.http` files).
+
+### Automated tests (`api`)
+
+Specs live under `apps/api/test/` (not co-located with `src/`):
+
+| Target | Command | Needs local Supabase + seed? |
+|--------|---------|------------------------------|
+| Unit (default / lint bar) | `pnpm exec nx test api` | No |
+| Integration | `pnpm exec nx run api:test-integration` | Yes |
+| E2E | `pnpm exec nx run api:test-e2e` | Yes |
+
+Suites under integration/e2e skip when `SUPABASE_URL` / `SUPABASE_SECRET_KEY` are missing.

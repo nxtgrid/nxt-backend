@@ -1,9 +1,0 @@
-{
-  "$schemaVersion": "2",
-  "deployment": {},
-  "public": {
-    "platformName": "Should be rejected"
-  },
-  "capabilities": {},
-  "integrations": {}
-}

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
-import { CoreTypeOrmModule, GlobalHttpModule, CoreLoggerModule, GlobalSupabaseModule, CorePgModule } from '@core';
+import { CoreTypeOrmModule, CorePgModule } from '@core';
 import { TimeseriesTypeOrmModule } from '@timeseries';
 
 // Core modules
@@ -10,11 +10,10 @@ import { CoreEnergyTrackingModule } from '@core/modules/energy-tracking/energy-t
 import { SoftwareDevAlertModule } from '@core/modules/software-dev-alert/software-dev-alert.module';
 
 // Local modules
-import { UserAdminModule } from './user-admin/user-admin.module';
-import { AccountsModule } from './accounts/accounts.module';
+// 002d Task 11: Foundation Nest modules deleted from legacy (auth, user-admin, accounts,
+// organizations, api-keys, supabase/http/logger). GridsModule retained (service only; controller gone).
 import { AfricastalkingModule } from './africastalking/africastalking.module';
 import { AgentsModule } from './agents/agents.module';
-import { AuthModule } from './auth/auth.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { DcusModule } from './dcus/dcus.module';
 import { FlutterwaveModule } from './flutterwave/flutterwave.module';
@@ -22,7 +21,6 @@ import { GridsModule } from './grids/grids.module';
 import { MetersModule } from './meters/meters.module';
 import { MpptsModule } from './mppts/mppts.module';
 import { OrdersModule } from './orders/orders.module';
-import { OrganizationsModule } from './organizations/organizations.module';
 import { DirectiveBatchesModule } from './directive-batches/directive-batches.module';
 import { DirectiveBatchExecutionsModule } from './directive-batch-executions/directive-batch-executions.module';
 import { UssdSessionsModule } from './ussd-sessions/ussd-sessions.module';
@@ -31,7 +29,6 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { DownloadModule } from './download/download.module';
 import { CoreVictronModule } from '@core/modules/victron/victron.module';
 import { MeteringHardwareInstallSessionsModule } from './metering-hardware-install-sessions/metering-hardware-install-sessions.module';
-import { ApiKeysModule } from './api-keys/api-keys.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { IssuesModule } from './issues/issues.module';
 import { EpicollectModule } from './epicollect/epicollect.module';
@@ -53,10 +50,7 @@ const modules = process.env.IS_HIBERNATED === 'true' ? [] : [
   ScheduleModule.forRoot(),
   CoreTypeOrmModule,
   TimeseriesTypeOrmModule,
-  GlobalHttpModule,
-  GlobalSupabaseModule,
   CorePgModule,
-  CoreLoggerModule,
 
   CoreEnergyTrackingModule,
   CoreSpendingModule,
@@ -65,14 +59,10 @@ const modules = process.env.IS_HIBERNATED === 'true' ? [] : [
   MeterInteractionsModule,
   MeterInstallsModule,
   DataAnalyticsModule,
-  UserAdminModule,
-  AccountsModule,
   AgentsModule,
-  AuthModule,
   DcusModule,
   CoreVictronModule,
   MeteringHardwareInstallSessionsModule,
-  OrganizationsModule,
   FlutterwaveModule,
   GridsModule,
   MetersModule,
@@ -87,7 +77,6 @@ const modules = process.env.IS_HIBERNATED === 'true' ? [] : [
   MpptsModule,
   WebsocketModule,
   IssuesModule,
-  ApiKeysModule,
   TelegramModule,
   EpicollectModule,
   JiraModule,
