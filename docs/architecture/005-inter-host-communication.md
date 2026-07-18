@@ -13,10 +13,11 @@ deployable footprint is **`api`** (HTTP-facing; tiamat + folded-in talos) and **
 (background/collector domains; config-driven composition along capability seams). A separate
 deployable is justified only by a divergent runtime profile — never by code tidiness.
 
-The OSS migration roadmap (`docs/plans/002-oss-migration.md`) treats this ADR as open until
-Production Monitoring import (002e): that is the first sub-plan that gives `worker` a real
-capability and therefore real cross-host questions. Foundation (002d) wired Supabase on both hosts
-but carried no cross-host capability traffic.
+The OSS migration roadmap (`docs/plans/002-oss-migration.md`) accepts this ADR as a prerequisite of
+Production Monitoring import (**002e**): that is the first sub-plan that gives `worker` a real
+capability and therefore real cross-host questions — i.e. the first import that applies this
+accepted policy. Foundation (**002d**) wired Supabase on both hosts but carried no cross-host
+capability traffic.
 
 ### Legacy coupling (what we are leaving)
 
