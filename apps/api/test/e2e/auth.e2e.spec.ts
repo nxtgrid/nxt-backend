@@ -57,6 +57,7 @@ describeE2e('GET /auth/me (e2e — X-API-KEY)', () => {
     app.useGlobalPipes(
       new ValidationPipe({
         transform: true,
+        whitelist: true,
         transformOptions: { enableImplicitConversion: false },
       }),
     );

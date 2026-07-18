@@ -94,7 +94,7 @@ export class SupabaseStrategy extends PassportStrategy(Strategy, 'supabase') {
     }
 
     const organization_id = Number(appMetadata.organization_id);
-    if (!Number.isFinite(organization_id)) {
+    if (!Number.isFinite(organization_id) || organization_id <= 0) {
       throw new UnauthorizedException('Token is missing organization_id');
     }
 

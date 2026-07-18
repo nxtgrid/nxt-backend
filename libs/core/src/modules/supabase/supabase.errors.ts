@@ -52,6 +52,8 @@ export function throwSupabaseError(
   logger: ErrorLogger,
 ): never {
   if (isCloudflareHtmlError(error)) {
+    // @TEMPORARY :: Logging the entire error so we can tighten the html check
+    console.info(error);
     logger.error(
       `[SUPABASE RESPONSE ERROR] status=${ status ?? 'unknown' } ${ CLOUDFLARE_HTML_SUMMARY }`,
     );

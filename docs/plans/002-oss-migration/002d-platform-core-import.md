@@ -301,7 +301,7 @@ organization (including the `PLATFORM_OPERATOR` row), accounts, members, an `api
 grid — plus a **test auth user with `app_metadata` claims** (account_id, member_type,
 organization_id) for auth/e2e. Doubles as the local-dev bootstrap.
 
-**Done when:** a fresh `pnpm supabase start` + seed yields a coherent Foundation dataset and a
+**Done when:** a fresh `pnpm exec supabase db reset` yields a coherent Foundation dataset and a
 usable test user; documented in `docs/deployment/supabase.md` (or the local-dev doc).
 
 **Done:**

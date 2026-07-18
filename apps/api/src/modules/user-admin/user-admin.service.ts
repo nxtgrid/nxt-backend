@@ -57,6 +57,15 @@ const handleUserResponse = (res: UserResponse) => {
  * Whole-method admin client: Auth Admin APIs and follow-on DB writes cannot run
  * under RLS. Callers may be bearer or API-key; API-key principals currently have
  * no RLS-bound user client — see ADR-014 §5.3 (near-future).
+ *
+ * @TODO Dual-write risk: Auth (GoTrue) and Postgres are updated sequentially with
+ * no cross-service transaction (supabase-js cannot bundle them). A mid-flow failure
+ * can leave orphan Auth users, missing member/agent/customer rows, stale JWT
+ * metadata, or a soft-deleted account whose Auth user was not banned. Acceptable
+ * for low-frequency admin paths today; proportional follow-ups — await all Auth
+ * metadata updates (some create paths use `void`), and on create failure after
+ * Auth user exists compensate with `auth.admin.deleteUser`. Full resumable/saga
+ * machinery is not planned unless this starts failing in practice.
  */
 @Injectable()
 export class UserAdminService {

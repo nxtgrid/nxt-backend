@@ -153,19 +153,27 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
 - Existing dual-ORM usage (legacy TypeORM + Supabase client on the primary DB) complicates module
   extraction and must be paid down alongside.
 
-## Out of Scope / Deferred to Follow-up ADRs
+## Follow-up ADRs
+
+Mechanism-level decisions that this ADR intentionally left to separate documents. Several are now
+**Accepted** (summaries below); see each file for full status and any remaining deferred items.
+
 - **ADR-005 — Inter-host communication:** **Accepted (2026-07-17).** Independent hosts; shared DBs
   carry state; residual sync HTTP (prefer worker→`api`); async via per-capability DB jobs; retire
   the bidirectional `*_API` mesh; no broker as inter-host bus. See
   `docs/architecture/005-inter-host-communication.md`.
-- **ADR-006 — Monorepo tooling & CI/CD:** Nx suitability / fresh setup, affected-only builds, remote
-  caching, per-host build & deploy, replacing the DigitalOcean-coupled stub workflow.
-- **ADR-007 — Configuration & wiring mechanism:** config file format, conditional NestJS dynamic-module
-  loading per capability, boot-time validation of flags/providers.
-- **ADR-008 — Open-source migration strategy:** re-scaffold + incremental module import; database
-  baseline/squash; deprecated-table (e.g. `directives` / `lorawan-directives`) phase-out; parity + cutover.
-- **ADR-009 — Database migration deployment & governance:** operator-controlled (non-push-triggered)
-  migration application; keep migrations in the monorepo; separate-migrations-repo rejected.
+- **ADR-006 — Monorepo tooling & CI/CD:** **Accepted.** Nx suitability / fresh setup, affected-only
+  builds, remote caching, per-host build & deploy, replacing the DigitalOcean-coupled stub workflow.
+- **ADR-007 — Configuration & wiring mechanism:** **Accepted.** Config file format, conditional NestJS
+  dynamic-module loading per capability, boot-time validation of flags/providers.
+- **ADR-008 — Open-source migration strategy:** **Accepted (strategy).** Re-scaffold + incremental
+  module import; database baseline/squash; deprecated-table (e.g. `directives` / `lorawan-directives`)
+  phase-out; parity + cutover.
+- **ADR-009 — Database migration deployment & governance:** **Accepted.** Operator-controlled
+  (non-push-triggered) migration application; keep migrations in the monorepo; separate-migrations-repo
+  rejected.
+
+### Still out of scope (not decided here)
 - **Per-organization provider overrides** (generalizing ADR-003) as an optional payments feature.
 - **Dual-ORM consolidation** (TypeORM → Supabase client) as it interacts with capability extraction.
 

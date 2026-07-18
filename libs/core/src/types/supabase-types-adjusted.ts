@@ -15,7 +15,7 @@ export type Database = OriginalDatabase & {
         Row: OriginalDatabase['public']['Tables']['grids']['Row'] & {
           location_geom: {
             type: 'Point';
-            coordinates: number[];
+            coordinates: [ number, number ];
           } | null;
         };
       };
@@ -23,7 +23,7 @@ export type Database = OriginalDatabase & {
         Row: OriginalDatabase['public']['Tables']['poles']['Row'] & {
           location_geom: {
             type: 'Point';
-            coordinates: number[];
+            coordinates: [ number, number ];
           };
         };
       };

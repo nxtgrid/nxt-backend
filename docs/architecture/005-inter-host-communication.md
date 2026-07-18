@@ -222,4 +222,3 @@ relationship so imports do not pretend device-messaging is “just another worke
 - **ADR-013** — capability-owned behavior over shared entities (write/ownership companion).
 - **ADR-014** — machine credentials, scopes, route allowlist for residual HTTP.
 - **002e** — Energy Production Monitoring import; first major consumer of this ADR.
-)
