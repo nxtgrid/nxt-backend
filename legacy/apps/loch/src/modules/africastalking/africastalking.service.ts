@@ -29,12 +29,33 @@ export class AfricastalkingService {
       message: `[NXT Grid] ${ sms.message }`, //Adding branding as requested by AT
     };
 
-    const smsResponse = await this.atClient.send(options);
+    let smsResponse;
+    try {
+      smsResponse = await this.atClient.send(options);
+    }
+    catch (err) {
+      console.error('[AT SMS send] Provider request failed', {
+        notificationId: sms.id,
+        phone: sms.phone,
+        notificationType: sms.notification_type,
+        errorMessage: err?.message,
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        responseData: err?.response?.data,
+      });
+      throw err;
+    }
 
     const recipients = smsResponse?.SMSMessageData?.Recipients;
 
-    if(!Array.isArray(recipients)) {
-      console.error('[AT SMS send] failed for options: ', options);
+    if(!Array.isArray(recipients) || recipients.length === 0) {
+      console.error('[AT SMS send] Invalid provider response shape', {
+        notificationId: sms.id,
+        phone: sms.phone,
+        notificationType: sms.notification_type,
+        options,
+        response: smsResponse,
+      });
       throw new Error('[AT SMS send] No (valid) response from Africa\'s Talking');
     }
 

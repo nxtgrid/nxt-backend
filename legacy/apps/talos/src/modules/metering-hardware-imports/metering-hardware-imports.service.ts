@@ -108,7 +108,7 @@ export class MeteringHardwareImportsService extends CoreMeteringHardwareImportsS
           .then(this.supabaseService.handleResponse)
         ;
         if (isAdd) await this.calinService.importDcu(dcu);
-        if (isRemove) { await this.calinService.removeDcu(dcu);}
+        if (isRemove) await this.calinService.removeDcu(dcu);
       }
       else {
         throw new Error('Process import only accepts DCU or METER types. Invalid type supplied.');
@@ -130,13 +130,13 @@ export class MeteringHardwareImportsService extends CoreMeteringHardwareImportsS
     }
     catch (err) {
       console.error(err);
-      this.isInstallLoopRunning = false;
-      return this.update(hardwareImport.id, {
+      await this.update(hardwareImport.id, {
         metering_hardware_import_status: 'FAILED',
       });
+      return;
     }
     finally {
-      this.importDcusInParallel();
+      this.installLoop();
     }
   }
 
@@ -146,8 +146,6 @@ export class MeteringHardwareImportsService extends CoreMeteringHardwareImportsS
     let processingImports: MeteringHardwareImport[] = [];
 
     do {
-      const lockSession = uuidv4();
-
       // this is going to find anything that's processing, independently of whether
       // it is a meter import or a dcu import
       processingImports = await this.findCurrentlyProcessing();
@@ -156,6 +154,8 @@ export class MeteringHardwareImportsService extends CoreMeteringHardwareImportsS
         console.info('Already too many hardware imports running. Skipping...');
         break;
       }
+
+      const lockSession = uuidv4();
 
       dcuImport = await this.lockNextByType(lockSession, 'DCU');
       // If there are no pending DCUs to import, exit
@@ -181,6 +181,8 @@ export class MeteringHardwareImportsService extends CoreMeteringHardwareImportsS
     }
     catch (err) {
       console.error(err);
+    }
+    finally {
       this.isInstallLoopRunning = false;
     }
   }

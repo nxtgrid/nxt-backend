@@ -24,6 +24,30 @@ export class NotificationsService {
     private readonly africastalkingService: AfricastalkingService,
   ) {}
 
+  private getValidationFailureReason(notification: LockedNotification): string | null {
+    if (notification.carrier_external_system === 'AFRICASTALKING') {
+      if (!notification.phone) return 'missing_phone';
+      if (typeof notification.message !== 'string' || !notification.message.trim()) return 'missing_message';
+      return null;
+    }
+
+    if (notification.carrier_external_system === 'SENDGRID') {
+      if (!notification.email) return 'missing_email';
+      const templateTypesWithoutSubject = [ 'GRID_REVENUE', 'AUTO_PAYOUT_GENRATION_REPORT' ];
+      const requiresSubject = !templateTypesWithoutSubject.includes(notification.notification_type);
+      if (requiresSubject && (!notification.subject || !notification.subject.trim())) return 'missing_subject';
+      return null;
+    }
+
+    if (notification.carrier_external_system === 'TELEGRAM') {
+      if (typeof notification.message !== 'string' || !notification.message.trim()) return 'missing_message';
+      if (!notification.chat_id) return 'missing_chat_id';
+      return null;
+    }
+
+    return `unsupported_carrier_${ notification.carrier_external_system }`;
+  }
+
   async update(id: number, updateNotificationInput) {
     const { handleResponse, adminClient: supabase } = this.supabaseService;
 
@@ -85,8 +109,25 @@ export class NotificationsService {
   }
 
   async process(pendingNotifications: LockedNotification[]) {
+    const validatedNotifications = pendingNotifications
+      .map(notification => ({
+        notification,
+        reason: this.getValidationFailureReason(notification),
+      }));
+
+    const invalidNotifications = validatedNotifications
+      .filter(({ reason }) => Boolean(reason));
+
+    invalidNotifications.forEach(({ notification, reason }) => {
+      console.warn(`[NotificationsService] Validation failed for notification ${ notification.id }: ${ reason }`);
+    });
+
+    const validNotifications = validatedNotifications
+      .filter(({ reason }) => !reason)
+      .map(({ notification }) => notification);
+
     // Process telegram notifications
-    const telegramNotifications = pendingNotifications
+    const telegramNotifications = validNotifications
       .filter(notification => notification.carrier_external_system === 'TELEGRAM');
 
     // @TODO :: MAP_ASYNC_SEQUENTIAL_V2 try binding with options.context
@@ -95,7 +136,7 @@ export class NotificationsService {
     }, { returnWithInput: true })(telegramNotifications);
 
     // Process email notifications
-    const emailNotifications = pendingNotifications
+    const emailNotifications = validNotifications
       .filter(notification => notification.carrier_external_system === 'SENDGRID');
 
     // @TODO :: MAP_ASYNC_SEQUENTIAL_V2 try binding with options.context
@@ -104,7 +145,7 @@ export class NotificationsService {
     }, { returnWithInput: true })(emailNotifications);
 
     // Process sms notifications
-    const smsNotifications = pendingNotifications
+    const smsNotifications = validNotifications
       .filter(notification => notification.carrier_external_system === 'AFRICASTALKING');
 
     // @TODO :: MAP_ASYNC_SEQUENTIAL_V2 try binding with options.context
@@ -116,12 +157,18 @@ export class NotificationsService {
     // The differentiator is the existence of an external_reference field.
 
     // First we get all the errors from the calls (they got called in the mapAsyncSequential)
-    const notificationsToMarkAsfailed = [ ...tgErrors, ...emailErrors, ...smsErrors ]
-      .map(err => ({
+    const notificationsToMarkAsfailed = [
+      ...invalidNotifications.map(({ notification, reason }) => ({
+        id: notification.id,
+        external_reference: `VALIDATION_FAILED:${ reason }`,
+        notification_status: 'FAILED' as NotificationStatusEnum,
+      })),
+      ...[ ...tgErrors, ...emailErrors, ...smsErrors ].map(err => ({
         id: err.input.id,
         external_reference: err.input.external_reference,
         notification_status: 'FAILED' as NotificationStatusEnum,
-      }));
+      })),
+    ];
 
     // We merge all the failures
     const asyncResults = [ ...tgResults, ...emailResults, ...smsResults ];
@@ -178,10 +225,19 @@ export class NotificationsService {
         carrier_external_system,
         connector_external_system,
         notification_type,
+        message,
+        phone,
+        email,
+        subject,
+        chat_id,
+        thread_id,
         lock_session,
         notification_status,
         external_reference,
-        created_at
+        created_at,
+        notification_parameter:notification_parameters(
+          parameters
+        )
       `)
       .eq('lock_session', lockSession)
       .then(this.supabaseService.handleResponse)

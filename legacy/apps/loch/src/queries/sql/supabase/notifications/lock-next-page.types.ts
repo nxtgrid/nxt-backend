@@ -34,7 +34,23 @@ export type LockedNotification = {
   /** Current processing status */
   notification_status: NotificationStatusEnum;
   /** External reference from carrier (e.g., message ID) */
-  external_reference: string;
+  external_reference: string | null;
+  /** SMS / Telegram / email body */
+  message: string | null;
+  /** SMS recipient */
+  phone: string | null;
+  /** Email recipient */
+  email: string | null;
+  /** Email subject */
+  subject: string | null;
+  /** Telegram chat */
+  chat_id: string | null;
+  /** Telegram thread */
+  thread_id: string | null;
+  /** Optional template parameters for provider-specific templates */
+  notification_parameter?: {
+    parameters: Record<string, unknown>;
+  };
   /** When the notification was created */
   created_at: string;
 };
