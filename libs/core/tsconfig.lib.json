@@ -1,27 +1,23 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
+    "emitDeclarationOnly": false,
+    "forceConsistentCasingInFileNames": true,
     "types": [
       "node"
-    ],
-    "target": "es2021",
-    "composite": true,
-    "declarationMap": true
+    ]
   },
   "include": [
-    "src/**/*.ts",
-    "migration/1690451156799-init.ts"
+    "src/**/*.ts"
   ],
+  "references": [],
   "exclude": [
     "jest.config.ts",
+    "jest.config.cts",
     "src/**/*.spec.ts",
     "src/**/*.test.ts"
-  ],
-  "references": [
-    {
-      "path": "../helpers/tsconfig.lib.json"
-    }
   ]
 }

@@ -1,0 +1,118 @@
+# @import ./login.http
+#
+# Task 9 smoke — privileged user-admin (whole-method admin client).
+# Needs: local Supabase + seed, `nx serve api`, httpYac env `local`.
+# Creates Auth users + rows — use unique emails/phones (below) or `supabase db reset`
+# between full runs if something collides.
+
+### Create customer (solar bearer → grid 1)
+# @name createCustomerSolar
+# @ref loginSolar
+POST {{baseUrl}}/user-admin/create-customer
+Authorization: Bearer {{loginSolar.access_token}}
+Content-Type: application/json
+
+{
+  "full_name": "Smoke Customer",
+  "email": "smoke-customer-{{$timestamp}}@example.com",
+  "grid_id": 1,
+  "is_hidden_from_reporting": false
+}
+
+### Update customer (solar bearer)
+# @ref loginSolar
+POST {{baseUrl}}/user-admin/update-customer
+Authorization: Bearer {{loginSolar.access_token}}
+Content-Type: application/json
+
+{
+  "id": {{createCustomerSolar.id}},
+  "full_name": "Smoke Customer Updated",
+  "email": "{{createCustomerSolar.account.email}}",
+  "is_hidden_from_reporting": true
+}
+
+### Create customer (X-API-KEY — machine path, platform key)
+# @name createCustomerApiKey
+POST {{baseUrl}}/user-admin/create-customer
+X-API-KEY: {{devApiKey}}
+Content-Type: application/json
+
+{
+  "full_name": "Smoke Machine Customer",
+  "email": "smoke-machine-customer-{{$timestamp}}@example.com",
+  "grid_id": 1,
+  "is_hidden_from_reporting": false
+}
+
+### Create agent (solar bearer → grid 1)
+# @name createAgentSolar
+# @ref loginSolar
+POST {{baseUrl}}/user-admin/create-agent
+Authorization: Bearer {{loginSolar.access_token}}
+Content-Type: application/json
+
+{
+  "full_name": "Smoke Agent",
+  "phone": "+316{{$randomInt 10000000 99999999}}",
+  "email": "smoke-agent-{{$timestamp}}@example.com",
+  "grid_id": 1
+}
+
+### Update agent (solar bearer)
+# @ref loginSolar
+POST {{baseUrl}}/user-admin/update-agent
+Authorization: Bearer {{loginSolar.access_token}}
+Content-Type: application/json
+
+{
+  "id": {{createAgentSolar.id}},
+  "full_name": "Smoke Agent Updated",
+  "phone": "+316{{$randomInt 10000000 99999999}}",
+  "email": "smoke-agent-updated-{{$timestamp}}@example.com"
+}
+
+### Invite member (solar bearer → org 2)
+# @name inviteMemberSolar
+# @ref loginSolar
+POST {{baseUrl}}/user-admin/invite-member
+Authorization: Bearer {{loginSolar.access_token}}
+Content-Type: application/json
+
+{
+  "email": "smoke-member-{{$timestamp}}@example.com",
+  "full_name": "Smoke Member",
+  "organization_id": 2,
+  "member_type": "TECH",
+  "redirectTo": "http://localhost:5173/"
+}
+
+### Update member (solar bearer — invited member)
+# @ref loginSolar
+POST {{baseUrl}}/user-admin/update-member
+Authorization: Bearer {{loginSolar.access_token}}
+Content-Type: application/json
+
+{
+  "id": {{inviteMemberSolar.id}},
+  "full_name": "Smoke Member Updated",
+  "member_type": "TECH",
+  "training_level": 1,
+  "subscribed_to_telegram_revenue_notifications": false,
+  "hidden": false
+}
+
+### Delete customer created by solar bearer (cleanup)
+# @ref loginSolar
+DELETE {{baseUrl}}/user-admin/customer/{{createCustomerSolar.id}}
+Authorization: Bearer {{loginSolar.access_token}}
+
+### Delete agent (cleanup)
+# @ref loginSolar
+DELETE {{baseUrl}}/user-admin/agent/{{createAgentSolar.id}}
+Authorization: Bearer {{loginSolar.access_token}}
+
+### Delete invited member (cleanup — member id from invite response)
+# @ref loginSolar
+DELETE {{baseUrl}}/user-admin/member/{{inviteMemberSolar.id}}
+Authorization: Bearer {{loginSolar.access_token}}

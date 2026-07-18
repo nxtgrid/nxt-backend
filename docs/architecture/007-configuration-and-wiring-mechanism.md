@@ -1,7 +1,12 @@
 # ADR-007: Configuration & Wiring Mechanism
 
 **Date:** 2026-06-30
-**Status:** Accepted (mechanism decided; several refinements deliberately deferred — see "Deferred / future")
+**Status:** Accepted (mechanism decided; several refinements deliberately deferred — see "Deferred /
+future"). **Amended 2026-07-09** — admin organization becomes DB-native; see "Amendment (2026-07-09)"
+below (supersedes part of decisions 1 and 10). **Amended 2026-07-15 (002d)** — the `deployment`
+config group is dropped, the wiring mechanism becomes explicit central per-host composition, and the
+boot model requires DB for Foundation-wired hosts; see "Amendment (2026-07-15)" below (supersedes
+decisions 7 and 10, and the `deployment` subtree of decision 5).
 
 ---
 
@@ -59,6 +64,11 @@ env var or an object-store URL.
 The admin organization is a **config-supplied id** (category B), **not** a new DB column/flag: it is a
 deployment-wide singleton that must be known before DB-dependent code initializes, and a config value
 is trivially overridable per environment without a data migration.
+
+> **Amended 2026-07-09** — this classification is superseded for the admin organization specifically:
+> it is now DB-native (`organizations.organization_type = 'PLATFORM_OPERATOR'`). See "Amendment
+> (2026-07-09)" below. The rest of decision 1 (topology/presentation categories, secrets-in-env) is
+> unaffected.
 
 ### 2. Canonical format = JSON; contract = Zod; no `@nestjs/config`
 
@@ -183,12 +193,160 @@ CMS dump silently mis-wiring a deployment).
 - All call sites (both auth strategies, `epicollect.controller.ts`, `payouts.service.ts`) read via
   `getConfig().deployment.*` — a near-mechanical find-and-replace, not a constructor refactor.
 
+> **Amended 2026-07-09** — `adminOrganizationId`'s *source of truth* moves to the database (see
+> Amendment below); `systemWalletId` is unaffected and still follows this decision as originally
+> written. How backend/frontend call sites resolve the now-DB-native admin organization is **not yet
+> decided** — see Amendment "Open / deferred."
+
 ### 11. Frontend/backend shared artifact
 
 - The **distribution mechanism to the frontend is deferred** (it belongs with the CMS-era work).
 - The only commitment now is **schema hygiene**: all browser-safe values live under the single `public`
   subtree, and nothing sensitive is ever placed there — so the frontend can later receive *just that
   subtree* without disentangling fields.
+
+---
+
+## Amendment (2026-07-09) — admin organization becomes DB-native
+
+**Context:** surfaced during 002b Task 3c (schema programmability review). Postgres RLS
+(`rls_check_if_nxt_member()`, hard-coded `nxt_org_id := 2`) cannot call `getConfig()` — the admin
+organization must be resolvable **inside the database**, and RLS is on the hot path, so the resolution
+must be fast (no per-row DB lookup).
+
+**Decision:** the single source of truth for "which organization is the platform operator" moves from
+the config artifact (`deployment.adminOrganizationId`, decisions 1/10 above) to the database itself:
+
+- `organization_type_enum` gains a new value: **`PLATFORM_OPERATOR`**.
+- A partial unique index enforces **at most one** organization with that type:
+  ```sql
+  CREATE UNIQUE INDEX one_platform_operator_org
+    ON organizations (organization_type)
+    WHERE organization_type = 'PLATFORM_OPERATOR';
+  ```
+- A trigger on `organizations` (`AFTER INSERT OR UPDATE OF organization_type` and `AFTER DELETE`) keeps
+  a fast-read cache in sync: a Postgres **custom GUC** (`app.admin_organization_id`), set via both
+  `SET` (immediate effect for the current session) and `ALTER DATABASE … SET` (durable — applied to
+  future connections) whenever the flag changes.
+- RLS reads the GUC via `current_setting('app.admin_organization_id', true)` — an in-memory,
+  zero-I/O read — instead of a live `organizations` lookup (index + heap fetch + MVCC check on every
+  evaluation). The renamed function (`rls_check_if_admin_org_member()`, replacing
+  `rls_check_if_nxt_member()`) is also marked `STABLE` so Postgres evaluates it once per statement,
+  not once per row.
+- Setup flow: create the platform-operator organization (Supabase UI or SQL), set its
+  `organization_type = 'PLATFORM_OPERATOR'`; the trigger records its id automatically. No manual script
+  required for the common path (a script remains a fine manual fallback/override).
+
+**Rationale:** the value is a fact about which row in `organizations` is special, not a boot-time
+topology decision — none of its current call sites (`api-key.strategy.ts`, `supabase.strategy.ts`,
+`payouts.service.ts`) gate module composition or run before the DB is available, so decision 1's
+original justification ("must be known before DB-dependent code initializes") does not hold for this
+specific value. Flipping the flag is also friendlier to operate (an `UPDATE` + trigger) than editing
+and redeploying the config artifact. `PLATFORM_OPERATOR` (not `SUPERADMIN`) avoids colliding with
+`member_type_enum.SUPERADMIN`, which is an unrelated concept (a **member's** role within an org).
+
+**Superseded:** decision 1's classification of the admin organization as "category B, config-supplied,
+not a DB column/flag" (now DB-native for this value only). Decision 10's plan to have all consumers
+read `getConfig().deployment.adminOrganizationId` populated from the JSON artifact is superseded for
+the *source of truth*; how each consumer resolves the value is **open** (below). `systemWalletId` is
+unaffected by this amendment.
+
+**Open / deferred (do not lose these):**
+
+- **Backend consumers:** keep the `getConfig().deployment.adminOrganizationId` call sites, but populate
+  that field from the DB (query/cache at boot) instead of the JSON artifact — or have consumers query
+  `organizations` directly (cached, not per-request). Not decided.
+- **Frontend consumers:** qilin/pegasus/eos/niffler/sphinx may need the same fact (e.g.
+  `is_nxt_grid_member`-style checks). If the DB is the source of truth, frontend delivery needs its own
+  resolution path (API endpoint, or republish into the shared config artifact from the DB at
+  build/boot time). **Not decided** — revisit alongside the frontend config delivery decision already
+  deferred in decision 11.
+- **GUC propagation lag:** `ALTER DATABASE … SET` only takes effect for *new* connections; already-open
+  pooled connections keep the old value until they reconnect. Acceptable for a value that changes at
+  most once per deployment lifetime; document for operators.
+- **Trigger function privilege:** needs `SECURITY DEFINER`, owned by a role with privilege to
+  `ALTER DATABASE` (typically `postgres`, which owns the database in Supabase-hosted projects) —
+  confirm this holds for self-hosted/vanilla Postgres adopters at Task 5/8.
+
+**Recorded in:** `docs/plans/002-oss-migration/002b-schema-programmability-review.md` (H1c) and
+`002b-schema-deviation-register.md` (register #22, Programmability adjustments) — 002b Task 3c.
+
+> **Amended 2026-07-13 (002b Task 8)** — the GUC + `sync_admin_organization_id_guc` trigger
+> mechanism above is **superseded in the shipped baseline**. Supabase runs migrations as
+> non-superuser `postgres`, which cannot `ALTER DATABASE … SET` custom parameters (bootstrap
+> failed with `42501`); assigning the trigger function to `supabase_admin` in-migration also
+> fails (`must be able to SET ROLE "supabase_admin"`). **Shipped implementation:** drop the GUC
+> trigger; `rls_check_if_admin_org_member()` reads the `PLATFORM_OPERATOR` row directly
+> (`LANGUAGE sql STABLE`, `one_platform_operator_org` index). Enum value + partial unique index
+> unchanged. Post-migration bootstrap: `docs/deployment/supabase.md` §5. Register #22 +
+> Programmability adjustments §3 updated. The "GUC propagation lag" and "Trigger function
+> privilege" open items below are **closed** by this amendment.
+
+---
+
+## Amendment (2026-07-15) — 002d Foundation import: wiring, `deployment` drop, boot model
+
+Surfaced while planning the platform-core import
+(`docs/plans/002-oss-migration/002d-platform-core-import.md`). Three related changes.
+
+### A. Wiring is explicit central per-host composition (supersedes decision 7)
+
+Decision 7's per-capability **contribution functions** (`xModules(config)`) are **not adopted**.
+The temporary `demoModules(getConfig())` scaffold from 002c is their last vestige and is removed in
+002d. Instead:
+
+- Each host composes its own module list **explicitly and centrally** in its `app.module.ts` using
+  plain named arrays — an `infrastructure` array and a `foundation` array — plus **inline Tier-1
+  conditionals** for capabilities (`...(cfg.capabilities.metering?.enabled ? [MeteringModule] : [])`).
+- There is **no shared "always-on" constant** across hosts: `api` and `worker` each list their own
+  infrastructure/foundation modules, so each host's composition is readable in one place. (`api`'s
+  Foundation is large; `worker`'s is small.)
+- **Per-capability / per-adapter fail-fast stays where decision 9 (Layer 2) put it** — inside the
+  module/adapter's own wiring (`forRoot`/constructor via `requireEnv`), not in a wrapper function.
+- **Extract trigger:** keep composition inline in `app.module.ts` until it gets crowded (~20+
+  imports, or when Tier-2 `forRoot` wiring starts obscuring the Tier-1 booleans), then move it to a
+  co-located `app.composition.ts`. Not a lib.
+
+The **central capability registry** (Deferred / future) remains the eventual home for auto-derived
+host composition and the effective-config report; this amendment does not build it, and the explicit
+arrays refactor into it cleanly if/when it lands.
+
+### B. The `deployment` config group is dropped (supersedes decision 10; closes the 07-09 open item)
+
+The entire `deployment` subtree (`adminOrganizationId`, `systemWalletId`) is **removed from the
+config schema** (decision 5's shape and decision 10 no longer apply). Rationale: every consumer of
+both values lives in a **deferred capability**, so nothing in the Foundation reads either one, and
+keeping empty config surface invites premature coupling.
+
+- **`adminOrganizationId`** — already DB-native since the 2026-07-09 amendment
+  (`organizations.organization_type = 'PLATFORM_OPERATOR'`). Its **backend consumers** (the
+  `payouts.service.ts` / `epicollect` gate) resolve it **DB-side within their owning capability**
+  (Payments / Field Ops) when those capabilities are imported — **not** via a config field. This
+  **closes** the 2026-07-09 "Open / deferred → Backend consumers" item (the answer is: no
+  config-populated field; resolve DB-side per consumer). Foundation auth does **not** compute an
+  admin-org membership flag in 002d (no in-scope reader); when reintroduced it is named
+  `is_admin_org_member` (was `is_nxt_grid_member`).
+- **`systemWalletId`** — returns as **`bankingSystemWalletId`** under `capabilities.payments`
+  (owned by the Payments capability), **not** a resurrected top-level `deployment` group, when
+  Payments is imported.
+- **Frontend resolution** of the admin-org fact remains open (unchanged) — see the 2026-07-09
+  Amendment "Open / deferred → Frontend consumers" and decision 11.
+
+### C. Boot model — Foundation-wired hosts require the database (refines decision 4 "evaluation mode")
+
+Once a host wires Foundation/Supabase infrastructure, it **requires DB connectivity and fails fast
+on missing `SUPABASE_*` env** at boot (`requireEnv` in the Supabase provider). "Evaluation mode"
+(decision 4 — "a bare clone runs") is clarified to mean **capabilities off + a local Supabase**, not
+**DB-less**. Both `api` and `worker` wire Supabase infra in 002d, so both require DB env from then
+on. Per-host env differs: admin-client vars (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`) on
+both; `SUPABASE_PUBLISHABLE_KEY` + JWT verification (`SUPABASE_JWKS_URL` preferred;
+`SUPABASE_JWT_SECRET` legacy fallback) only where auth runs (`api`). `SupabaseService`
+builds its client in a **provider** (no import-time `export const supabase` singleton); the
+query-type-generation shortcut returns later as a **type-only probe** (no runtime client).
+
+**Superseded by this amendment:** decision 7 (contribution functions) in full; decision 10 and the
+`deployment` subtree of decision 5's schema shape; the 2026-07-09 "Backend consumers" open item
+(now resolved as DB-side-per-consumer).
 
 ---
 
@@ -257,3 +415,9 @@ CMS dump silently mis-wiring a deployment).
 - The effective-config report or automated host composition becomes needed (build the central registry).
 - A port gains a real manual-mode fallback (introduce the null/manual adapter + `whenUnprovided` policy).
 - The CMS integration lands (formalize generated JSON Schema, URL/build-time delivery, and FE distribution).
+- The frontend config delivery mechanism is designed (resolve how the now-DB-native
+  `adminOrganizationId` reaches frontend apps — see Amendment "Open / deferred").
+- ~~Backend consumers of `getConfig().deployment.adminOrganizationId` are touched (002b Task 5/8) —
+  decide DB-populated-config vs. direct-DB-query at that point.~~ **Resolved 2026-07-15 (002d):** the
+  `deployment` group is dropped; backend consumers resolve the admin org **DB-side within their
+  owning capability**. See "Amendment (2026-07-15) → B".

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [oss-migration]
+  push:
+    branches: [oss-migration]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ##
+  # Core CI - lint, test, typecheck affected files
+  ##
+  nx-affected-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - uses: nrwl/nx-set-shas@v5
+        with:
+          main-branch-name: oss-migration
+      - run: pnpm exec nx affected -t lint test typecheck build --parallel=3
+
+  ##
+  # Schema type-drift guard — disabled during the oss-migration phase.
+  # Re-enable (uncomment both jobs below) once migration lands on main.
+  ##
+  # supabase-type-filter:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     schema: ${{ steps.filter.outputs.schema }}
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - uses: dorny/paths-filter@v4
+  #       id: filter
+  #       with:
+  #         filters: |
+  #           schema:
+  #             - 'supabase/**'
+  #             - 'libs/core/src/types/**'
+
+  # supabase-type-drift:
+  #   needs: supabase-type-filter
+  #   if: needs.supabase-type-filter.outputs.schema == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - uses: actions/setup-node@v6
+  #       with:
+  #         node-version: '24'
+  #     - run: corepack enable
+  #     - run: pnpm install --frozen-lockfile
+  #     - run: pnpm supabase db start
+  #     - run: pnpm gen-types-local && pnpm gen-better-types
+  #     - run: git diff --exit-code libs/core/src/types/supabase-types.ts

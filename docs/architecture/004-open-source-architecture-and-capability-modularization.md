@@ -58,7 +58,7 @@ onto **thin runtime hosts** (horizontal/operational). Capabilities expose **port
 - **Platform core (always on):** auth, api-keys, organizations, members, accounts, agents, grids,
   poles, dcus, routers, db/supabase, logging, websocket, download.
 - **(1) Energy Production Monitoring:** mppts + mppt/grid snapshots, victron, solcast & forecasts,
-  grid-diagnostics/digital-twin, device-data-sink, zerotier.
+  grid-diagnostics/digital-twin, zerotier.
 - **(2) Smart Metering & Distribution:** meters, meter-interactions/installs/commissionings,
   directive-batches (bulk meter-interactions), hardware imports/installs, connections, customers,
   device-messages, calin adapter, chirpstack/LoRaWAN, ussd-sessions.
@@ -68,6 +68,32 @@ onto **thin runtime hosts** (horizontal/operational). Capabilities expose **port
   telegram, make, flow-xo) are optional adapters.
 - **(5) Field Operations:** epicollect, issues, notes, jira, pd-flows/actions/hero.
 - **(6) Automation:** autopilot, lifeline (depends on (2) and/or (3)).
+
+> **Amended 2026-07-13 (002b / register #12)** — **`device-data-sink` removed** from (1). The
+> legacy generic device registry (`devices`, `device_types`, `device_logs`) and its Grafana-oriented
+> read path are **out of OSS scope** — dropped from the canonical baseline schema, not a
+> capability-flagged optional module. Production monitoring import (**002e**) must not resurrect
+> those tables or the `meters.device_id` FK. Cutover spec: deviation register **#12**.
+
+> **Amended 2026-07-15 (002d — Foundation scope)** — the "platform core (always on)" list above is
+> narrowed to what is genuinely always-on identity/access/infra. **Always-on Foundation** =
+> `auth`, `api-keys`, `organizations`, `members`, `accounts`, `grids` (entity data + core CRUD),
+> `db/supabase`, `logging`. The remaining items originally listed are **not** always-on and move
+> out per **ADR-013** (behavior follows domain ownership):
+> - `agents` — no standalone core module; the agent **entity/type** rides the accounts/identity
+>   graph, but every agent **behavior** (topups, management) is owned by Metering/Payments.
+> - `dcus`, `poles` — metering-specific → **Metering** capability (poles: only a stale entity today).
+> - `websocket` — realtime is a metering after-effect → **Metering** (first realtime emitter).
+> - `routers` — unresolved; provisionally **Production Monitoring**, decided when that capability is
+>   imported.
+> - `download` — deferred; not part of initial core.
+> - Notification **core** (§4) remains platform in principle but its **import is deferred** to the
+>   first capability that writes notifications.
+>
+> `grids` is therefore an always-on entity with a **lean core surface only**; capability-specific
+> grid behavior (e.g. connectivity stats) lives in the owning capability (**ADR-013**). Naming: the
+> always-on layer is referred to as **Foundation** and is a per-host *selection*, not a library —
+> see 002d. Import spec: `docs/plans/002-oss-migration/002d-platform-core-import.md`.
 
 The primary independence boundary is **(1) Production vs (2)+(3) Metering/Payments**, over the shared
 platform core. Production is the clean island (depends only on platform core).
@@ -127,17 +153,27 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
 - Existing dual-ORM usage (legacy TypeORM + Supabase client on the primary DB) complicates module
   extraction and must be paid down alongside.
 
-## Out of Scope / Deferred to Follow-up ADRs
-- **ADR-005 — Inter-host communication:** shared-DB vs HTTP mesh vs internal event bus (today both a
-  shared DB and a bidirectional HTTP mesh are in use).
-- **ADR-006 — Monorepo tooling & CI/CD:** Nx suitability / fresh setup, affected-only builds, remote
-  caching, per-host build & deploy, replacing the DigitalOcean-coupled stub workflow.
-- **ADR-007 — Configuration & wiring mechanism:** config file format, conditional NestJS dynamic-module
-  loading per capability, boot-time validation of flags/providers.
-- **ADR-008 — Open-source migration strategy:** re-scaffold + incremental module import; database
-  baseline/squash; deprecated-table (e.g. `directives` / `lorawan-directives`) phase-out; parity + cutover.
-- **ADR-009 — Database migration deployment & governance:** operator-controlled (non-push-triggered)
-  migration application; keep migrations in the monorepo; separate-migrations-repo rejected.
+## Follow-up ADRs
+
+Mechanism-level decisions that this ADR intentionally left to separate documents. Several are now
+**Accepted** (summaries below); see each file for full status and any remaining deferred items.
+
+- **ADR-005 — Inter-host communication:** **Accepted (2026-07-17).** Independent hosts; shared DBs
+  carry state; residual sync HTTP (prefer worker→`api`); async via per-capability DB jobs; retire
+  the bidirectional `*_API` mesh; no broker as inter-host bus. See
+  `docs/architecture/005-inter-host-communication.md`.
+- **ADR-006 — Monorepo tooling & CI/CD:** **Accepted.** Nx suitability / fresh setup, affected-only
+  builds, remote caching, per-host build & deploy, replacing the DigitalOcean-coupled stub workflow.
+- **ADR-007 — Configuration & wiring mechanism:** **Accepted.** Config file format, conditional NestJS
+  dynamic-module loading per capability, boot-time validation of flags/providers.
+- **ADR-008 — Open-source migration strategy:** **Accepted (strategy).** Re-scaffold + incremental
+  module import; database baseline/squash; deprecated-table (e.g. `directives` / `lorawan-directives`)
+  phase-out; parity + cutover.
+- **ADR-009 — Database migration deployment & governance:** **Accepted.** Operator-controlled
+  (non-push-triggered) migration application; keep migrations in the monorepo; separate-migrations-repo
+  rejected.
+
+### Still out of scope (not decided here)
 - **Per-organization provider overrides** (generalizing ADR-003) as an optional payments feature.
 - **Dual-ORM consolidation** (TypeORM → Supabase client) as it interacts with capability extraction.
 
@@ -145,3 +181,5 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
 - A capability needs to differ per organization within one deployment (would reopen Decision 7).
 - A second real adapter appears for a port (validates/forces the Tier-2 abstraction; cf. ADR-001).
 - A capability's runtime profile diverges enough to warrant its own deployable (cf. Decision 8).
+- The OSS baseline schema deviation register adds or removes objects that affect capability
+  boundaries (keep the capability map aligned — see Decision 5 amendment, register #12).

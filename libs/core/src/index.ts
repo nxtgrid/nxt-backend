@@ -1,5 +1,9 @@
-export { CoreTypeOrmModule } from './modules/core-typeorm.module';
-export { GlobalHttpModule } from './modules/global-http-module';
-export { GlobalSupabaseModule } from './modules/supabase.module';
-export { CoreLoggerModule } from './modules/logger-module';
-export { CorePgModule } from './modules/core-pg';
+export { SUPABASE_QUERY_LIMIT } from './constants.js';
+export { CreateCustomerDto } from './modules/customers/dto/create-customer.dto.js';
+export { GlobalHttpModule } from './modules/global-http-module.js';
+export { GlobalLoggerModule } from './modules/logger/logger.module.js';
+export {
+  GlobalSupabaseModule,
+  SupabaseService,
+  throwSupabaseError,
+} from './modules/supabase/supabase.module.js';

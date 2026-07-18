@@ -1,7 +1,7 @@
 # Open-Source Migration — Roadmap
 
-**Decisions:** ADR-004 (architecture), ADR-005 (open — see decision points), ADR-006 (tooling/CI),
-ADR-007 (config), ADR-008 (migration strategy), ADR-009 (migration governance)
+**Decisions:** ADR-004 (architecture), ADR-005 (inter-host communication — Accepted 2026-07-17),
+ADR-006 (tooling/CI), ADR-007 (config), ADR-008 (migration strategy), ADR-009 (migration governance)
 **Plan number:** 002 (family)
 **Created:** 2026-07-08
 **Status:** In progress
@@ -114,9 +114,16 @@ Step 0 (002a) ─┬─ Track A: Database baseline (002b) ───────�
 - **Track B (002c)** proves the golden path (`migration up → gen-types → typecheck → build →
   image → deploy`) per ADR-006/ADR-008 Phase 1, and establishes the ADR-007 config skeleton.
   Until Track A delivers, the golden-path proof may use a minimal hello-world migration.
+  **Completed 2026-07-14** (Tasks 1–11). Next: capability imports (002d…).
 - **Interlock:** the baseline migrations from Track A become the scaffold's canonical
-  `supabase/` content; types are regenerated from them and the type-drift CI guard goes live
-  against the real schema. Whichever track finishes first waits at this join.
+  `supabase/` content. **Adopted in 002c Tasks 4–5** (002b finished first). **Interlock reached
+  2026-07-14** (002c Task 8 clean-clone sign-off). Type-drift CI guard deferred until
+  post-migration (002c Task 7).
+
+**002b interlock deliverables (Track A complete, 2026-07-13):** see
+`002b-database-baseline.md` Task 10 handoff table — init migration at root `supabase/`, PG17,
+CLI pin `2.109.1`, gen-types invocation (`--schema public` only), deviation register, deployment
+doc. **Adopted in 002c Tasks 4–5; interlock reached 2026-07-14** (Task 8 sign-off).
 
 **Hard edges for capability imports (non-negotiable, ADR-008 Phase 3):**
 
@@ -131,6 +138,10 @@ Two passes per module (ADR-008): (a) move it in working, behavior-preserving; (b
 port seam + capability flag. Each capability registers its own three-tier config into the 002c
 skeleton as it lands (ADR-008 Phase 4). Capability numbering per ADR-004 decision 5.
 
+> **Foundation (002d) is a single-pass exception.** It is always-on, so it has no capability flag
+> and (with only one auth provider) no speculative port seam — pass (b) does not apply. The dual-
+> pass model resumes for the flagged capabilities from 002e onward.
+
 **Import mechanics (whole vs partial):**
 
 - **Whole-module moves** are `git mv legacy/... → ...` with adaptation in a *separate follow-up
@@ -144,6 +155,26 @@ skeleton as it lands (ADR-008 Phase 4). Capability numbering per ADR-004 decisio
   what has been re-homed, and guards against two capabilities unknowingly importing duplicate
   copies of shared entangled code.
 
+### "No-cracks" governance (migration-scoped)
+
+The primary failure mode of an incremental import is legacy code that is neither imported nor
+consciously deferred — it just gets forgotten. Four rules keep every part accounted for (read
+during migration work; not always-on context):
+
+1. **Ledger completeness.** Every legacy file in a sub-plan's scope gets an import-ledger row —
+   `moved` / `partially imported (listing what remains)` / `superseded → deleted` / `deferred (with
+   destination)`. No file is silently skipped. The ledger, not git history, is authoritative.
+2. **Per-behavior placement (ADR-013).** For an entangled module, each *behavior* is routed to its
+   owning capability in the ledger **before** the legacy file is deleted. A legacy file is deleted
+   only when **every** behavior it holds has a recorded home (imported or explicitly deferred).
+3. **Legacy shrinks as the to-do list (rule 5 / ADR-008).** `legacy/` is never edited, only deleted
+   from, and only on **full** supersession. A non-empty `legacy/` *is* the standing list of what has
+   not yet been re-homed; `legacy/` reaching empty is part of the exit condition.
+4. **Every deviation recorded.** Renames, drops, de-brand/i18n neutralizations, and behavior
+   re-homings land in the appropriate register (schema deviation / internationalization & de-brand)
+   or the sub-plan decisions log. Undocumented divergence is the failure this whole spine exists to
+   prevent.
+
 | Order | Import | Driver |
 |---|---|---|
 | 1 | Platform core | Hard edge — everything depends on it |
@@ -156,35 +187,44 @@ Sub-plans live in `docs/plans/002-oss-migration/`. Keep this table current.
 
 | ID | Title | Scope | Status |
 |---|---|---|---|
-| 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | Authored — not started |
-| 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | Authored — not started |
-| 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | Authored — not started |
-| 002d | Platform core import | Move platform-core modules into the new workspace (two passes) | Just-in-time — not yet authored |
-| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate | Just-in-time — not yet authored |
+| 002a | Repo restructure (Step 0) | Create `oss-migration` branch; atomic rename-only move to `legacy/`, freeze notice, verification | Completed |
+| 002b | Database baseline | Inventory, four-bucket classification, canonical init migration, A/B diff verification (old chain from `legacy/supabase/migrations`), deviation register, staged rollout (local → fresh Supabase project → adopter) | **Completed** (2026-07-13) |
+| 002c | Scaffold, pipeline & config skeleton | Fresh Nx 23 workspace (ADR-006), CI with affected + type-drift guard, Dockerfile, DO deploy baseline, ADR-007 config loader/schema skeleton, hooks reintroduction | **Completed** (2026-07-14) |
+| 002d | Platform core import (Foundation) | Import the always-on Foundation (auth, api-keys, accounts, members, organizations, user-admin, grids) over infra (Supabase provider, HTTP, logging); retire ops-DB TypeORM; drop `deployment` config group; explicit per-host composition | **Completed** (2026-07-17) |
+| 002e | Energy Production Monitoring import | Capability (1), incl. TimescaleDB estate; **exclude device registry** (register #12 — see assumption #10). **Prerequisite:** **ADR-005** (Accepted 2026-07-17) | Just-in-time — not yet authored |
 | 002f… | Remaining capability imports | (2) Metering, (3) Payments, (4) Notifications, (5) Field Ops, (6) Automation — one sub-plan each; IDs assigned when authored | Just-in-time — not yet authored |
-| (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement | Just-in-time — not yet authored |
+| (last) | Parity verification & company cutover | Parity checklist, company DB convergence migration (from deviation register), cutover, private-repo retirement. Strategy-level decisions (host flip mechanics, rollback stance, maintenance window) recorded early in **ADR-012** — reconcile with it when authoring | Just-in-time — not yet authored |
 
 ## Standing assumptions and open decision points
 
 | # | Item | Standing position | Resolves when |
 |---|---|---|---|
 | 1 | **Device-messaging (plan 001 / ADR-010)** | Runs as a parallel effort; this migration treats device-messaging as **arriving as an external service**. The Metering import sub-plan depends on plan 001 being (near) complete | Checked when the Metering sub-plan is authored |
-| 2 | **ADR-005 inter-host communication** | Deliberately open. Groundwork (002a–002c) does not need it; much of the current HTTP mesh collapses into in-process calls in the modular monolith | **Decide before the `worker` host receives its first real capability** (i.e. during/before the Production Monitoring import) |
+| 2 | **ADR-005 inter-host communication** | **Accepted (2026-07-17).** Independent hosts; shared DBs carry state; residual sync HTTP (prefer worker→`api`, ADR-014 auth); async via per-capability DB jobs; retire bidirectional `*_API` mesh; no broker / `LISTEN`/`NOTIFY` baseline; capability-owned ops writes (ADR-013); device-messaging = integrable HTTP+callbacks (ADR-010) | **Done** — apply during 002e+ capability imports |
 | 3 | **TimescaleDB schema** | Out of the 002b baseline (Supabase primary DB only). Belongs to the Production Monitoring capability import, where its consumers live | 002e authoring |
-| 4 | **Production schema = migrations** | Production has had no schema changes outside `supabase/migrations`. Certified once by a read-only `supabase db diff --linked` drift check at the start of 002b | 002b first task |
+| 4 | **Production schema = migrations** | Production has had no schema changes outside `supabase/migrations`. Certified by read-only drift check at 002b Task 1 (2026-07-08) | Done (002b Task 1) |
 | 5 | **Adopter requirements surface during execution** | Outside requirements (renames, omissions, additions) are discovered *while executing* sub-plans, not gathered up-front — and always recorded (see below) | Continuous |
-| 6 | **Branch strategy** | The migration lives on the long-running **`oss-migration`** branch; `main` keeps the original tree (incl. original README) untouched. No external automation watches this repo (production builds from the private repo). Documentation rewrites (root README, AGENTS.md commands) are deferred to the later phases | When/how the branch lands on `main` — decided in a later phase |
-| 7 | **Git hooks (husky) suspended** | Hooks are suspended from Step 0 onward to avoid friction during groundwork. Automatic lint/typecheck on commit is reintroduced as a 002c task, activated once the new workspace's lint/typecheck targets are stable | 002c execution |
+| 6 | **Branch strategy** | **Resolved after 002d (2026-07-18):** land Foundation on **`main`** via `oss-migration` → `main`; further capability imports and roadmap work continue on **`main`**. The long-running `oss-migration` branch was the migration vehicle while `main` held the pre-restructure tree; that tip remains in git history / `legacy/` — not a second live track. No external automation watches this repo (production still builds from the private company repo until ADR-012 cutover). Root README carries an honest Foundation-status blurb; fuller docs rewrites remain deferred. | **Done** — PR to `main` after 002d |
+| 7 | **Git hooks (husky) suspended** | Hooks were suspended from Step 0 onward; reintroduced in 002c Task 10 (husky + lint-staged + `nx affected -t typecheck --uncommitted`) | **Done** (2026-07-14, 002c Task 10) |
+| 8 | **Company cutover strategy (ADR-012)** | Decided ahead of the just-in-time sub-plan, since they're durable and unlikely to change: schema convergence splits into "anytime" (additive/dead-drop) vs. "flip-atomic" (renames) changes; `api` can blue/green but `worker` needs a hard stop-then-start; RLS parity gets an explicit regression pass; hard point-of-no-return past the flip-atomic migration (PITR checkpoint immediately before); a short maintenance window is acceptable; Geo FastAPI is out of scope | The "Parity verification & company cutover" sub-plan is authored — reconcile its runbook with ADR-012, which it supersedes on execution detail |
+| 9 | **DB-native platform operator org** (register #22) | Admin organization row is DB-native (`PLATFORM_OPERATOR`). **Backend resolution superseded (002d, 2026-07-15):** the `deployment` config group is **dropped** entirely (`adminOrganizationId` + `systemWalletId`) — no config field; backend consumers resolve the admin org **DB-side within their owning capability** (Payments / Field Ops), all of which are deferred, so nothing in the Foundation reads it. `systemWalletId` returns as `bankingSystemWalletId` under `capabilities.payments`. **Frontend apps' resolution still not decided** | Backend: **resolved (002d)** — ADR-007 Amendment 2026-07-15 §B. Frontend delivery still open — **ADR-007** Amendment "Open / deferred"; revisit alongside decision 11's frontend config delivery |
+| 12 | **Module-split philosophy (whole-module vs split)** | Resolved in principle: **behavior follows domain ownership, not the entity** — capability-specific behavior lives in the owning capability, never bolted onto a core module; split capabilities along cost/independence seams. Authoritative record: **ADR-013**. `user-admin` (imported whole incl. agents/customers) is a recorded per-module exception, not a precedent | **Decided (ADR-013, 2026-07-15)** — applied per import from 002d onward |
+| 10 | **Device registry dropped from baseline** (register #12) | `devices` / `device_types` / `device_logs` excluded from OSS schema; **ADR-004** §5 amended (2026-07-13) — `device-data-sink` removed from (1) | **002e** authoring (import must not resurrect device registry) |
+| 11 | **NXT Grid production Postgres 15→17** | OSS baseline targets PG17; NXT Grid production is still PG15 — independent Supabase platform-upgrade project (extensions, role passwords, …), not 002b/002c | Before company cutover parity — **ADR-012** trigger; prerequisites in cutover sub-plan when authored |
 
 ## Deviation recording
 
-Two levels, both mandatory:
+Three registers, all mandatory:
 
 1. **Schema deviation register** (companion to 002b, in the sub-plan folder): one entry per
    deviation from the original schema — object, change (drop / exclude / parameterize / rename /
    other), rationale, and **cutover implication** (what the company DB needs to converge).
    This register *is* the spec for the company convergence migration at cutover.
-2. **Per-sub-plan decisions log**: every sub-plan ends with a "Notes & decisions log" section
+2. **Internationalization & de-brand register** (`internationalization-and-debrand-register.md`,
+   migration-wide): one entry per Nigeria-specific / NXT-Grid-specific value or name (currency,
+   timezone, phone/locale, brand strings, brand-named symbols) and how the baseline neutralizes,
+   configures, or defers it. Roadmap rule 6 made durable. Created in 002d.
+3. **Per-sub-plan decisions log**: every sub-plan ends with a "Notes & decisions log" section
    (as in plan 001) recording task-level deviations and choices made during execution.
 
 **Rename policy:** renames are allowed but each one is a loan against later phases — imported
@@ -194,10 +234,15 @@ cutover. Weigh each rename individually; record all of them.
 ## Related documents
 
 - **ADR-004** — target architecture; capability map; three-tier flags.
+- **ADR-005** — inter-host communication (Accepted 2026-07-17); apply from 002e onward.
 - **ADR-006** — tooling/CI decisions executed by 002c.
 - **ADR-007** — config mechanism executed by 002c (skeleton) and each capability import (flags).
 - **ADR-008** — the four-phase strategy this roadmap operationalizes.
 - **ADR-009** — migration governance executed across 002b (baseline) and 002c (CI lane, CODEOWNERS).
+- **ADR-012** — company cutover strategy; strategy-level decisions for the last, not-yet-authored
+  sub-plan (see assumption 8).
+- **ADR-013** — capability-owned behavior over shared core entities; the placement principle that
+  governs whole-vs-split imports from 002d onward (see assumption 12).
 - **Plan 001** — device-messaging service extraction (parallel effort; see assumption 1).
 
 ---
@@ -224,3 +269,49 @@ cutover. Weigh each rename individually; record all of them.
   execution-model note in each sub-plan header): per task, the maintainer chooses who
   executes; the agent must ask when unstated, verify actual repo state rather than assume,
   and always keep the bookkeeping regardless of who did the work.
+- 2026-07-10 — Discussed company cutover strategy ahead of authoring the last sub-plan (its
+  prerequisites are far from complete). Surfaced runtime facts not considered in ADR-008: the 4
+  legacy apps collapse to 2 hosts (`api`/`worker`, ADR-004/005), and the database is the primary
+  integration point for 5 frontends + Grafana + Make.com, not just the backend. Recorded as
+  **ADR-012**: schema convergence splits into anytime-safe vs. flip-atomic changes; `api`/`worker`
+  have different flip mechanics; RLS parity gets an explicit regression pass; hard point-of-no-return
+  past the flip-atomic migration (PITR checkpoint before); short maintenance window accepted; Geo
+  FastAPI out of scope. The ADR's illustrative cutover sequence is explicitly non-binding — the
+  authoritative runbook remains the just-in-time sub-plan, to reconcile with ADR-012 when authored.
+  New standing assumption 8 added; sub-plan index and related-documents updated to point to it.
+- 2026-07-15 — **002d (Platform Core Import / Foundation) authored** after an extended maintainer
+  interview, and its Task 1 (decision records & registers) executed: **ADR-013** authored
+  (capability-owned behavior over shared core entities) + AGENTS.md ADR-index row; **ADR-004 §5**
+  amended (Foundation narrowed — agents/dcus/poles/websocket/routers/download out of always-on core)
+  and **ADR-007** amended (2026-07-15: `deployment` config group dropped; explicit central per-host
+  wiring supersedes decision 7's contribution functions; Foundation-wired hosts require DB / fail-
+  fast on `SUPABASE_*`). Created the **internationalization & de-brand register**; added the
+  "no-cracks" governance and standing assumption 12 (module-split → ADR-013); updated assumptions 2
+  (ADR-005 = explicit 002e prerequisite) and 9 (deployment group dropped). Foundation noted as a
+  single-pass exception to the dual-pass import model.
+- 2026-07-16 — **002d Task 4 done** (infra + explicit composition): Supabase provider, HTTP on both
+  hosts, Nest `Logger` + `GlobalLoggerModule` stub (nestjs-pino deferred), demo + `deployment`
+  config group removed, env rename (`SUPABASE_URL` / `SUPABASE_SECRET_KEY`). Next: Task 5 seed.
+- 2026-07-16 — **002d Task 5 done** (seed harness): local `supabase/seed.sql` +
+  `docs/deployment/supabase.md` §5. Next: Task 6 (`accounts` + `api-keys`).
+- 2026-07-17 — **002d Task 7 signed off** (auth): Passport strategies + guard, `AuthenticatedUser`,
+  JWKS/`jose`, inline API-key select, `/auth/me` + httpYac, ADR-014, CORS/`ValidationPipe`.
+  Seed verify (bearer + `X-API-KEY`) passed. Next: Task 8 (scoped test spike).
+- 2026-07-17 — **002d Task 8 adopted** (test spike): `apps/api/test/` layout; unit default /
+  integration+e2e opt-in; ApiKeyStrategy + thin X-API-KEY e2e green. Next: Task 9.
+- 2026-07-17 — **002d Task 8 signed off.** Next: Task 9 (`organizations` + `user-admin`).
+- 2026-07-17 — **002d Task 9 signed off:** Nest `organizations` skipped; `user-admin` imported
+  (whole-method admin); `CreateCustomerDto` in `@nxt/core`; `handleSingle` + Cloudflare→503.
+  Near-future: ADR-014 §5.3 API-key → RLS-bound user client. Next was Task 10 (`grids`).
+- 2026-07-17 — **002d Task 10 signed off:** Nest `grids` skipped (table/RLS/seed stay). Next:
+  Task 11 (close-out; grids = annotate service + remove `GET /:id` only).
+- 2026-07-17 — **002d Completed** (Task 11 close-out): legacy Foundation deletes per ledger;
+  grids annotated + `GET /:id` removed; lint bar green; `demo`/`deployment` gone. Next was:
+  lock ADR-005, then author **002e**.
+- 2026-07-17 — **ADR-005 Accepted** (inter-host communication). Independent hosts + shared DBs;
+  residual HTTP prefer worker→`api` (ADR-014); async per-capability DB jobs; retire `*_API` mesh;
+  no broker/`LISTEN` baseline; capability-owned ops writes; device-messaging = HTTP+callbacks.
+  Assumption 2 → Done. Next: author **002e** (Energy Production Monitoring).
+- 2026-07-18 — **Branch strategy (assumption 6) resolved:** merge `oss-migration` → `main` after
+  Foundation (002d). Default development track is **`main`** going forward; `oss-migration` is
+  historical after merge (retarget any open work; tip optional to keep). README status blurb added.

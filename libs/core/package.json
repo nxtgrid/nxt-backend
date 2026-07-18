@@ -1,0 +1,72 @@
+{
+  "name": "@nxt/core",
+  "version": "0.0.1",
+  "license": "MPL-2.0",
+  "authors": [
+    {
+      "name": "Bobby Bol",
+      "email": "studio.innua@gmail.com"
+    },
+    {
+      "name": "Tommaso Girotto",
+      "email": "tommaso.girotto91@gmail.com"
+    }
+  ],
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "imports": {
+    "#config/*.js": {
+      "source": "./src/config/*.ts",
+      "default": "./dist/config/*.js"
+    },
+    "#modules/*.js": {
+      "source": "./src/modules/*.ts",
+      "default": "./dist/modules/*.js"
+    },
+    "#types/*.js": {
+      "source": "./src/types/*.ts",
+      "default": "./dist/types/*.js"
+    }
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "source": "./src/config/index.ts",
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js",
+      "default": "./dist/config/index.js"
+    },
+    "./types/supabase-types": {
+      "source": "./src/types/supabase-types.ts",
+      "types": "./dist/types/supabase-types.d.ts",
+      "import": "./dist/types/supabase-types.js",
+      "default": "./dist/types/supabase-types.js"
+    },
+    "./types/supabase-types-adjusted": {
+      "source": "./src/types/supabase-types-adjusted.ts",
+      "types": "./dist/types/supabase-types-adjusted.d.ts",
+      "import": "./dist/types/supabase-types-adjusted.js",
+      "default": "./dist/types/supabase-types-adjusted.js"
+    }
+  },
+  "nx": {
+    "name": "core"
+  },
+  "dependencies": {
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/common": "^11.0.0",
+    "@supabase/supabase-js": "^2.103.3",
+    "class-validator": "^0.15.1",
+    "tslib": "^2.3.0",
+    "zod": "^4.4.3"
+  }
+}

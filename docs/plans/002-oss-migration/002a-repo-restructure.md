@@ -4,7 +4,7 @@
 **Decisions:** ADR-008 (re-scaffold strategy); Step-0 mechanics decided with maintainer 2026-07-08
 (see roadmap decisions log)
 **Created:** 2026-07-08
-**Status:** Not started
+**Status:** Completed
 **Execution model:** collaborative — the maintainer may execute tasks manually with the agent
 advising, or the agent may execute under maintainer review. Ask which mode applies before
 starting a task; see "Division of labor" in the parent plan.
@@ -44,6 +44,7 @@ Snapshot taken 2026-07-08. Verify against reality before executing (`ls -A`, `gi
 | `.husky/`, `.scripts/` | yes | → `legacy/` |
 | `.github/workflows/deploy-to-do.yml` | yes | → `legacy/.github-workflows/` (stub per ADR-009; moving it disables it — intended) |
 | `.gitignore`, `.github/` (rest, if any) | yes | stay at root |
+| `.editorconfig` | yes | stay at root |
 | `README.md` | yes | → `legacy/` (a new root README is authored in a later phase — or this one is copied back and updated; `main` keeps the original meanwhile) |
 | `docs/`, `AGENTS.md`, `LICENSE`, `AUTHORS.md`, `CONTRIBUTING.md`, `CONTRIBUTORS.md` | yes | stay at root |
 | `.cursor/`, `.vscode/`, `.cursorignore` | yes | stay at root (editor/agent config; path-specific rules reviewed in 002c) |
@@ -69,7 +70,7 @@ the later phases of the migration.
 
 ## Task 1 — The move commit (rename-only)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** nothing
 
 Create the `oss-migration` branch from `main`. On a clean working tree, on that branch:
@@ -103,7 +104,7 @@ returns only the intended root survivors (`docs/`, `.github/`, `.gitignore`, `.c
 
 ## Task 2 — Follow-up commit: freeze notice
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** Task 1
 
 Content changes go in a **separate commit** after the move:
@@ -128,7 +129,7 @@ phases of the migration (see "Accepted transitional state").
 
 ## Task 3 — Local cleanup (per clone, not committed)
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** Task 1
 
 1. Delete stale untracked artifacts at root: `dist/`, `.nx/`, `node_modules/`, `.DS_Store`,
@@ -146,7 +147,7 @@ phases of the migration (see "Accepted transitional state").
 
 ## Task 4 — Verification
 
-- [ ] **Status:** Not started
+- [x] **Status:** Completed (2026-07-08)
 - **Depends on:** Tasks 1–3
 
 1. **History-follow spot check** on at least two deep files, e.g.:
@@ -172,4 +173,9 @@ pushed. Update the roadmap sub-plan index: 002a → Completed; 002b and 002c unb
 
 > Append here as the plan is executed. Format: `YYYY-MM-DD — [task] — note`
 
-_(empty)_
+- `2026-07-08 — [task 1] — Root `.editorconfig` exists in the live tree and remains at repo root; inventory table updated before the move.`
+- `2026-07-08 — [task 1] — Move executed as a pure rename-only staged change set; local untracked Supabase artifacts were cleaned outside the move commit.`
+- `2026-07-08 — [task 2] — Added `legacy/README.md` freeze notice and extended `.gitignore` to cover `legacy/supabase/.temp` and `.branches`, the only ignore rules broken by the move.`
+- `2026-07-08 — [task 3] — Deleted stale root artifacts (`dist/`, `.nx/`, `.DS_Store`, `.snaplet/`); `node_modules/` was already absent and `core.hooksPath` was already unset in this clone.`
+- `2026-07-08 — [task 4] — History-follow checks passed for `legacy/apps/tiamat/src/main.ts` and `legacy/libs/core/src/types/supabase-types.ts`.`
+- `2026-07-08 — [task 4] — No root survivor outside `docs/` and `legacy/` referenced the old root paths except `.vscode/settings.json` search excludes for `libs/*/migration` and `supabase/migrations`; harmless for Step 0 and deferred to 002c path-specific cleanup.`

@@ -1,0 +1,8 @@
+{
+  "$schemaVersion": "1",
+  "public": {
+    "platformName": "Acme Mini-Grid"
+  },
+  "capabilities": {},
+  "integrations": {}
+}

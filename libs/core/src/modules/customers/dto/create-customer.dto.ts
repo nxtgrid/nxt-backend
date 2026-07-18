@@ -1,11 +1,27 @@
-import { GenderEnum, GeneratorTypeEnum } from '@core/types/supabase-types';
-import { IsBoolean, IsEmail, IsIn, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
-import { Constants } from '@core/types/supabase-types';
+import {
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsLatitude,
+  IsLongitude,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+} from 'class-validator';
 
+import {
+  Constants,
+  type GenderEnum,
+  type GeneratorTypeEnum,
+} from '#types/supabase-types.js';
+
+/** Shared create-customer payload (api user-admin + worker). */
 export class CreateCustomerDto {
   @IsString()
   @IsNotEmpty()
-    full_name: string;
+    full_name!: string;
 
   @IsPhoneNumber()
   @IsOptional()
@@ -24,10 +40,10 @@ export class CreateCustomerDto {
     longitude?: number;
 
   @IsBoolean()
-    is_hidden_from_reporting: boolean;
+    is_hidden_from_reporting!: boolean;
 
   @IsNumber()
-    grid_id: number;
+    grid_id!: number;
 
   @IsBoolean()
   @IsOptional()

@@ -1,11 +1,6 @@
 export type Json = Record<string, any>
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '12.2.3 (519615d)';
-  };
   public: {
     Tables: {
       accounts: {
@@ -17,7 +12,7 @@ export type Database = {
           id: number;
           organization_id: number | null;
           phone: string | null;
-          supabase_id: string | null;
+          supabase_id: string;
           telegram_id: string | null;
           telegram_link_token: string | null;
         };
@@ -29,7 +24,7 @@ export type Database = {
           id?: number;
           organization_id?: number | null;
           phone?: string | null;
-          supabase_id?: string | null;
+          supabase_id: string;
           telegram_id?: string | null;
           telegram_link_token?: string | null;
         };
@@ -41,7 +36,7 @@ export type Database = {
           id?: number;
           organization_id?: number | null;
           phone?: string | null;
-          supabase_id?: string | null;
+          supabase_id?: string;
           telegram_id?: string | null;
           telegram_link_token?: string | null;
         };
@@ -106,21 +101,18 @@ export type Database = {
           account_id: number | null;
           created_at: string;
           id: number;
-          is_locked: boolean;
           key: string | null;
         };
         Insert: {
           account_id?: number | null;
           created_at?: string;
           id?: number;
-          is_locked?: boolean;
           key?: string | null;
         };
         Update: {
           account_id?: number | null;
           created_at?: string;
           id?: number;
-          is_locked?: boolean;
           key?: string | null;
         };
         Relationships: [
@@ -266,69 +258,6 @@ export type Database = {
           },
         ];
       };
-      autopilot_executions: {
-        Row: {
-          code: string | null;
-          created_at: string;
-          id: number;
-          input: Json | null;
-          output: Json | null;
-          queries: Json | null;
-        };
-        Insert: {
-          code?: string | null;
-          created_at?: string;
-          id?: number;
-          input?: Json | null;
-          output?: Json | null;
-          queries?: Json | null;
-        };
-        Update: {
-          code?: string | null;
-          created_at?: string;
-          id?: number;
-          input?: Json | null;
-          output?: Json | null;
-          queries?: Json | null;
-        };
-        Relationships: [];
-      };
-      bank_accounts: {
-        Row: {
-          bank_id: number | null;
-          created_at: string;
-          id: number;
-          organization_id: number | null;
-        };
-        Insert: {
-          bank_id?: number | null;
-          created_at?: string;
-          id?: number;
-          organization_id?: number | null;
-        };
-        Update: {
-          bank_id?: number | null;
-          created_at?: string;
-          id?: number;
-          organization_id?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'FK_482543ba26483726aaa00d39174';
-            columns: ['bank_id'];
-            isOneToOne: false;
-            referencedRelation: 'banks';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_cc20105b139589c697648c925c3';
-            columns: ['organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       banks: {
         Row: {
           created_at: string;
@@ -406,11 +335,9 @@ export type Database = {
           deleted_at: string | null;
           document_id: string | null;
           document_type:
-            | Database['public']['Enums']['id_document_type_enum']
-            | null;
+            Database['public']['Enums']['id_document_type_enum'] | null;
           external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           id: number;
           is_building_wired: boolean | null;
           is_commercial: boolean;
@@ -430,11 +357,9 @@ export type Database = {
           deleted_at?: string | null;
           document_id?: string | null;
           document_type?:
-            | Database['public']['Enums']['id_document_type_enum']
-            | null;
+            Database['public']['Enums']['id_document_type_enum'] | null;
           external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           id?: number;
           is_building_wired?: boolean | null;
           is_commercial: boolean;
@@ -454,11 +379,9 @@ export type Database = {
           deleted_at?: string | null;
           document_id?: string | null;
           document_type?:
-            | Database['public']['Enums']['id_document_type_enum']
-            | null;
+            Database['public']['Enums']['id_document_type_enum'] | null;
           external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           id?: number;
           is_building_wired?: boolean | null;
           is_commercial?: boolean;
@@ -501,8 +424,7 @@ export type Database = {
           created_at: string;
           gender: Database['public']['Enums']['gender_enum'] | null;
           generator_owned:
-            | Database['public']['Enums']['generator_type_enum']
-            | null;
+            Database['public']['Enums']['generator_type_enum'] | null;
           grid_id: number | null;
           id: number;
           is_hidden_from_reporting: boolean;
@@ -518,8 +440,7 @@ export type Database = {
           created_at?: string;
           gender?: Database['public']['Enums']['gender_enum'] | null;
           generator_owned?:
-            | Database['public']['Enums']['generator_type_enum']
-            | null;
+            Database['public']['Enums']['generator_type_enum'] | null;
           grid_id?: number | null;
           id?: number;
           is_hidden_from_reporting?: boolean;
@@ -535,8 +456,7 @@ export type Database = {
           created_at?: string;
           gender?: Database['public']['Enums']['gender_enum'] | null;
           generator_owned?:
-            | Database['public']['Enums']['generator_type_enum']
-            | null;
+            Database['public']['Enums']['generator_type_enum'] | null;
           grid_id?: number | null;
           id?: number;
           is_hidden_from_reporting?: boolean;
@@ -574,8 +494,7 @@ export type Database = {
       dcus: {
         Row: {
           communication_protocol:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           created_at: string;
           external_reference: string;
           external_system: Database['public']['Enums']['external_system_enum'];
@@ -586,13 +505,11 @@ export type Database = {
           last_metering_hardware_install_session_id: number | null;
           last_online_at: string | null;
           location_geom: unknown;
-          queue_buffer_length: number;
           rls_organization_id: number | null;
         };
         Insert: {
           communication_protocol?:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           created_at?: string;
           external_reference: string;
           external_system: Database['public']['Enums']['external_system_enum'];
@@ -603,13 +520,11 @@ export type Database = {
           last_metering_hardware_install_session_id?: number | null;
           last_online_at?: string | null;
           location_geom?: unknown;
-          queue_buffer_length?: number;
           rls_organization_id?: number | null;
         };
         Update: {
           communication_protocol?:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           created_at?: string;
           external_reference?: string;
           external_system?: Database['public']['Enums']['external_system_enum'];
@@ -620,7 +535,6 @@ export type Database = {
           last_metering_hardware_install_session_id?: number | null;
           last_online_at?: string | null;
           location_geom?: unknown;
-          queue_buffer_length?: number;
           rls_organization_id?: number | null;
         };
         Relationships: [
@@ -643,544 +557,6 @@ export type Database = {
             columns: ['last_metering_hardware_install_session_id'];
             isOneToOne: true;
             referencedRelation: 'metering_hardware_install_sessions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      device_logs: {
-        Row: {
-          created_at: string;
-          device_id: number | null;
-          id: number;
-          message: string | null;
-          rls_organization_id: number | null;
-        };
-        Insert: {
-          created_at?: string;
-          device_id?: number | null;
-          id?: number;
-          message?: string | null;
-          rls_organization_id?: number | null;
-        };
-        Update: {
-          created_at?: string;
-          device_id?: number | null;
-          id?: number;
-          message?: string | null;
-          rls_organization_id?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'device_logs_device_id_fkey';
-            columns: ['device_id'];
-            isOneToOne: false;
-            referencedRelation: 'devices';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'device_logs_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      device_types: {
-        Row: {
-          created_at: string;
-          external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
-          id: number;
-          name: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
-          id?: number;
-          name?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
-          id?: number;
-          name?: string | null;
-        };
-        Relationships: [];
-      };
-      devices: {
-        Row: {
-          created_at: string;
-          device_type_id: number;
-          external_reference: string;
-          grid_id: number | null;
-          id: number;
-          nickname: string | null;
-          rls_organization_id: number | null;
-          values: Json;
-        };
-        Insert: {
-          created_at?: string;
-          device_type_id: number;
-          external_reference: string;
-          grid_id?: number | null;
-          id?: number;
-          nickname?: string | null;
-          rls_organization_id?: number | null;
-          values?: Json;
-        };
-        Update: {
-          created_at?: string;
-          device_type_id?: number;
-          external_reference?: string;
-          grid_id?: number | null;
-          id?: number;
-          nickname?: string | null;
-          rls_organization_id?: number | null;
-          values?: Json;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'devices_device_type_id_fkey';
-            columns: ['device_type_id'];
-            isOneToOne: false;
-            referencedRelation: 'device_types';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'devices_grid_id_fkey';
-            columns: ['grid_id'];
-            isOneToOne: false;
-            referencedRelation: 'grids';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'devices_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      directive_batch_executions: {
-        Row: {
-          completed_at: string | null;
-          created_at: string;
-          directive_batch_id: number;
-          failed_count: number;
-          id: number;
-          pending_count: number;
-          processed_count: number;
-          processing_count: number;
-          qualified_at: string | null;
-          rls_organization_id: number | null;
-          successful_count: number;
-          total_count: number;
-        };
-        Insert: {
-          completed_at?: string | null;
-          created_at?: string;
-          directive_batch_id: number;
-          failed_count?: number;
-          id?: number;
-          pending_count?: number;
-          processed_count?: number;
-          processing_count?: number;
-          qualified_at?: string | null;
-          rls_organization_id?: number | null;
-          successful_count?: number;
-          total_count?: number;
-        };
-        Update: {
-          completed_at?: string | null;
-          created_at?: string;
-          directive_batch_id?: number;
-          failed_count?: number;
-          id?: number;
-          pending_count?: number;
-          processed_count?: number;
-          processing_count?: number;
-          qualified_at?: string | null;
-          rls_organization_id?: number | null;
-          successful_count?: number;
-          total_count?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'directive_batch_executions_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_7b0737005e7c358392d87ebb329';
-            columns: ['directive_batch_id'];
-            isOneToOne: false;
-            referencedRelation: 'directive_batches';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      directive_batches: {
-        Row: {
-          author_id: number | null;
-          created_at: string;
-          directive_type:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          execution_bucket: number | null;
-          fs_command:
-            | Database['public']['Enums']['fs_command_type_enum']
-            | null;
-          grid_id: number | null;
-          hour: number;
-          id: number;
-          is_deleted: boolean;
-          is_repeating: boolean;
-          lock_session: string | null;
-          minute: number;
-          rls_organization_id: number | null;
-          task_type:
-            | Database['public']['Enums']['meter_interaction_type_enum']
-            | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          author_id?: number | null;
-          created_at?: string;
-          directive_type?:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          execution_bucket?: number | null;
-          fs_command?:
-            | Database['public']['Enums']['fs_command_type_enum']
-            | null;
-          grid_id?: number | null;
-          hour: number;
-          id?: number;
-          is_deleted?: boolean;
-          is_repeating?: boolean;
-          lock_session?: string | null;
-          minute: number;
-          rls_organization_id?: number | null;
-          task_type?:
-            | Database['public']['Enums']['meter_interaction_type_enum']
-            | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          author_id?: number | null;
-          created_at?: string;
-          directive_type?:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          execution_bucket?: number | null;
-          fs_command?:
-            | Database['public']['Enums']['fs_command_type_enum']
-            | null;
-          grid_id?: number | null;
-          hour?: number;
-          id?: number;
-          is_deleted?: boolean;
-          is_repeating?: boolean;
-          lock_session?: string | null;
-          minute?: number;
-          rls_organization_id?: number | null;
-          task_type?:
-            | Database['public']['Enums']['meter_interaction_type_enum']
-            | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'directive_batches_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_5c44fae05dc443720f62664e563';
-            columns: ['grid_id'];
-            isOneToOne: false;
-            referencedRelation: 'grids';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_6e26cb6e966f484f0f897127c84';
-            columns: ['author_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      directive_watchdog_sessions: {
-        Row: {
-          created_at: string;
-          id: number;
-          identifier: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          identifier?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          identifier?: string | null;
-        };
-        Relationships: [];
-      };
-      directives: {
-        Row: {
-          author_id: number | null;
-          can_be_retried: boolean | null;
-          created_at: string;
-          directive_batch_deprecated_id: number | null;
-          directive_batch_execution_id: number | null;
-          directive_error:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_priority: number;
-          directive_special_status:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
-          directive_status: Database['public']['Enums']['directive_status_enum'];
-          directive_status_a:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_status_b:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_status_c:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_type: Database['public']['Enums']['directive_type_enum'];
-          directive_watchdog_session_id: number | null;
-          execution_session: string | null;
-          external_reference: string | null;
-          external_reference_a: string | null;
-          external_reference_b: string | null;
-          external_reference_c: string | null;
-          id: number;
-          is_on: boolean | null;
-          kwh: number | null;
-          kwh_credit_available: number | null;
-          meter_commissioning_id: number | null;
-          meter_credit_transfer_id: number | null;
-          meter_id: number | null;
-          meter_version: string | null;
-          order_id: number | null;
-          power: number | null;
-          power_a: number | null;
-          power_b: number | null;
-          power_c: number | null;
-          power_down_count: number | null;
-          power_limit: number | null;
-          power_limit_should_be: number | null;
-          retry_of_directive_id: number | null;
-          rls_organization_id: number | null;
-          status_check_lock_session: string | null;
-          status_last_checked_at: string | null;
-          token: string | null;
-          updated_at: string | null;
-          voltage: number | null;
-          voltage_a: number | null;
-          voltage_b: number | null;
-          voltage_c: number | null;
-        };
-        Insert: {
-          author_id?: number | null;
-          can_be_retried?: boolean | null;
-          created_at?: string;
-          directive_batch_deprecated_id?: number | null;
-          directive_batch_execution_id?: number | null;
-          directive_error?:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_priority?: number;
-          directive_special_status?:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
-          directive_status?: Database['public']['Enums']['directive_status_enum'];
-          directive_status_a?:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_status_b?:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_status_c?:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_type: Database['public']['Enums']['directive_type_enum'];
-          directive_watchdog_session_id?: number | null;
-          execution_session?: string | null;
-          external_reference?: string | null;
-          external_reference_a?: string | null;
-          external_reference_b?: string | null;
-          external_reference_c?: string | null;
-          id?: number;
-          is_on?: boolean | null;
-          kwh?: number | null;
-          kwh_credit_available?: number | null;
-          meter_commissioning_id?: number | null;
-          meter_credit_transfer_id?: number | null;
-          meter_id?: number | null;
-          meter_version?: string | null;
-          order_id?: number | null;
-          power?: number | null;
-          power_a?: number | null;
-          power_b?: number | null;
-          power_c?: number | null;
-          power_down_count?: number | null;
-          power_limit?: number | null;
-          power_limit_should_be?: number | null;
-          retry_of_directive_id?: number | null;
-          rls_organization_id?: number | null;
-          status_check_lock_session?: string | null;
-          status_last_checked_at?: string | null;
-          token?: string | null;
-          updated_at?: string | null;
-          voltage?: number | null;
-          voltage_a?: number | null;
-          voltage_b?: number | null;
-          voltage_c?: number | null;
-        };
-        Update: {
-          author_id?: number | null;
-          can_be_retried?: boolean | null;
-          created_at?: string;
-          directive_batch_deprecated_id?: number | null;
-          directive_batch_execution_id?: number | null;
-          directive_error?:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_priority?: number;
-          directive_special_status?:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
-          directive_status?: Database['public']['Enums']['directive_status_enum'];
-          directive_status_a?:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_status_b?:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_status_c?:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_type?: Database['public']['Enums']['directive_type_enum'];
-          directive_watchdog_session_id?: number | null;
-          execution_session?: string | null;
-          external_reference?: string | null;
-          external_reference_a?: string | null;
-          external_reference_b?: string | null;
-          external_reference_c?: string | null;
-          id?: number;
-          is_on?: boolean | null;
-          kwh?: number | null;
-          kwh_credit_available?: number | null;
-          meter_commissioning_id?: number | null;
-          meter_credit_transfer_id?: number | null;
-          meter_id?: number | null;
-          meter_version?: string | null;
-          order_id?: number | null;
-          power?: number | null;
-          power_a?: number | null;
-          power_b?: number | null;
-          power_c?: number | null;
-          power_down_count?: number | null;
-          power_limit?: number | null;
-          power_limit_should_be?: number | null;
-          retry_of_directive_id?: number | null;
-          rls_organization_id?: number | null;
-          status_check_lock_session?: string | null;
-          status_last_checked_at?: string | null;
-          token?: string | null;
-          updated_at?: string | null;
-          voltage?: number | null;
-          voltage_a?: number | null;
-          voltage_b?: number | null;
-          voltage_c?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'directives_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_259bc4fc1c63035217ee41a719d';
-            columns: ['meter_commissioning_id'];
-            isOneToOne: false;
-            referencedRelation: 'meter_commissionings';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_276c89b475e9805d3322a36657a';
-            columns: ['order_id'];
-            isOneToOne: false;
-            referencedRelation: 'orders';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_3f3cc652d521872dbfe604b05b6';
-            columns: ['meter_credit_transfer_id'];
-            isOneToOne: false;
-            referencedRelation: 'meter_credit_transfers';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_637c697dc2877f08538b2fa02f5';
-            columns: ['directive_watchdog_session_id'];
-            isOneToOne: false;
-            referencedRelation: 'directive_watchdog_sessions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_6c4e7feadae61cb27761734b11d';
-            columns: ['meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_6c4e7feadae61cb27761734b11d';
-            columns: ['meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters_with_account_and_statuses';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_9064328678b805e99750773387d';
-            columns: ['retry_of_directive_id'];
-            isOneToOne: false;
-            referencedRelation: 'directives';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_f3a84a3f4b619b1ca8c179fff6c';
-            columns: ['author_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_f9e3439b6ea7096d6a9d85c4503';
-            columns: ['directive_batch_execution_id'];
-            isOneToOne: false;
-            referencedRelation: 'directive_batch_executions';
             referencedColumns: ['id'];
           },
         ];
@@ -1224,36 +600,12 @@ export type Database = {
           },
         ];
       };
-      features: {
-        Row: {
-          created_at: string;
-          id: number;
-          is_deleted: boolean;
-          uuid: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          is_deleted?: boolean;
-          uuid: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          is_deleted?: boolean;
-          uuid?: string;
-        };
-        Relationships: [];
-      };
       grids: {
         Row: {
-          are_all_dcus_online: boolean;
-          are_all_dcus_under_high_load_threshold: boolean;
           commissioned_at: string | null;
           created_at: string;
           current_weather:
-            | Database['public']['Enums']['weather_type_enum']
-            | null;
+            Database['public']['Enums']['weather_type_enum'] | null;
           default_fs_1_phase_connection_fee: number;
           default_fs_3_phase_connection_fee: number;
           default_hps_connection_fee: number;
@@ -1271,7 +623,6 @@ export type Database = {
           is_automatic_energy_generation_data_sync_enabled: boolean;
           is_automatic_meter_energy_consumption_data_sync_enabled: boolean;
           is_automatic_meter_install_enabled: boolean;
-          is_automatic_payout_generation_enabled: boolean;
           is_cabin_meter_credit_depleting: boolean;
           is_dcu_connectivity_tracking_enabled: boolean;
           is_energised_notification_enabled: boolean;
@@ -1303,8 +654,6 @@ export type Database = {
           lifeline_connection_kwh_threshold: number;
           location_geom: unknown;
           meter_commissioning_initial_credit_kwh: number;
-          meter_communication_issue_threshold_detection_days: number;
-          meter_consumption_issue_threshold_detection_days: number;
           metering_external_system: Database['public']['Enums']['external_system_enum'];
           monthly_rental: number;
           name: string;
@@ -1313,20 +662,15 @@ export type Database = {
           should_fs_be_on_updated_at: string | null;
           telegram_config: Json | null;
           telegram_notification_channel_invite_link: string | null;
-          telegram_response_path_autopilot: string | null;
           telegram_response_path_token: string | null;
           timezone: string;
-          uses_dual_meter_setup: boolean;
           walkthrough_external_id: string | null;
         };
         Insert: {
-          are_all_dcus_online?: boolean;
-          are_all_dcus_under_high_load_threshold?: boolean;
           commissioned_at?: string | null;
           created_at?: string;
           current_weather?:
-            | Database['public']['Enums']['weather_type_enum']
-            | null;
+            Database['public']['Enums']['weather_type_enum'] | null;
           default_fs_1_phase_connection_fee?: number;
           default_fs_3_phase_connection_fee?: number;
           default_hps_connection_fee?: number;
@@ -1344,7 +688,6 @@ export type Database = {
           is_automatic_energy_generation_data_sync_enabled?: boolean;
           is_automatic_meter_energy_consumption_data_sync_enabled?: boolean;
           is_automatic_meter_install_enabled?: boolean;
-          is_automatic_payout_generation_enabled?: boolean;
           is_cabin_meter_credit_depleting?: boolean;
           is_dcu_connectivity_tracking_enabled?: boolean;
           is_energised_notification_enabled?: boolean;
@@ -1376,8 +719,6 @@ export type Database = {
           lifeline_connection_kwh_threshold?: number;
           location_geom?: unknown;
           meter_commissioning_initial_credit_kwh?: number;
-          meter_communication_issue_threshold_detection_days?: number;
-          meter_consumption_issue_threshold_detection_days?: number;
           metering_external_system?: Database['public']['Enums']['external_system_enum'];
           monthly_rental?: number;
           name: string;
@@ -1386,20 +727,15 @@ export type Database = {
           should_fs_be_on_updated_at?: string | null;
           telegram_config?: Json | null;
           telegram_notification_channel_invite_link?: string | null;
-          telegram_response_path_autopilot?: string | null;
           telegram_response_path_token?: string | null;
           timezone?: string;
-          uses_dual_meter_setup?: boolean;
           walkthrough_external_id?: string | null;
         };
         Update: {
-          are_all_dcus_online?: boolean;
-          are_all_dcus_under_high_load_threshold?: boolean;
           commissioned_at?: string | null;
           created_at?: string;
           current_weather?:
-            | Database['public']['Enums']['weather_type_enum']
-            | null;
+            Database['public']['Enums']['weather_type_enum'] | null;
           default_fs_1_phase_connection_fee?: number;
           default_fs_3_phase_connection_fee?: number;
           default_hps_connection_fee?: number;
@@ -1417,7 +753,6 @@ export type Database = {
           is_automatic_energy_generation_data_sync_enabled?: boolean;
           is_automatic_meter_energy_consumption_data_sync_enabled?: boolean;
           is_automatic_meter_install_enabled?: boolean;
-          is_automatic_payout_generation_enabled?: boolean;
           is_cabin_meter_credit_depleting?: boolean;
           is_dcu_connectivity_tracking_enabled?: boolean;
           is_energised_notification_enabled?: boolean;
@@ -1449,8 +784,6 @@ export type Database = {
           lifeline_connection_kwh_threshold?: number;
           location_geom?: unknown;
           meter_commissioning_initial_credit_kwh?: number;
-          meter_communication_issue_threshold_detection_days?: number;
-          meter_consumption_issue_threshold_detection_days?: number;
           metering_external_system?: Database['public']['Enums']['external_system_enum'];
           monthly_rental?: number;
           name?: string;
@@ -1459,10 +792,8 @@ export type Database = {
           should_fs_be_on_updated_at?: string | null;
           telegram_config?: Json | null;
           telegram_notification_channel_invite_link?: string | null;
-          telegram_response_path_autopilot?: string | null;
           telegram_response_path_token?: string | null;
           timezone?: string;
-          uses_dual_meter_setup?: boolean;
           walkthrough_external_id?: string | null;
         };
         Relationships: [
@@ -1479,49 +810,37 @@ export type Database = {
         Row: {
           closed_at: string | null;
           created_at: string;
-          estimated_lost_revenue: number;
-          external_reference: string | null;
-          external_system: Database['public']['Enums']['external_system_enum'];
-          grid_id: number | null;
+          external_tracking_reference: string | null;
+          external_tracking_system: Database['public']['Enums']['external_system_enum'];
           id: number;
           issue_status: Database['public']['Enums']['issue_status_enum'];
           issue_type: Database['public']['Enums']['issue_type_enum'];
           meter_id: number | null;
-          mppt_id: number | null;
           rls_organization_id: number | null;
-          snoozed_until: string | null;
           started_at: string | null;
         };
         Insert: {
           closed_at?: string | null;
           created_at?: string;
-          estimated_lost_revenue?: number;
-          external_reference?: string | null;
-          external_system?: Database['public']['Enums']['external_system_enum'];
-          grid_id?: number | null;
+          external_tracking_reference?: string | null;
+          external_tracking_system?: Database['public']['Enums']['external_system_enum'];
           id?: number;
           issue_status?: Database['public']['Enums']['issue_status_enum'];
           issue_type: Database['public']['Enums']['issue_type_enum'];
           meter_id?: number | null;
-          mppt_id?: number | null;
           rls_organization_id?: number | null;
-          snoozed_until?: string | null;
           started_at?: string | null;
         };
         Update: {
           closed_at?: string | null;
           created_at?: string;
-          estimated_lost_revenue?: number;
-          external_reference?: string | null;
-          external_system?: Database['public']['Enums']['external_system_enum'];
-          grid_id?: number | null;
+          external_tracking_reference?: string | null;
+          external_tracking_system?: Database['public']['Enums']['external_system_enum'];
           id?: number;
           issue_status?: Database['public']['Enums']['issue_status_enum'];
           issue_type?: Database['public']['Enums']['issue_type_enum'];
           meter_id?: number | null;
-          mppt_id?: number | null;
           rls_organization_id?: number | null;
-          snoozed_until?: string | null;
           started_at?: string | null;
         };
         Relationships: [
@@ -1537,20 +856,6 @@ export type Database = {
             columns: ['meter_id'];
             isOneToOne: false;
             referencedRelation: 'meters_with_account_and_statuses';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_be8d64bd0c97a739ac323dde9dd';
-            columns: ['grid_id'];
-            isOneToOne: false;
-            referencedRelation: 'grids';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_bf46db804a794d1d09eb050ac77';
-            columns: ['mppt_id'];
-            isOneToOne: false;
-            referencedRelation: 'mppts';
             referencedColumns: ['id'];
           },
           {
@@ -1558,226 +863,6 @@ export type Database = {
             columns: ['rls_organization_id'];
             isOneToOne: false;
             referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      lorawan_directives: {
-        Row: {
-          author_id: number | null;
-          can_be_retried: boolean | null;
-          created_at: string;
-          current_a: number | null;
-          current_b: number | null;
-          current_c: number | null;
-          directive_batch_execution_id: number | null;
-          directive_direction: Database['public']['Enums']['directive_direction_enum'];
-          directive_error:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_phase:
-            | Database['public']['Enums']['directive_phase_enum']
-            | null;
-          directive_status: Database['public']['Enums']['directive_status_enum'];
-          directive_type:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          directive_watchdog_session_id: number | null;
-          external_reference: string | null;
-          id: number;
-          is_on: boolean | null;
-          kwh: number | null;
-          kwh_credit_available: number | null;
-          meter_commissioning_id: number | null;
-          meter_id: number | null;
-          order_id: number | null;
-          power_a: number | null;
-          power_b: number | null;
-          power_c: number | null;
-          power_limit: number | null;
-          power_limit_should_be: number | null;
-          retry_of_directive_id: number | null;
-          rls_organization_id: number | null;
-          token: string | null;
-          value: Json | null;
-          voltage_a: number | null;
-          voltage_b: number | null;
-          voltage_c: number | null;
-        };
-        Insert: {
-          author_id?: number | null;
-          can_be_retried?: boolean | null;
-          created_at?: string;
-          current_a?: number | null;
-          current_b?: number | null;
-          current_c?: number | null;
-          directive_batch_execution_id?: number | null;
-          directive_direction: Database['public']['Enums']['directive_direction_enum'];
-          directive_error?:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_phase?:
-            | Database['public']['Enums']['directive_phase_enum']
-            | null;
-          directive_status: Database['public']['Enums']['directive_status_enum'];
-          directive_type?:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          directive_watchdog_session_id?: number | null;
-          external_reference?: string | null;
-          id?: number;
-          is_on?: boolean | null;
-          kwh?: number | null;
-          kwh_credit_available?: number | null;
-          meter_commissioning_id?: number | null;
-          meter_id?: number | null;
-          order_id?: number | null;
-          power_a?: number | null;
-          power_b?: number | null;
-          power_c?: number | null;
-          power_limit?: number | null;
-          power_limit_should_be?: number | null;
-          retry_of_directive_id?: number | null;
-          rls_organization_id?: number | null;
-          token?: string | null;
-          value?: Json | null;
-          voltage_a?: number | null;
-          voltage_b?: number | null;
-          voltage_c?: number | null;
-        };
-        Update: {
-          author_id?: number | null;
-          can_be_retried?: boolean | null;
-          created_at?: string;
-          current_a?: number | null;
-          current_b?: number | null;
-          current_c?: number | null;
-          directive_batch_execution_id?: number | null;
-          directive_direction?: Database['public']['Enums']['directive_direction_enum'];
-          directive_error?:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_phase?:
-            | Database['public']['Enums']['directive_phase_enum']
-            | null;
-          directive_status?: Database['public']['Enums']['directive_status_enum'];
-          directive_type?:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          directive_watchdog_session_id?: number | null;
-          external_reference?: string | null;
-          id?: number;
-          is_on?: boolean | null;
-          kwh?: number | null;
-          kwh_credit_available?: number | null;
-          meter_commissioning_id?: number | null;
-          meter_id?: number | null;
-          order_id?: number | null;
-          power_a?: number | null;
-          power_b?: number | null;
-          power_c?: number | null;
-          power_limit?: number | null;
-          power_limit_should_be?: number | null;
-          retry_of_directive_id?: number | null;
-          rls_organization_id?: number | null;
-          token?: string | null;
-          value?: Json | null;
-          voltage_a?: number | null;
-          voltage_b?: number | null;
-          voltage_c?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'lorawan_directives_author_id_fkey';
-            columns: ['author_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_directive_batch_execution_id_fkey';
-            columns: ['directive_batch_execution_id'];
-            isOneToOne: false;
-            referencedRelation: 'directive_batch_executions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_directive_watchdog_session_id_fkey';
-            columns: ['directive_watchdog_session_id'];
-            isOneToOne: false;
-            referencedRelation: 'directive_watchdog_sessions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_meter_commissioning_id_fkey';
-            columns: ['meter_commissioning_id'];
-            isOneToOne: false;
-            referencedRelation: 'meter_commissionings';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_meter_id_fkey';
-            columns: ['meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_meter_id_fkey';
-            columns: ['meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters_with_account_and_statuses';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_order_id_fkey';
-            columns: ['order_id'];
-            isOneToOne: false;
-            referencedRelation: 'orders';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_retry_of_directive_id_fkey';
-            columns: ['retry_of_directive_id'];
-            isOneToOne: false;
-            referencedRelation: 'lorawan_directives';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'lorawan_directives_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      member_feature: {
-        Row: {
-          feature_id: number;
-          member_id: number;
-        };
-        Insert: {
-          feature_id: number;
-          member_id: number;
-        };
-        Update: {
-          feature_id?: number;
-          member_id?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'FK_4da956d70d1de38087b251b9978';
-            columns: ['feature_id'];
-            isOneToOne: false;
-            referencedRelation: 'features';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_c312f698867204bf4f1fd149c91';
-            columns: ['member_id'];
-            isOneToOne: false;
-            referencedRelation: 'members';
             referencedColumns: ['id'];
           },
         ];
@@ -1840,48 +925,160 @@ export type Database = {
           },
         ];
       };
+      meter_command_batch_executions: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          failed_count: number;
+          id: number;
+          meter_command_batch_id: number;
+          pending_count: number;
+          processed_count: number;
+          processing_count: number;
+          qualified_at: string | null;
+          rls_organization_id: number | null;
+          successful_count: number;
+          total_count: number;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          failed_count?: number;
+          id?: number;
+          meter_command_batch_id: number;
+          pending_count?: number;
+          processed_count?: number;
+          processing_count?: number;
+          qualified_at?: string | null;
+          rls_organization_id?: number | null;
+          successful_count?: number;
+          total_count?: number;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          failed_count?: number;
+          id?: number;
+          meter_command_batch_id?: number;
+          pending_count?: number;
+          processed_count?: number;
+          processing_count?: number;
+          qualified_at?: string | null;
+          rls_organization_id?: number | null;
+          successful_count?: number;
+          total_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'FK_7b0737005e7c358392d87ebb329';
+            columns: ['meter_command_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'meter_command_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meter_command_batch_executions_rls_organization_id_fkey';
+            columns: ['rls_organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meter_command_batches: {
+        Row: {
+          author_id: number | null;
+          created_at: string;
+          fs_command:
+            Database['public']['Enums']['fs_command_type_enum'] | null;
+          grid_id: number | null;
+          hour: number;
+          id: number;
+          is_deleted: boolean;
+          is_repeating: boolean;
+          minute: number;
+          rls_organization_id: number | null;
+          task_type:
+            Database['public']['Enums']['meter_interaction_type_enum'] | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          author_id?: number | null;
+          created_at?: string;
+          fs_command?:
+            Database['public']['Enums']['fs_command_type_enum'] | null;
+          grid_id?: number | null;
+          hour: number;
+          id?: number;
+          is_deleted?: boolean;
+          is_repeating?: boolean;
+          minute: number;
+          rls_organization_id?: number | null;
+          task_type?:
+            Database['public']['Enums']['meter_interaction_type_enum'] | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          author_id?: number | null;
+          created_at?: string;
+          fs_command?:
+            Database['public']['Enums']['fs_command_type_enum'] | null;
+          grid_id?: number | null;
+          hour?: number;
+          id?: number;
+          is_deleted?: boolean;
+          is_repeating?: boolean;
+          minute?: number;
+          rls_organization_id?: number | null;
+          task_type?:
+            Database['public']['Enums']['meter_interaction_type_enum'] | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'FK_5c44fae05dc443720f62664e563';
+            columns: ['grid_id'];
+            isOneToOne: false;
+            referencedRelation: 'grids';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'FK_6e26cb6e966f484f0f897127c84';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'accounts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meter_command_batches_rls_organization_id_fkey';
+            columns: ['rls_organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       meter_commissionings: {
         Row: {
           created_at: string;
-          failed_steps: number | null;
           id: number;
-          initialised_steps: number | null;
-          lock_session: string | null;
           meter_commissioning_status: Database['public']['Enums']['meter_commissioning_status_enum'];
           metering_hardware_install_session_id: number | null;
-          pending_steps: number | null;
-          processing_steps: number | null;
           rls_organization_id: number | null;
-          successful_steps: number | null;
-          total_steps: number | null;
         };
         Insert: {
           created_at?: string;
-          failed_steps?: number | null;
           id?: number;
-          initialised_steps?: number | null;
-          lock_session?: string | null;
           meter_commissioning_status?: Database['public']['Enums']['meter_commissioning_status_enum'];
           metering_hardware_install_session_id?: number | null;
-          pending_steps?: number | null;
-          processing_steps?: number | null;
           rls_organization_id?: number | null;
-          successful_steps?: number | null;
-          total_steps?: number | null;
         };
         Update: {
           created_at?: string;
-          failed_steps?: number | null;
           id?: number;
-          initialised_steps?: number | null;
-          lock_session?: string | null;
           meter_commissioning_status?: Database['public']['Enums']['meter_commissioning_status_enum'];
           metering_hardware_install_session_id?: number | null;
-          pending_steps?: number | null;
-          processing_steps?: number | null;
           rls_organization_id?: number | null;
-          successful_steps?: number | null;
-          total_steps?: number | null;
         };
         Relationships: [
           {
@@ -1893,91 +1090,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'meter_commissionings_rls_organization_id_fkey';
-            columns: ['rls_organization_id'];
-            isOneToOne: false;
-            referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      meter_credit_transfers: {
-        Row: {
-          amount: number;
-          author_id: number | null;
-          created_at: string;
-          currency: Database['public']['Enums']['currency_enum'];
-          id: number;
-          lock_session: string | null;
-          meter_credit_transfer_status: Database['public']['Enums']['meter_credit_transfer_status_enum'];
-          receiver_meter_id: number;
-          rls_organization_id: number | null;
-          sender_meter_id: number;
-          sender_meter_set_to_amount: number | null;
-        };
-        Insert: {
-          amount: number;
-          author_id?: number | null;
-          created_at?: string;
-          currency: Database['public']['Enums']['currency_enum'];
-          id?: number;
-          lock_session?: string | null;
-          meter_credit_transfer_status?: Database['public']['Enums']['meter_credit_transfer_status_enum'];
-          receiver_meter_id: number;
-          rls_organization_id?: number | null;
-          sender_meter_id: number;
-          sender_meter_set_to_amount?: number | null;
-        };
-        Update: {
-          amount?: number;
-          author_id?: number | null;
-          created_at?: string;
-          currency?: Database['public']['Enums']['currency_enum'];
-          id?: number;
-          lock_session?: string | null;
-          meter_credit_transfer_status?: Database['public']['Enums']['meter_credit_transfer_status_enum'];
-          receiver_meter_id?: number;
-          rls_organization_id?: number | null;
-          sender_meter_id?: number;
-          sender_meter_set_to_amount?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'FK_3b4ebdcd826c46e4b5c165a0840';
-            columns: ['sender_meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_3b4ebdcd826c46e4b5c165a0840';
-            columns: ['sender_meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters_with_account_and_statuses';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_b196e2b2b291716e18a11611350';
-            columns: ['author_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_e83e8905a777a669de1c2391b77';
-            columns: ['receiver_meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_e83e8905a777a669de1c2391b77';
-            columns: ['receiver_meter_id'];
-            isOneToOne: false;
-            referencedRelation: 'meters_with_account_and_statuses';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meter_credit_transfers_rls_organization_id_fkey';
             columns: ['rls_organization_id'];
             isOneToOne: false;
             referencedRelation: 'organizations';
@@ -2042,7 +1154,7 @@ export type Database = {
             foreignKeyName: 'meter_interactions_batch_execution_id_fkey';
             columns: ['batch_execution_id'];
             isOneToOne: false;
-            referencedRelation: 'directive_batch_executions';
+            referencedRelation: 'meter_command_batch_executions';
             referencedColumns: ['id'];
           },
           {
@@ -2208,19 +1320,14 @@ export type Database = {
           balance: number | null;
           balance_updated_at: string | null;
           communication_protocol:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           connection_id: number | null;
           connection_metrics: Json | null;
           coord_accuracy: number;
           created_at: string;
-          current_special_status:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
           dcu_id: number | null;
           decoder_key: string | null;
           deleted_at: string | null;
-          device_id: number | null;
           external_reference: string;
           external_system: Database['public']['Enums']['external_system_enum'];
           id: number;
@@ -2229,7 +1336,6 @@ export type Database = {
           is_manual_mode_on_updated_at: string | null;
           is_on: boolean | null;
           is_on_updated_at: string | null;
-          is_simulated: boolean;
           is_starred: boolean;
           is_test_mode_on: boolean;
           issue_check_execution_session: string | null;
@@ -2249,16 +1355,12 @@ export type Database = {
           nickname: string | null;
           pole_id: number | null;
           power: number | null;
-          power_down_count: number | null;
-          power_down_count_updated_at: string | null;
           power_limit: number | null;
           power_limit_hps_mode: number;
           power_limit_should_be: number | null;
           power_limit_should_be_updated_at: string | null;
           power_limit_updated_at: string | null;
           power_updated_at: string | null;
-          pulse_counter_kwh: number | null;
-          pulse_counter_kwh_updated_at: string | null;
           rls_grid_id: number | null;
           rls_organization_id: number | null;
           should_be_on: boolean | null;
@@ -2266,26 +1368,19 @@ export type Database = {
           version: string | null;
           voltage: number | null;
           voltage_updated_at: string | null;
-          watchdog_last_run_at: string | null;
-          watchdog_session: string | null;
         };
         Insert: {
           balance?: number | null;
           balance_updated_at?: string | null;
           communication_protocol?:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           connection_id?: number | null;
           connection_metrics?: Json | null;
           coord_accuracy?: number;
           created_at?: string;
-          current_special_status?:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
           dcu_id?: number | null;
           decoder_key?: string | null;
           deleted_at?: string | null;
-          device_id?: number | null;
           external_reference: string;
           external_system: Database['public']['Enums']['external_system_enum'];
           id?: number;
@@ -2294,7 +1389,6 @@ export type Database = {
           is_manual_mode_on_updated_at?: string | null;
           is_on?: boolean | null;
           is_on_updated_at?: string | null;
-          is_simulated?: boolean;
           is_starred?: boolean;
           is_test_mode_on?: boolean;
           issue_check_execution_session?: string | null;
@@ -2314,16 +1408,12 @@ export type Database = {
           nickname?: string | null;
           pole_id?: number | null;
           power?: number | null;
-          power_down_count?: number | null;
-          power_down_count_updated_at?: string | null;
           power_limit?: number | null;
           power_limit_hps_mode?: number;
           power_limit_should_be?: number | null;
           power_limit_should_be_updated_at?: string | null;
           power_limit_updated_at?: string | null;
           power_updated_at?: string | null;
-          pulse_counter_kwh?: number | null;
-          pulse_counter_kwh_updated_at?: string | null;
           rls_grid_id?: number | null;
           rls_organization_id?: number | null;
           should_be_on?: boolean | null;
@@ -2331,26 +1421,19 @@ export type Database = {
           version?: string | null;
           voltage?: number | null;
           voltage_updated_at?: string | null;
-          watchdog_last_run_at?: string | null;
-          watchdog_session?: string | null;
         };
         Update: {
           balance?: number | null;
           balance_updated_at?: string | null;
           communication_protocol?:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           connection_id?: number | null;
           connection_metrics?: Json | null;
           coord_accuracy?: number;
           created_at?: string;
-          current_special_status?:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
           dcu_id?: number | null;
           decoder_key?: string | null;
           deleted_at?: string | null;
-          device_id?: number | null;
           external_reference?: string;
           external_system?: Database['public']['Enums']['external_system_enum'];
           id?: number;
@@ -2359,7 +1442,6 @@ export type Database = {
           is_manual_mode_on_updated_at?: string | null;
           is_on?: boolean | null;
           is_on_updated_at?: string | null;
-          is_simulated?: boolean;
           is_starred?: boolean;
           is_test_mode_on?: boolean;
           issue_check_execution_session?: string | null;
@@ -2379,16 +1461,12 @@ export type Database = {
           nickname?: string | null;
           pole_id?: number | null;
           power?: number | null;
-          power_down_count?: number | null;
-          power_down_count_updated_at?: string | null;
           power_limit?: number | null;
           power_limit_hps_mode?: number;
           power_limit_should_be?: number | null;
           power_limit_should_be_updated_at?: string | null;
           power_limit_updated_at?: string | null;
           power_updated_at?: string | null;
-          pulse_counter_kwh?: number | null;
-          pulse_counter_kwh_updated_at?: string | null;
           rls_grid_id?: number | null;
           rls_organization_id?: number | null;
           should_be_on?: boolean | null;
@@ -2396,8 +1474,6 @@ export type Database = {
           version?: string | null;
           voltage?: number | null;
           voltage_updated_at?: string | null;
-          watchdog_last_run_at?: string | null;
-          watchdog_session?: string | null;
         };
         Relationships: [
           {
@@ -2436,13 +1512,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'meters_device_id_fkey';
-            columns: ['device_id'];
-            isOneToOne: true;
-            referencedRelation: 'devices';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'meters_rls_grid_id_fkey';
             columns: ['rls_grid_id'];
             isOneToOne: false;
@@ -2457,24 +1526,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      migrations: {
-        Row: {
-          id: number;
-          name: string;
-          timestamp: number;
-        };
-        Insert: {
-          id?: number;
-          name: string;
-          timestamp: number;
-        };
-        Update: {
-          id?: number;
-          name?: string;
-          timestamp?: number;
-        };
-        Relationships: [];
       };
       mppts: {
         Row: {
@@ -2644,12 +1695,10 @@ export type Database = {
         Row: {
           account_id: number | null;
           carrier_external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           chat_id: string | null;
           connector_external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           created_at: string;
           email: string | null;
           external_reference: string | null;
@@ -2668,12 +1717,10 @@ export type Database = {
         Insert: {
           account_id?: number | null;
           carrier_external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           chat_id?: string | null;
           connector_external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           created_at?: string;
           email?: string | null;
           external_reference?: string | null;
@@ -2692,12 +1739,10 @@ export type Database = {
         Update: {
           account_id?: number | null;
           carrier_external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           chat_id?: string | null;
           connector_external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           created_at?: string;
           email?: string | null;
           external_reference?: string | null;
@@ -2750,45 +1795,33 @@ export type Database = {
           author_id: number | null;
           created_at: string;
           currency: Database['public']['Enums']['currency_enum'];
-          directive_id: number | null;
           external_reference: string | null;
-          external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
           historical_grid_id: number | null;
           id: number;
           lock_session: string | null;
-          lorawan_directive_id: number | null;
           meta_author_id: number | null;
           meta_author_name: string | null;
           meta_author_type:
-            | Database['public']['Enums']['account_type_enum']
-            | null;
+            Database['public']['Enums']['account_type_enum'] | null;
           meta_is_hidden_from_reporting: boolean | null;
           meta_order_type:
-            | Database['public']['Enums']['order_type_enum']
-            | null;
+            Database['public']['Enums']['order_type_enum'] | null;
           meta_receiver_id: number | null;
           meta_receiver_id_part_2: number | null;
           meta_receiver_name: string | null;
           meta_receiver_name_part_2: string | null;
           meta_receiver_type:
-            | Database['public']['Enums']['order_actor_type_enum']
-            | null;
+            Database['public']['Enums']['order_actor_type_enum'] | null;
           meta_sender_id: number | null;
           meta_sender_name: string | null;
           meta_sender_name_part_2: string | null;
           meta_sender_type:
-            | Database['public']['Enums']['order_actor_type_enum']
-            | null;
-          meter_credit_transfer_id: number | null;
+            Database['public']['Enums']['order_actor_type_enum'] | null;
           order_status: Database['public']['Enums']['order_status_enum'];
           payment_channel:
-            | Database['public']['Enums']['payment_channel_enum']
-            | null;
+            Database['public']['Enums']['payment_channel_enum'] | null;
           payment_method:
-            | Database['public']['Enums']['payment_method_enum']
-            | null;
+            Database['public']['Enums']['payment_method_enum'] | null;
           receiver_wallet_id: number | null;
           rls_organization_id: number | null;
           sender_wallet_id: number | null;
@@ -2802,45 +1835,33 @@ export type Database = {
           author_id?: number | null;
           created_at?: string;
           currency: Database['public']['Enums']['currency_enum'];
-          directive_id?: number | null;
           external_reference?: string | null;
-          external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
           historical_grid_id?: number | null;
           id?: number;
           lock_session?: string | null;
-          lorawan_directive_id?: number | null;
           meta_author_id?: number | null;
           meta_author_name?: string | null;
           meta_author_type?:
-            | Database['public']['Enums']['account_type_enum']
-            | null;
+            Database['public']['Enums']['account_type_enum'] | null;
           meta_is_hidden_from_reporting?: boolean | null;
           meta_order_type?:
-            | Database['public']['Enums']['order_type_enum']
-            | null;
+            Database['public']['Enums']['order_type_enum'] | null;
           meta_receiver_id?: number | null;
           meta_receiver_id_part_2?: number | null;
           meta_receiver_name?: string | null;
           meta_receiver_name_part_2?: string | null;
           meta_receiver_type?:
-            | Database['public']['Enums']['order_actor_type_enum']
-            | null;
+            Database['public']['Enums']['order_actor_type_enum'] | null;
           meta_sender_id?: number | null;
           meta_sender_name?: string | null;
           meta_sender_name_part_2?: string | null;
           meta_sender_type?:
-            | Database['public']['Enums']['order_actor_type_enum']
-            | null;
-          meter_credit_transfer_id?: number | null;
+            Database['public']['Enums']['order_actor_type_enum'] | null;
           order_status?: Database['public']['Enums']['order_status_enum'];
           payment_channel?:
-            | Database['public']['Enums']['payment_channel_enum']
-            | null;
+            Database['public']['Enums']['payment_channel_enum'] | null;
           payment_method?:
-            | Database['public']['Enums']['payment_method_enum']
-            | null;
+            Database['public']['Enums']['payment_method_enum'] | null;
           receiver_wallet_id?: number | null;
           rls_organization_id?: number | null;
           sender_wallet_id?: number | null;
@@ -2854,45 +1875,33 @@ export type Database = {
           author_id?: number | null;
           created_at?: string;
           currency?: Database['public']['Enums']['currency_enum'];
-          directive_id?: number | null;
           external_reference?: string | null;
-          external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
           historical_grid_id?: number | null;
           id?: number;
           lock_session?: string | null;
-          lorawan_directive_id?: number | null;
           meta_author_id?: number | null;
           meta_author_name?: string | null;
           meta_author_type?:
-            | Database['public']['Enums']['account_type_enum']
-            | null;
+            Database['public']['Enums']['account_type_enum'] | null;
           meta_is_hidden_from_reporting?: boolean | null;
           meta_order_type?:
-            | Database['public']['Enums']['order_type_enum']
-            | null;
+            Database['public']['Enums']['order_type_enum'] | null;
           meta_receiver_id?: number | null;
           meta_receiver_id_part_2?: number | null;
           meta_receiver_name?: string | null;
           meta_receiver_name_part_2?: string | null;
           meta_receiver_type?:
-            | Database['public']['Enums']['order_actor_type_enum']
-            | null;
+            Database['public']['Enums']['order_actor_type_enum'] | null;
           meta_sender_id?: number | null;
           meta_sender_name?: string | null;
           meta_sender_name_part_2?: string | null;
           meta_sender_type?:
-            | Database['public']['Enums']['order_actor_type_enum']
-            | null;
-          meter_credit_transfer_id?: number | null;
+            Database['public']['Enums']['order_actor_type_enum'] | null;
           order_status?: Database['public']['Enums']['order_status_enum'];
           payment_channel?:
-            | Database['public']['Enums']['payment_channel_enum']
-            | null;
+            Database['public']['Enums']['payment_channel_enum'] | null;
           payment_method?:
-            | Database['public']['Enums']['payment_method_enum']
-            | null;
+            Database['public']['Enums']['payment_method_enum'] | null;
           receiver_wallet_id?: number | null;
           rls_organization_id?: number | null;
           sender_wallet_id?: number | null;
@@ -2902,13 +1911,6 @@ export type Database = {
           ussd_session_id?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: 'FK_093ca3525311b8a12f6cf6b1c9b';
-            columns: ['directive_id'];
-            isOneToOne: true;
-            referencedRelation: 'directives';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'FK_0b03d1bc1cff784570333129e63';
             columns: ['historical_grid_id'];
@@ -2945,20 +1947,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'FK_a53c58bdb5ae0193f17497c81b4';
-            columns: ['meter_credit_transfer_id'];
-            isOneToOne: true;
-            referencedRelation: 'meter_credit_transfers';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'orders_lorawan_directive_id_fkey';
-            columns: ['lorawan_directive_id'];
-            isOneToOne: false;
-            referencedRelation: 'lorawan_directives';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'orders_rls_organization_id_fkey';
             columns: ['rls_organization_id'];
             isOneToOne: false;
@@ -2969,7 +1957,6 @@ export type Database = {
       };
       organizations: {
         Row: {
-          address: string | null;
           created_at: string;
           deleted_at: string | null;
           developer_group_telegram_chat_id: string | null;
@@ -2982,11 +1969,8 @@ export type Database = {
           id: number;
           name: string;
           organization_type: Database['public']['Enums']['organization_type_enum'];
-          pd_hero_google_drive_folder_id: string | null;
-          phone: string | null;
         };
         Insert: {
-          address?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           developer_group_telegram_chat_id?: string | null;
@@ -2999,11 +1983,8 @@ export type Database = {
           id?: number;
           name: string;
           organization_type?: Database['public']['Enums']['organization_type_enum'];
-          pd_hero_google_drive_folder_id?: string | null;
-          phone?: string | null;
         };
         Update: {
-          address?: string | null;
           created_at?: string;
           deleted_at?: string | null;
           developer_group_telegram_chat_id?: string | null;
@@ -3016,417 +1997,6 @@ export type Database = {
           id?: number;
           name?: string;
           organization_type?: Database['public']['Enums']['organization_type_enum'];
-          pd_hero_google_drive_folder_id?: string | null;
-          phone?: string | null;
-        };
-        Relationships: [];
-      };
-      payouts: {
-        Row: {
-          approved_amount: number | null;
-          approved_by_account_id: number | null;
-          bank_account_id: number | null;
-          created_at: string;
-          details: Json | null;
-          draft_link: string | null;
-          ended_at: string;
-          external_reference: string | null;
-          external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
-          grid_id: number;
-          id: number;
-          payout_status: Database['public']['Enums']['payout_status_enum'];
-          proposed_amount: number;
-          started_at: string;
-        };
-        Insert: {
-          approved_amount?: number | null;
-          approved_by_account_id?: number | null;
-          bank_account_id?: number | null;
-          created_at?: string;
-          details?: Json | null;
-          draft_link?: string | null;
-          ended_at: string;
-          external_reference?: string | null;
-          external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
-          grid_id: number;
-          id?: number;
-          payout_status: Database['public']['Enums']['payout_status_enum'];
-          proposed_amount: number;
-          started_at: string;
-        };
-        Update: {
-          approved_amount?: number | null;
-          approved_by_account_id?: number | null;
-          bank_account_id?: number | null;
-          created_at?: string;
-          details?: Json | null;
-          draft_link?: string | null;
-          ended_at?: string;
-          external_reference?: string | null;
-          external_system?:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
-          grid_id?: number;
-          id?: number;
-          payout_status?: Database['public']['Enums']['payout_status_enum'];
-          proposed_amount?: number;
-          started_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'FK_7796c1df57eeefa9173325627c4';
-            columns: ['bank_account_id'];
-            isOneToOne: false;
-            referencedRelation: 'bank_accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_e2e6de2a3c003b36f840829079a';
-            columns: ['approved_by_account_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'FK_e8bc1a446b4df957b8d37af1cd0';
-            columns: ['grid_id'];
-            isOneToOne: false;
-            referencedRelation: 'grids';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pd_action_templates: {
-        Row: {
-          created_at: string;
-          depends_on: Json | null;
-          id: number;
-          key: string | null;
-          name: string;
-          parameters: Json;
-          pd_action_type: Database['public']['Enums']['pd_action_type_enum'];
-          pd_document_template_id: number | null;
-          pd_flow_template_id: number;
-        };
-        Insert: {
-          created_at?: string;
-          depends_on?: Json | null;
-          id?: number;
-          key?: string | null;
-          name: string;
-          parameters?: Json;
-          pd_action_type: Database['public']['Enums']['pd_action_type_enum'];
-          pd_document_template_id?: number | null;
-          pd_flow_template_id: number;
-        };
-        Update: {
-          created_at?: string;
-          depends_on?: Json | null;
-          id?: number;
-          key?: string | null;
-          name?: string;
-          parameters?: Json;
-          pd_action_type?: Database['public']['Enums']['pd_action_type_enum'];
-          pd_document_template_id?: number | null;
-          pd_flow_template_id?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'pd_action_templates_pd_document_template_id_fkey';
-            columns: ['pd_document_template_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_document_templates';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pd_action_templates_pd_flow_template_id_fkey';
-            columns: ['pd_flow_template_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_flow_templates';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pd_actions: {
-        Row: {
-          created_at: string;
-          depends_on: Json | null;
-          id: number;
-          key: string | null;
-          latest_pd_document_id: number | null;
-          name: string;
-          parameters: Json;
-          pd_action_status: Database['public']['Enums']['pd_action_status_enum'];
-          pd_action_template_id: number | null;
-          pd_action_type: Database['public']['Enums']['pd_action_type_enum'];
-          pd_flow_id: number | null;
-          pd_section_id: number | null;
-        };
-        Insert: {
-          created_at?: string;
-          depends_on?: Json | null;
-          id?: number;
-          key?: string | null;
-          latest_pd_document_id?: number | null;
-          name: string;
-          parameters?: Json;
-          pd_action_status?: Database['public']['Enums']['pd_action_status_enum'];
-          pd_action_template_id?: number | null;
-          pd_action_type: Database['public']['Enums']['pd_action_type_enum'];
-          pd_flow_id?: number | null;
-          pd_section_id?: number | null;
-        };
-        Update: {
-          created_at?: string;
-          depends_on?: Json | null;
-          id?: number;
-          key?: string | null;
-          latest_pd_document_id?: number | null;
-          name?: string;
-          parameters?: Json;
-          pd_action_status?: Database['public']['Enums']['pd_action_status_enum'];
-          pd_action_template_id?: number | null;
-          pd_action_type?: Database['public']['Enums']['pd_action_type_enum'];
-          pd_flow_id?: number | null;
-          pd_section_id?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'pd_actions_latest_pd_document_id_fkey';
-            columns: ['latest_pd_document_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_documents';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pd_actions_pd_action_template_id_fkey';
-            columns: ['pd_action_template_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_action_templates';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pd_actions_pd_flow_id_fkey';
-            columns: ['pd_flow_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_flows';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pd_actions_pd_section_id_fkey';
-            columns: ['pd_section_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_actions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pd_audits: {
-        Row: {
-          author_id: number | null;
-          created_at: string;
-          id: number;
-          message: string | null;
-          pd_action_id: number | null;
-        };
-        Insert: {
-          author_id?: number | null;
-          created_at?: string;
-          id?: number;
-          message?: string | null;
-          pd_action_id?: number | null;
-        };
-        Update: {
-          author_id?: number | null;
-          created_at?: string;
-          id?: number;
-          message?: string | null;
-          pd_action_id?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'pd_audits_author_id_fkey';
-            columns: ['author_id'];
-            isOneToOne: false;
-            referencedRelation: 'accounts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pd_audits_pd_action_id_fkey';
-            columns: ['pd_action_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_actions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pd_document_templates: {
-        Row: {
-          created_at: string;
-          google_drive_template_id: string;
-          id: number;
-          parameters: Json;
-          pd_document_type:
-            | Database['public']['Enums']['pd_document_type_enum']
-            | null;
-          title: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          google_drive_template_id: string;
-          id?: number;
-          parameters?: Json;
-          pd_document_type?:
-            | Database['public']['Enums']['pd_document_type_enum']
-            | null;
-          title?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          google_drive_template_id?: string;
-          id?: number;
-          parameters?: Json;
-          pd_document_type?:
-            | Database['public']['Enums']['pd_document_type_enum']
-            | null;
-          title?: string | null;
-        };
-        Relationships: [];
-      };
-      pd_documents: {
-        Row: {
-          created_at: string;
-          google_drive_document_id: string;
-          id: number;
-          pd_action_id: number | null;
-          pd_document_type:
-            | Database['public']['Enums']['pd_document_type_enum']
-            | null;
-          title: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          google_drive_document_id: string;
-          id?: number;
-          pd_action_id?: number | null;
-          pd_document_type?:
-            | Database['public']['Enums']['pd_document_type_enum']
-            | null;
-          title?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          google_drive_document_id?: string;
-          id?: number;
-          pd_action_id?: number | null;
-          pd_document_type?:
-            | Database['public']['Enums']['pd_document_type_enum']
-            | null;
-          title?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'pd_documents_pd_action_id_fkey';
-            columns: ['pd_action_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_actions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pd_flow_templates: {
-        Row: {
-          created_at: string;
-          id: number;
-          name: string;
-          parameters: Json;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          name: string;
-          parameters?: Json;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          name?: string;
-          parameters?: Json;
-        };
-        Relationships: [];
-      };
-      pd_flows: {
-        Row: {
-          created_at: string;
-          google_folder_id: string | null;
-          id: number;
-          parameters: Json;
-          pd_flow_template_id: number;
-          title: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          google_folder_id?: string | null;
-          id?: number;
-          parameters?: Json;
-          pd_flow_template_id: number;
-          title?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          google_folder_id?: string | null;
-          id?: number;
-          parameters?: Json;
-          pd_flow_template_id?: number;
-          title?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'pd_flows_pd_flow_template_id_fkey';
-            columns: ['pd_flow_template_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_flow_templates';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pd_section_templates: {
-        Row: {
-          created_at: string;
-          id: number;
-          title: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          title?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          title?: string | null;
-        };
-        Relationships: [];
-      };
-      pd_sections: {
-        Row: {
-          created_at: string;
-          id: number;
-          title: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          title?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          title?: string | null;
         };
         Relationships: [];
       };
@@ -3505,7 +2075,6 @@ export type Database = {
           operations_grid_id: number | null;
           organization_id: number | null;
           outline_geom: unknown;
-          pd_flow_id: number | null;
         };
         Insert: {
           created_at?: string;
@@ -3516,7 +2085,6 @@ export type Database = {
           operations_grid_id?: number | null;
           organization_id?: number | null;
           outline_geom?: unknown;
-          pd_flow_id?: number | null;
         };
         Update: {
           created_at?: string;
@@ -3527,7 +2095,6 @@ export type Database = {
           operations_grid_id?: number | null;
           organization_id?: number | null;
           outline_geom?: unknown;
-          pd_flow_id?: number | null;
         };
         Relationships: [
           {
@@ -3542,13 +2109,6 @@ export type Database = {
             columns: ['organization_id'];
             isOneToOne: false;
             referencedRelation: 'organizations';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pd_sites_pd_flow_id_fkey';
-            columns: ['pd_flow_id'];
-            isOneToOne: false;
-            referencedRelation: 'pd_flows';
             referencedColumns: ['id'];
           },
         ];
@@ -3866,7 +2426,6 @@ export type Database = {
           connection_id: number | null;
           created_at: string;
           customer_id: number | null;
-          goldring_migration_id: number | null;
           id: number;
           identifier: string | null;
           lock_session: string | null;
@@ -3882,7 +2441,6 @@ export type Database = {
           connection_id?: number | null;
           created_at?: string;
           customer_id?: number | null;
-          goldring_migration_id?: number | null;
           id?: number;
           identifier?: string | null;
           lock_session?: string | null;
@@ -3898,7 +2456,6 @@ export type Database = {
           connection_id?: number | null;
           created_at?: string;
           customer_id?: number | null;
-          goldring_migration_id?: number | null;
           id?: number;
           identifier?: string | null;
           lock_session?: string | null;
@@ -4002,31 +2559,6 @@ export type Database = {
           },
         ];
       };
-      batch_commands: {
-        Row: {
-          created_at: string | null;
-          dcu_external_reference: string | null;
-          dcu_id: number | null;
-          directive_batch_execution_id: number | null;
-          directive_error:
-            | Database['public']['Enums']['directive_error_enum']
-            | null;
-          directive_status:
-            | Database['public']['Enums']['directive_status_enum']
-            | null;
-          directive_type:
-            | Database['public']['Enums']['directive_type_enum']
-            | null;
-          id: number | null;
-          latitude: number | null;
-          location_geom: unknown;
-          longitude: number | null;
-          meter_external_reference: string | null;
-          meter_id: number | null;
-          meter_type: Database['public']['Enums']['meter_type_enum'] | null;
-        };
-        Relationships: [];
-      };
       customers_with_account: {
         Row: {
           account_id: number | null;
@@ -4035,8 +2567,7 @@ export type Database = {
           full_name: string | null;
           gender: Database['public']['Enums']['gender_enum'] | null;
           generator_owned:
-            | Database['public']['Enums']['generator_type_enum']
-            | null;
+            Database['public']['Enums']['generator_type_enum'] | null;
           grid_id: number | null;
           has_fully_paid_connection_fees: boolean | null;
           id: number | null;
@@ -4071,22 +2602,16 @@ export type Database = {
           balance: number | null;
           balance_updated_at: string | null;
           communication_protocol:
-            | Database['public']['Enums']['communication_protocol_enum']
-            | null;
+            Database['public']['Enums']['communication_protocol_enum'] | null;
           connection_id: number | null;
           coord_accuracy: number | null;
           created_at: string | null;
-          current_special_status:
-            | Database['public']['Enums']['directive_special_status_enum']
-            | null;
           dcu_id: number | null;
           decoder_key: string | null;
           deleted_at: string | null;
-          device_id: number | null;
           external_reference: string | null;
           external_system:
-            | Database['public']['Enums']['external_system_enum']
-            | null;
+            Database['public']['Enums']['external_system_enum'] | null;
           full_name: string | null;
           grid_id: number | null;
           id: number | null;
@@ -4097,7 +2622,6 @@ export type Database = {
           is_manual_mode_on_updated_at: string | null;
           is_on: boolean | null;
           is_on_updated_at: string | null;
-          is_simulated: boolean | null;
           is_starred: boolean | null;
           is_test_mode_on: boolean | null;
           issue_check_execution_session: string | null;
@@ -4119,15 +2643,12 @@ export type Database = {
           phone: string | null;
           pole_id: number | null;
           power: number | null;
-          power_down_count: number | null;
-          power_down_count_updated_at: string | null;
           power_limit: number | null;
           power_limit_hps_mode: number | null;
           power_limit_should_be: number | null;
           power_limit_should_be_updated_at: string | null;
           power_limit_updated_at: string | null;
           power_updated_at: string | null;
-          pulse_counter_kwh: number | null;
           rls_grid_id: number | null;
           rls_organization_id: number | null;
           should_be_on: boolean | null;
@@ -4135,8 +2656,6 @@ export type Database = {
           version: string | null;
           voltage: number | null;
           voltage_updated_at: string | null;
-          watchdog_last_run_at: string | null;
-          watchdog_session: string | null;
         };
         Relationships: [
           {
@@ -4182,13 +2701,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'meters_device_id_fkey';
-            columns: ['device_id'];
-            isOneToOne: true;
-            referencedRelation: 'devices';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'meters_rls_grid_id_fkey';
             columns: ['rls_grid_id'];
             isOneToOne: false;
@@ -4226,154 +2738,56 @@ export type Database = {
       get_grid_status: {
         Args: { grid_id: number };
         Returns: {
-          are_all_dcus_online: boolean;
-          are_all_dcus_under_high_load_threshold: boolean;
           customer_count: number;
           is_cabin_meter_credit_depleting: boolean;
           is_fs_on: boolean;
           is_hps_on: boolean;
         }[];
       };
-      lock_next_order: { Args: { uuid: string }; Returns: undefined };
       lock_next_order_and_wallets: {
         Args: { uuid: string };
         Returns: {
           id: number;
         }[];
       };
-      lock_next_pd_action: { Args: never; Returns: number };
+      rls_check_if_admin_org_member: { Args: never; Returns: boolean };
       rls_check_if_lender: { Args: never; Returns: boolean };
-      rls_check_if_nxt_member: { Args: never; Returns: boolean };
       rls_get_member_org_id: { Args: never; Returns: number };
+      rls_org_id_from_agent: { Args: { agent_id: number }; Returns: number };
+      rls_org_id_from_connection: {
+        Args: { connection_id: number };
+        Returns: number;
+      };
+      rls_org_id_from_customer: {
+        Args: { customer_id: number };
+        Returns: number;
+      };
+      rls_org_id_from_dcu: { Args: { dcu_id: number }; Returns: number };
+      rls_org_id_from_grid: { Args: { grid_id: number }; Returns: number };
+      rls_org_id_from_meter: { Args: { meter_id: number }; Returns: number };
     };
     Enums: {
       account_type_enum: 'AGENT' | 'MEMBER' | 'CUSTOMER';
       communication_protocol_enum: 'CALIN_V1' | 'CALIN_V2' | 'CALIN_LORAWAN';
       currency_enum: 'USD' | 'NGN' | 'EUR';
-      directive_direction_enum: 'UP' | 'DOWN';
-      directive_error_enum:
-        | 'GRID_DOWN'
-        | 'DCU_OFFLINE'
-        | 'NO_METER'
-        | 'NO_DCU'
-        | 'NO_GRID'
-        | 'NO_CONNECTION'
-        | 'NO_CUSTOMER';
-      directive_phase_enum: 'A' | 'B' | 'C';
-      directive_special_status_enum:
-        | 'POWER_LIMIT_BREACHED'
-        | 'CREDIT_EXHAUSTED'
-        | 'REMOTE_SWITCHED_OFF'
-        | 'OVER_VOLTAGE'
-        | 'METER_NOT_ACTIVATED'
-        | 'TAMPER'
-        | 'LOW_VOLTAGE';
-      directive_status_enum:
-        | 'INITIALISED'
-        | 'PENDING'
-        | 'SENT_TO_API'
-        | 'RECEIVED_BY_API'
-        | 'SENT_TO_DCU'
-        | 'RECEIVED_BY_DCU'
-        | 'SENT_TO_METER'
-        | 'RECEIVED_BY_METER'
-        | 'SUCCESSFUL'
-        | 'FAILED'
-        | 'IGNORED'
-        | 'CANCELLED'
-        | 'TIMED_OUT'
-        | 'UNKNOWN';
-      directive_type_enum:
-        | 'ON'
-        | 'OFF'
-        | 'READ_VOLTAGE'
-        | 'PLS'
-        | 'PLR'
-        | 'CLEAR_TAMPER'
-        | 'READ_METER_VERSION'
-        | 'TOP_UP'
-        | 'READ_CURRENT_CREDIT'
-        | 'READ_CURRENT'
-        | 'READ_POWER'
-        | 'READ_SPECIAL_STATUS'
-        | 'CLEAR_CREDIT'
-        | 'READ_RELAY_STATUS'
-        | 'READ_POWER_DOWN_COUNT'
-        | 'READ_TIME'
-        | 'READ_DATE'
-        | 'READ_VOLTAGE_A'
-        | 'READ_VOLTAGE_B'
-        | 'READ_VOLTAGE_C'
-        | 'READ_POWER_A'
-        | 'READ_POWER_B'
-        | 'READ_POWER_C'
-        | 'READ_CURRENT_A'
-        | 'READ_CURRENT_B'
-        | 'READ_CURRENT_C'
-        | 'READ_TOTAL_ACTIVE_KWH'
-        | 'READ_STATUS'
-        | 'SEND_TOKEN'
-        | 'READ_FRAUD_STATUS'
-        | 'READ_REPORT'
-        | 'WRITE_DATE'
-        | 'WRITE_TIME'
-        | 'CLEAR_TAMPER_TOKEN'
-        | 'READ_REPORT_UP'
-        | 'READ_REPORT_DOWN'
-        | 'READ_CREDIT_DOWN'
-        | 'READ_CREDIT_UP'
-        | 'READ_VOLTAGE_UP'
-        | 'READ_VOLTAGE_DOWN'
-        | 'READ_POWER_UP'
-        | 'READ_POWER_DOWN'
-        | 'READ_CURRENT_UP'
-        | 'READ_CURRENT_DOWN'
-        | 'CLEAR_TAMPER_UP'
-        | 'CLEAR_TAMPER_DOWN'
-        | 'TOP_UP_DOWN'
-        | 'POWER_LIMIT_SET_UP'
-        | 'POWER_LIMIT_SET_DOWN'
-        | 'OPEN_RELAY_UP'
-        | 'OPEN_RELAY_DOWN'
-        | 'CLOSE_RELAY_UP'
-        | 'CLOSE_RELAY_DOWN'
-        | 'READ_VOLTAGE_A_UP'
-        | 'READ_VOLTAGE_A_DOWN'
-        | 'READ_POWER_A_UP'
-        | 'READ_POWER_A_DOWN'
-        | 'READ_CURRENT_A_UP'
-        | 'READ_CURRENT_A_DOWN'
-        | 'UNKNOWN'
-        | 'CLEAR_CREDIT_DOWN'
-        | 'TOP_UP_KWH'
-        | 'TOKEN_ACCEPTED'
-        | 'TOKEN_REJECTED'
-        | 'ON_OFF_ACCEPTED'
-        | 'ON_OFF_REJECTED';
       external_system_enum:
-        | 'STEAMACO'
         | 'CALIN'
         | 'SOLCAST'
         | 'VICTRON'
         | 'FLUTTERWAVE'
         | 'AFRICASTALKING'
-        | 'JOTFORM'
         | 'EPICOLLECT'
         | 'JIRA'
         | 'TELEGRAM'
         | 'ZEROTIER'
         | 'MAKE'
         | 'FLOW_XO'
-        | 'SENDGRID'
-        | 'ACREL';
+        | 'SENDGRID';
       fs_command_type_enum: 'ON' | 'OFF';
       gender_enum: 'MALE' | 'FEMALE';
       generator_type_enum: 'SMALL' | 'LARGE';
       id_document_type_enum:
-        | 'PASSPORT'
-        | 'NATIONAL_ID'
-        | 'DRIVING_LICENSE'
-        | 'VOTERS_CARD';
+        'PASSPORT' | 'NATIONAL_ID' | 'DRIVING_LICENSE' | 'VOTERS_CARD';
       issue_status_enum: 'OPEN' | 'CLOSED' | 'OVERRIDDEN';
       issue_type_enum:
         | 'NO_COMMUNICATION'
@@ -4412,15 +2826,7 @@ export type Database = {
         | 'SALES'
         | 'TECH';
       meter_commissioning_status_enum:
-        | 'PENDING'
-        | 'PROCESSING'
-        | 'SUCCESSFUL'
-        | 'FAILED';
-      meter_credit_transfer_status_enum:
-        | 'PENDING'
-        | 'PROCESSING'
-        | 'SUCCESSFUL'
-        | 'FAILED';
+        'PENDING' | 'PROCESSING' | 'SUCCESSFUL' | 'FAILED';
       meter_interaction_status_enum:
         | 'QUEUED'
         | 'ABORTED'
@@ -4473,7 +2879,6 @@ export type Database = {
         | 'GRID_REVENUE'
         | 'PASSWORD_RESET'
         | 'INVITE'
-        | 'AUTO_PAYOUT_GENRATION_REPORT'
         | 'CREDIT_SENT'
         | 'CREDIT_RECEIVED'
         | 'METER_TOPPED_UP'
@@ -4503,23 +2908,10 @@ export type Database = {
         | 'ORGANIZATION_TOPUP'
         | 'ORGANIZATION_WITHDRAWAL'
         | 'CUSTOMER_TOPUP';
-      organization_type_enum: 'SOLAR_DEVELOPER' | 'LENDER' | 'DATA_AGGREGATOR';
+      organization_type_enum:
+        'SOLAR_DEVELOPER' | 'LENDER' | 'DATA_AGGREGATOR' | 'PLATFORM_OPERATOR';
       payment_channel_enum: 'USSD' | 'AYRTON' | 'NIFFLER' | 'TELEGRAM';
       payment_method_enum: 'CREDIT_CARD' | 'USSD' | 'BANK_TRANSFER';
-      payout_status_enum:
-        | 'INITIALISED'
-        | 'WAITING_FOR_APPROVAL'
-        | 'PROCESSING'
-        | 'SUCCESSFUL'
-        | 'FAILED';
-      pd_action_status_enum:
-        | 'GENERATING'
-        | 'GENERATION_FAILED'
-        | 'GENERATION_COMPLETED'
-        | 'ACTIONABLE'
-        | 'ACTION_COMPLETED';
-      pd_action_type_enum: 'UPLOAD' | 'TEMPLATE' | 'EXTERNAL' | 'START' | 'END';
-      pd_document_type_enum: 'GOOGLE_SHEETS' | 'GOOGLE_DOCS';
       solcast_cache_request_type_enum: 'ESTIMATED_ACTUALS' | 'FORECAST';
       transaction_status_enum: 'SUCCESSFUL' | 'FAILED';
       wallet_type_enum: 'VIRTUAL' | 'REAL';
@@ -4548,12 +2940,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -4575,13 +2967,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -4600,13 +2991,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -4625,13 +3015,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -4644,11 +3033,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -4663,118 +3052,12 @@ export const Constants = {
       account_type_enum: [ 'AGENT', 'MEMBER', 'CUSTOMER' ],
       communication_protocol_enum: [ 'CALIN_V1', 'CALIN_V2', 'CALIN_LORAWAN' ],
       currency_enum: [ 'USD', 'NGN', 'EUR' ],
-      directive_direction_enum: [ 'UP', 'DOWN' ],
-      directive_error_enum: [
-        'GRID_DOWN',
-        'DCU_OFFLINE',
-        'NO_METER',
-        'NO_DCU',
-        'NO_GRID',
-        'NO_CONNECTION',
-        'NO_CUSTOMER',
-      ],
-      directive_phase_enum: [ 'A', 'B', 'C' ],
-      directive_special_status_enum: [
-        'POWER_LIMIT_BREACHED',
-        'CREDIT_EXHAUSTED',
-        'REMOTE_SWITCHED_OFF',
-        'OVER_VOLTAGE',
-        'METER_NOT_ACTIVATED',
-        'TAMPER',
-        'LOW_VOLTAGE',
-      ],
-      directive_status_enum: [
-        'INITIALISED',
-        'PENDING',
-        'SENT_TO_API',
-        'RECEIVED_BY_API',
-        'SENT_TO_DCU',
-        'RECEIVED_BY_DCU',
-        'SENT_TO_METER',
-        'RECEIVED_BY_METER',
-        'SUCCESSFUL',
-        'FAILED',
-        'IGNORED',
-        'CANCELLED',
-        'TIMED_OUT',
-        'UNKNOWN',
-      ],
-      directive_type_enum: [
-        'ON',
-        'OFF',
-        'READ_VOLTAGE',
-        'PLS',
-        'PLR',
-        'CLEAR_TAMPER',
-        'READ_METER_VERSION',
-        'TOP_UP',
-        'READ_CURRENT_CREDIT',
-        'READ_CURRENT',
-        'READ_POWER',
-        'READ_SPECIAL_STATUS',
-        'CLEAR_CREDIT',
-        'READ_RELAY_STATUS',
-        'READ_POWER_DOWN_COUNT',
-        'READ_TIME',
-        'READ_DATE',
-        'READ_VOLTAGE_A',
-        'READ_VOLTAGE_B',
-        'READ_VOLTAGE_C',
-        'READ_POWER_A',
-        'READ_POWER_B',
-        'READ_POWER_C',
-        'READ_CURRENT_A',
-        'READ_CURRENT_B',
-        'READ_CURRENT_C',
-        'READ_TOTAL_ACTIVE_KWH',
-        'READ_STATUS',
-        'SEND_TOKEN',
-        'READ_FRAUD_STATUS',
-        'READ_REPORT',
-        'WRITE_DATE',
-        'WRITE_TIME',
-        'CLEAR_TAMPER_TOKEN',
-        'READ_REPORT_UP',
-        'READ_REPORT_DOWN',
-        'READ_CREDIT_DOWN',
-        'READ_CREDIT_UP',
-        'READ_VOLTAGE_UP',
-        'READ_VOLTAGE_DOWN',
-        'READ_POWER_UP',
-        'READ_POWER_DOWN',
-        'READ_CURRENT_UP',
-        'READ_CURRENT_DOWN',
-        'CLEAR_TAMPER_UP',
-        'CLEAR_TAMPER_DOWN',
-        'TOP_UP_DOWN',
-        'POWER_LIMIT_SET_UP',
-        'POWER_LIMIT_SET_DOWN',
-        'OPEN_RELAY_UP',
-        'OPEN_RELAY_DOWN',
-        'CLOSE_RELAY_UP',
-        'CLOSE_RELAY_DOWN',
-        'READ_VOLTAGE_A_UP',
-        'READ_VOLTAGE_A_DOWN',
-        'READ_POWER_A_UP',
-        'READ_POWER_A_DOWN',
-        'READ_CURRENT_A_UP',
-        'READ_CURRENT_A_DOWN',
-        'UNKNOWN',
-        'CLEAR_CREDIT_DOWN',
-        'TOP_UP_KWH',
-        'TOKEN_ACCEPTED',
-        'TOKEN_REJECTED',
-        'ON_OFF_ACCEPTED',
-        'ON_OFF_REJECTED',
-      ],
       external_system_enum: [
-        'STEAMACO',
         'CALIN',
         'SOLCAST',
         'VICTRON',
         'FLUTTERWAVE',
         'AFRICASTALKING',
-        'JOTFORM',
         'EPICOLLECT',
         'JIRA',
         'TELEGRAM',
@@ -4782,7 +3065,6 @@ export const Constants = {
         'MAKE',
         'FLOW_XO',
         'SENDGRID',
-        'ACREL',
       ],
       fs_command_type_enum: [ 'ON', 'OFF' ],
       gender_enum: [ 'MALE', 'FEMALE' ],
@@ -4833,12 +3115,6 @@ export const Constants = {
         'TECH',
       ],
       meter_commissioning_status_enum: [
-        'PENDING',
-        'PROCESSING',
-        'SUCCESSFUL',
-        'FAILED',
-      ],
-      meter_credit_transfer_status_enum: [
         'PENDING',
         'PROCESSING',
         'SUCCESSFUL',
@@ -4899,7 +3175,6 @@ export const Constants = {
         'GRID_REVENUE',
         'PASSWORD_RESET',
         'INVITE',
-        'AUTO_PAYOUT_GENRATION_REPORT',
         'CREDIT_SENT',
         'CREDIT_RECEIVED',
         'METER_TOPPED_UP',
@@ -4933,25 +3208,14 @@ export const Constants = {
         'ORGANIZATION_WITHDRAWAL',
         'CUSTOMER_TOPUP',
       ],
-      organization_type_enum: [ 'SOLAR_DEVELOPER', 'LENDER', 'DATA_AGGREGATOR' ],
+      organization_type_enum: [
+        'SOLAR_DEVELOPER',
+        'LENDER',
+        'DATA_AGGREGATOR',
+        'PLATFORM_OPERATOR',
+      ],
       payment_channel_enum: [ 'USSD', 'AYRTON', 'NIFFLER', 'TELEGRAM' ],
       payment_method_enum: [ 'CREDIT_CARD', 'USSD', 'BANK_TRANSFER' ],
-      payout_status_enum: [
-        'INITIALISED',
-        'WAITING_FOR_APPROVAL',
-        'PROCESSING',
-        'SUCCESSFUL',
-        'FAILED',
-      ],
-      pd_action_status_enum: [
-        'GENERATING',
-        'GENERATION_FAILED',
-        'GENERATION_COMPLETED',
-        'ACTIONABLE',
-        'ACTION_COMPLETED',
-      ],
-      pd_action_type_enum: [ 'UPLOAD', 'TEMPLATE', 'EXTERNAL', 'START', 'END' ],
-      pd_document_type_enum: [ 'GOOGLE_SHEETS', 'GOOGLE_DOCS' ],
       solcast_cache_request_type_enum: [ 'ESTIMATED_ACTUALS', 'FORECAST' ],
       transaction_status_enum: [ 'SUCCESSFUL', 'FAILED' ],
       wallet_type_enum: [ 'VIRTUAL', 'REAL' ],
@@ -4967,7 +3231,6 @@ export const Constants = {
   },
 } as const;
 
-// Schema: __InternalSupabase
 // Schema: public
 // Enums
 export type AccountTypeEnum = Database['public']['Enums']['account_type_enum'];
@@ -4976,24 +3239,6 @@ export type CommunicationProtocolEnum =
   Database['public']['Enums']['communication_protocol_enum'];
 
 export type CurrencyEnum = Database['public']['Enums']['currency_enum'];
-
-export type DirectiveDirectionEnum =
-  Database['public']['Enums']['directive_direction_enum'];
-
-export type DirectiveErrorEnum =
-  Database['public']['Enums']['directive_error_enum'];
-
-export type DirectivePhaseEnum =
-  Database['public']['Enums']['directive_phase_enum'];
-
-export type DirectiveSpecialStatusEnum =
-  Database['public']['Enums']['directive_special_status_enum'];
-
-export type DirectiveStatusEnum =
-  Database['public']['Enums']['directive_status_enum'];
-
-export type DirectiveTypeEnum =
-  Database['public']['Enums']['directive_type_enum'];
 
 export type ExternalSystemEnum =
   Database['public']['Enums']['external_system_enum'];
@@ -5017,9 +3262,6 @@ export type MemberTypeEnum = Database['public']['Enums']['member_type_enum'];
 
 export type MeterCommissioningStatusEnum =
   Database['public']['Enums']['meter_commissioning_status_enum'];
-
-export type MeterCreditTransferStatusEnum =
-  Database['public']['Enums']['meter_credit_transfer_status_enum'];
 
 export type MeterInteractionStatusEnum =
   Database['public']['Enums']['meter_interaction_status_enum'];
@@ -5060,18 +3302,6 @@ export type PaymentChannelEnum =
 export type PaymentMethodEnum =
   Database['public']['Enums']['payment_method_enum'];
 
-export type PayoutStatusEnum =
-  Database['public']['Enums']['payout_status_enum'];
-
-export type PdActionStatusEnum =
-  Database['public']['Enums']['pd_action_status_enum'];
-
-export type PdActionTypeEnum =
-  Database['public']['Enums']['pd_action_type_enum'];
-
-export type PdDocumentTypeEnum =
-  Database['public']['Enums']['pd_document_type_enum'];
-
 export type SolcastCacheRequestTypeEnum =
   Database['public']['Enums']['solcast_cache_request_type_enum'];
 
@@ -5098,19 +3328,6 @@ export type UpdateApiKey = Database['public']['Tables']['api_keys']['Update'];
 export type Audit = Database['public']['Tables']['audits']['Row'];
 export type InsertAudit = Database['public']['Tables']['audits']['Insert'];
 export type UpdateAudit = Database['public']['Tables']['audits']['Update'];
-
-export type AutopilotExecution =
-  Database['public']['Tables']['autopilot_executions']['Row'];
-export type InsertAutopilotExecution =
-  Database['public']['Tables']['autopilot_executions']['Insert'];
-export type UpdateAutopilotExecution =
-  Database['public']['Tables']['autopilot_executions']['Update'];
-
-export type BankAccount = Database['public']['Tables']['bank_accounts']['Row'];
-export type InsertBankAccount =
-  Database['public']['Tables']['bank_accounts']['Insert'];
-export type UpdateBankAccount =
-  Database['public']['Tables']['bank_accounts']['Update'];
 
 export type Bank = Database['public']['Tables']['banks']['Row'];
 export type InsertBank = Database['public']['Tables']['banks']['Insert'];
@@ -5139,58 +3356,11 @@ export type Dcus = Database['public']['Tables']['dcus']['Row'];
 export type InsertDcus = Database['public']['Tables']['dcus']['Insert'];
 export type UpdateDcus = Database['public']['Tables']['dcus']['Update'];
 
-export type DeviceLog = Database['public']['Tables']['device_logs']['Row'];
-export type InsertDeviceLog =
-  Database['public']['Tables']['device_logs']['Insert'];
-export type UpdateDeviceLog =
-  Database['public']['Tables']['device_logs']['Update'];
-
-export type DeviceType = Database['public']['Tables']['device_types']['Row'];
-export type InsertDeviceType =
-  Database['public']['Tables']['device_types']['Insert'];
-export type UpdateDeviceType =
-  Database['public']['Tables']['device_types']['Update'];
-
-export type Device = Database['public']['Tables']['devices']['Row'];
-export type InsertDevice = Database['public']['Tables']['devices']['Insert'];
-export type UpdateDevice = Database['public']['Tables']['devices']['Update'];
-
-export type DirectiveBatchExecution =
-  Database['public']['Tables']['directive_batch_executions']['Row'];
-export type InsertDirectiveBatchExecution =
-  Database['public']['Tables']['directive_batch_executions']['Insert'];
-export type UpdateDirectiveBatchExecution =
-  Database['public']['Tables']['directive_batch_executions']['Update'];
-
-export type DirectiveBatch =
-  Database['public']['Tables']['directive_batches']['Row'];
-export type InsertDirectiveBatch =
-  Database['public']['Tables']['directive_batches']['Insert'];
-export type UpdateDirectiveBatch =
-  Database['public']['Tables']['directive_batches']['Update'];
-
-export type DirectiveWatchdogSession =
-  Database['public']['Tables']['directive_watchdog_sessions']['Row'];
-export type InsertDirectiveWatchdogSession =
-  Database['public']['Tables']['directive_watchdog_sessions']['Insert'];
-export type UpdateDirectiveWatchdogSession =
-  Database['public']['Tables']['directive_watchdog_sessions']['Update'];
-
-export type Directive = Database['public']['Tables']['directives']['Row'];
-export type InsertDirective =
-  Database['public']['Tables']['directives']['Insert'];
-export type UpdateDirective =
-  Database['public']['Tables']['directives']['Update'];
-
 export type EnergyCabin = Database['public']['Tables']['energy_cabins']['Row'];
 export type InsertEnergyCabin =
   Database['public']['Tables']['energy_cabins']['Insert'];
 export type UpdateEnergyCabin =
   Database['public']['Tables']['energy_cabins']['Update'];
-
-export type Feature = Database['public']['Tables']['features']['Row'];
-export type InsertFeature = Database['public']['Tables']['features']['Insert'];
-export type UpdateFeature = Database['public']['Tables']['features']['Update'];
 
 export type Grid = Database['public']['Tables']['grids']['Row'];
 export type InsertGrid = Database['public']['Tables']['grids']['Insert'];
@@ -5200,23 +3370,23 @@ export type Issue = Database['public']['Tables']['issues']['Row'];
 export type InsertIssue = Database['public']['Tables']['issues']['Insert'];
 export type UpdateIssue = Database['public']['Tables']['issues']['Update'];
 
-export type LorawanDirective =
-  Database['public']['Tables']['lorawan_directives']['Row'];
-export type InsertLorawanDirective =
-  Database['public']['Tables']['lorawan_directives']['Insert'];
-export type UpdateLorawanDirective =
-  Database['public']['Tables']['lorawan_directives']['Update'];
-
-export type MemberFeature =
-  Database['public']['Tables']['member_feature']['Row'];
-export type InsertMemberFeature =
-  Database['public']['Tables']['member_feature']['Insert'];
-export type UpdateMemberFeature =
-  Database['public']['Tables']['member_feature']['Update'];
-
 export type Member = Database['public']['Tables']['members']['Row'];
 export type InsertMember = Database['public']['Tables']['members']['Insert'];
 export type UpdateMember = Database['public']['Tables']['members']['Update'];
+
+export type MeterCommandBatchExecution =
+  Database['public']['Tables']['meter_command_batch_executions']['Row'];
+export type InsertMeterCommandBatchExecution =
+  Database['public']['Tables']['meter_command_batch_executions']['Insert'];
+export type UpdateMeterCommandBatchExecution =
+  Database['public']['Tables']['meter_command_batch_executions']['Update'];
+
+export type MeterCommandBatch =
+  Database['public']['Tables']['meter_command_batches']['Row'];
+export type InsertMeterCommandBatch =
+  Database['public']['Tables']['meter_command_batches']['Insert'];
+export type UpdateMeterCommandBatch =
+  Database['public']['Tables']['meter_command_batches']['Update'];
 
 export type MeterCommissioning =
   Database['public']['Tables']['meter_commissionings']['Row'];
@@ -5224,13 +3394,6 @@ export type InsertMeterCommissioning =
   Database['public']['Tables']['meter_commissionings']['Insert'];
 export type UpdateMeterCommissioning =
   Database['public']['Tables']['meter_commissionings']['Update'];
-
-export type MeterCreditTransfer =
-  Database['public']['Tables']['meter_credit_transfers']['Row'];
-export type InsertMeterCreditTransfer =
-  Database['public']['Tables']['meter_credit_transfers']['Insert'];
-export type UpdateMeterCreditTransfer =
-  Database['public']['Tables']['meter_credit_transfers']['Update'];
 
 export type MeterInteraction =
   Database['public']['Tables']['meter_interactions']['Row'];
@@ -5256,12 +3419,6 @@ export type UpdateMeteringHardwareInstallSession =
 export type Meter = Database['public']['Tables']['meters']['Row'];
 export type InsertMeter = Database['public']['Tables']['meters']['Insert'];
 export type UpdateMeter = Database['public']['Tables']['meters']['Update'];
-
-export type Migration = Database['public']['Tables']['migrations']['Row'];
-export type InsertMigration =
-  Database['public']['Tables']['migrations']['Insert'];
-export type UpdateMigration =
-  Database['public']['Tables']['migrations']['Update'];
 
 export type Mppt = Database['public']['Tables']['mppts']['Row'];
 export type InsertMppt = Database['public']['Tables']['mppts']['Insert'];
@@ -5293,64 +3450,6 @@ export type InsertOrganization =
   Database['public']['Tables']['organizations']['Insert'];
 export type UpdateOrganization =
   Database['public']['Tables']['organizations']['Update'];
-
-export type Payout = Database['public']['Tables']['payouts']['Row'];
-export type InsertPayout = Database['public']['Tables']['payouts']['Insert'];
-export type UpdatePayout = Database['public']['Tables']['payouts']['Update'];
-
-export type PdActionTemplate =
-  Database['public']['Tables']['pd_action_templates']['Row'];
-export type InsertPdActionTemplate =
-  Database['public']['Tables']['pd_action_templates']['Insert'];
-export type UpdatePdActionTemplate =
-  Database['public']['Tables']['pd_action_templates']['Update'];
-
-export type PdAction = Database['public']['Tables']['pd_actions']['Row'];
-export type InsertPdAction =
-  Database['public']['Tables']['pd_actions']['Insert'];
-export type UpdatePdAction =
-  Database['public']['Tables']['pd_actions']['Update'];
-
-export type PdAudit = Database['public']['Tables']['pd_audits']['Row'];
-export type InsertPdAudit = Database['public']['Tables']['pd_audits']['Insert'];
-export type UpdatePdAudit = Database['public']['Tables']['pd_audits']['Update'];
-
-export type PdDocumentTemplate =
-  Database['public']['Tables']['pd_document_templates']['Row'];
-export type InsertPdDocumentTemplate =
-  Database['public']['Tables']['pd_document_templates']['Insert'];
-export type UpdatePdDocumentTemplate =
-  Database['public']['Tables']['pd_document_templates']['Update'];
-
-export type PdDocument = Database['public']['Tables']['pd_documents']['Row'];
-export type InsertPdDocument =
-  Database['public']['Tables']['pd_documents']['Insert'];
-export type UpdatePdDocument =
-  Database['public']['Tables']['pd_documents']['Update'];
-
-export type PdFlowTemplate =
-  Database['public']['Tables']['pd_flow_templates']['Row'];
-export type InsertPdFlowTemplate =
-  Database['public']['Tables']['pd_flow_templates']['Insert'];
-export type UpdatePdFlowTemplate =
-  Database['public']['Tables']['pd_flow_templates']['Update'];
-
-export type PdFlow = Database['public']['Tables']['pd_flows']['Row'];
-export type InsertPdFlow = Database['public']['Tables']['pd_flows']['Insert'];
-export type UpdatePdFlow = Database['public']['Tables']['pd_flows']['Update'];
-
-export type PdSectionTemplate =
-  Database['public']['Tables']['pd_section_templates']['Row'];
-export type InsertPdSectionTemplate =
-  Database['public']['Tables']['pd_section_templates']['Insert'];
-export type UpdatePdSectionTemplate =
-  Database['public']['Tables']['pd_section_templates']['Update'];
-
-export type PdSection = Database['public']['Tables']['pd_sections']['Row'];
-export type InsertPdSection =
-  Database['public']['Tables']['pd_sections']['Insert'];
-export type UpdatePdSection =
-  Database['public']['Tables']['pd_sections']['Update'];
 
 export type PdSiteSubmission =
   Database['public']['Tables']['pd_site_submissions']['Row'];
@@ -5404,8 +3503,6 @@ export type UpdateWallet = Database['public']['Tables']['wallets']['Update'];
 export type AgentWithAccount =
   Database['public']['Views']['agents_with_account']['Row'];
 
-export type BatchCommand = Database['public']['Views']['batch_commands']['Row'];
-
 export type CustomerWithAccount =
   Database['public']['Views']['customers_with_account']['Row'];
 
@@ -5428,32 +3525,52 @@ export type ArgsGetGridStatus =
 export type ReturnTypeGetGridStatus =
   Database['public']['Functions']['get_grid_status']['Returns'];
 
-export type ArgsLockNextOrder =
-  Database['public']['Functions']['lock_next_order']['Args'];
-export type ReturnTypeLockNextOrder =
-  Database['public']['Functions']['lock_next_order']['Returns'];
-
 export type ArgsLockNextOrderAndWallet =
   Database['public']['Functions']['lock_next_order_and_wallets']['Args'];
 export type ReturnTypeLockNextOrderAndWallet =
   Database['public']['Functions']['lock_next_order_and_wallets']['Returns'];
 
-export type ArgsLockNextPdAction =
-  Database['public']['Functions']['lock_next_pd_action']['Args'];
-export type ReturnTypeLockNextPdAction =
-  Database['public']['Functions']['lock_next_pd_action']['Returns'];
+export type ArgsRlCheckIfAdminOrgMember =
+  Database['public']['Functions']['rls_check_if_admin_org_member']['Args'];
+export type ReturnTypeRlCheckIfAdminOrgMember =
+  Database['public']['Functions']['rls_check_if_admin_org_member']['Returns'];
 
 export type ArgsRlCheckIfLender =
   Database['public']['Functions']['rls_check_if_lender']['Args'];
 export type ReturnTypeRlCheckIfLender =
   Database['public']['Functions']['rls_check_if_lender']['Returns'];
 
-export type ArgsRlCheckIfNxtMember =
-  Database['public']['Functions']['rls_check_if_nxt_member']['Args'];
-export type ReturnTypeRlCheckIfNxtMember =
-  Database['public']['Functions']['rls_check_if_nxt_member']['Returns'];
-
 export type ArgsRlGetMemberOrgId =
   Database['public']['Functions']['rls_get_member_org_id']['Args'];
 export type ReturnTypeRlGetMemberOrgId =
   Database['public']['Functions']['rls_get_member_org_id']['Returns'];
+
+export type ArgsRlOrgIdFromAgent =
+  Database['public']['Functions']['rls_org_id_from_agent']['Args'];
+export type ReturnTypeRlOrgIdFromAgent =
+  Database['public']['Functions']['rls_org_id_from_agent']['Returns'];
+
+export type ArgsRlOrgIdFromConnection =
+  Database['public']['Functions']['rls_org_id_from_connection']['Args'];
+export type ReturnTypeRlOrgIdFromConnection =
+  Database['public']['Functions']['rls_org_id_from_connection']['Returns'];
+
+export type ArgsRlOrgIdFromCustomer =
+  Database['public']['Functions']['rls_org_id_from_customer']['Args'];
+export type ReturnTypeRlOrgIdFromCustomer =
+  Database['public']['Functions']['rls_org_id_from_customer']['Returns'];
+
+export type ArgsRlOrgIdFromDcu =
+  Database['public']['Functions']['rls_org_id_from_dcu']['Args'];
+export type ReturnTypeRlOrgIdFromDcu =
+  Database['public']['Functions']['rls_org_id_from_dcu']['Returns'];
+
+export type ArgsRlOrgIdFromGrid =
+  Database['public']['Functions']['rls_org_id_from_grid']['Args'];
+export type ReturnTypeRlOrgIdFromGrid =
+  Database['public']['Functions']['rls_org_id_from_grid']['Returns'];
+
+export type ArgsRlOrgIdFromMeter =
+  Database['public']['Functions']['rls_org_id_from_meter']['Args'];
+export type ReturnTypeRlOrgIdFromMeter =
+  Database['public']['Functions']['rls_org_id_from_meter']['Returns'];

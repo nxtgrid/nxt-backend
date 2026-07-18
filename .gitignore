@@ -1,52 +1,58 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# compiled output
-dist
-tmp
-/out-tsc
+# Build / compile output (any project depth)
+dist/
+tmp/
+out-tsc/
 
-# dependencies
-node_modules
-# temporary until we fix dependencies
-package-lock.json
+# Dependencies
+node_modules/
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# Nx
+.nx/
 
-# IDE - VSCode
+# Test output
+test-output
+coverage/
+
+# Environment & secrets
+.env
+.env.*
+!**/.env.example
+
+# Supabase local state (root chain + legacy reference)
+supabase/generated-types.ts
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+supabase/.env.keys
+supabase/.env.local
+supabase/.env.*.local
+legacy/supabase/.temp/
+legacy/supabase/.branches/
+
+# Logs & runtime artifacts
+*.log
+
+# Tooling caches
+.pnpm-store/
+.cache/
+
+# IDE — VSCode (track shared workspace settings)
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
+# IDE — other editors
+.idea/
+*.sublime-workspace
 
-# System Files
+# AI agent local state
+.claude/worktrees/
+.claude/settings.local.json
+
+# OS
 .DS_Store
 Thumbs.db
-
-.env
-_NOTES
-
-.nx/cache
-# Supabase
-supabase/.temp
-supabase/.branches
-supabase/.env
-
-.nx/

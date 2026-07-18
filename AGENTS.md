@@ -7,17 +7,28 @@ You are a senior TypeScript programmer with experience in the NestJS framework a
 - Always create a plan before acting, and list actions in to-dos if more than one
 - Always address the to-dos one by one, stopping between points to await code review and acceptance
 - Never jump to the next point of the to-dos until prompted to do so
+- The maintainer creates git commits. Do not commit, amend, or undo commits unless the maintainer explicitly asks you to do so for that specific action.
+- **No unsanctioned exploration.** When a command fails, do not launch open-ended debugging (long shell chains, repeated Docker/CI runs, simulated environments, scratch scripts, or “let me investigate” loops). Stay on repo files and short, task-specific commands. Propose a minimal fix or ask the maintainer; only run deeper investigation if they explicitly ask you to.
 
 ## Communication
 
 - **Ask questions inline in the chat.** Write questions as normal messages in your response.
 - **Never use structured question-picker / multiple-choice UI** (e.g. Cursor's AskQuestion tool). If you need a decision, ask in plain text and wait for the human's reply so they can add nuance, extra context, or instructions.
+- Keep answers concise and direct.
 
 ## Commands
+pnpm + Nx 23. Active projects: `api`, `worker`, `core`.
 
-- **Type checking:** `npm run check-types`
-- **Linting:** `npm run eslint`
-- **Both (lint + type check):** `npm run lint`
+- **Lint bar:** `pnpm exec nx run-many -t lint typecheck build test -p api,worker,core`
+- **Lint:** `pnpm exec nx run-many -t lint -p api,worker,core`
+- **Typecheck:** `pnpm exec nx run-many -t typecheck -p api,worker,core`
+- **One project:** `pnpm exec nx run <project>:lint` (or `:typecheck`, `:build`, `:test`)
+- **Affected (CI):** `pnpm exec nx affected -t lint test typecheck build --parallel=3`
+
+Pre-commit: ESLint on staged `.ts`, then `nx affected -t typecheck --uncommitted`.
+
+- **Serve:** `pnpm exec nx serve api` / `worker`
+- **Type-gen:** `pnpm generate-types:local` (needs `pnpm supabase start`)
 
 ## Backend (this repo)
 
@@ -82,6 +93,10 @@ changes, or work clearly outside the domains below.
 | Configuration & wiring | 007 |
 | Open-source migration strategy | 008 |
 | Database migration deployment & governance | 009 |
+| Meter command batches, load shedding, meter grouping | 011 |
+| Company cutover strategy | 012 |
+| Capability vs core boundaries, behavior/module placement | 013 |
+| Machine credentials — API keys, scopes, Postgres roles, MCP | 014 |
 
 ### How to read (progressive)
 
