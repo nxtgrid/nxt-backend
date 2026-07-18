@@ -8,7 +8,7 @@ import { connect as mqttConnect, MqttClient, IClientPublishOptions } from 'mqtt'
 import { inferBrokerIndexByVrmId } from '@helpers/third-party-service-helpers';
 import { getMeasureTypeFromMqttTopic, isSafeMqttTopicArray, parseMqttMessageSafe } from './lib/mqtt-helpers';
 
-const { VICTRON_USERNAME, VICTRON_PASSWORD } = process.env;
+const { VICTRON_USERNAME, VICTRON_API_TOKEN } = process.env;
 const MQQT_CHANNEL_KEEP_ALIVE_INTERVAL_MS = 55_000;
 
 @Injectable()
@@ -71,7 +71,7 @@ export class GridDigitalTwinService implements OnModuleInit {
       const client = mqttConnect(`mqtts://mqtt${ brokerIndex }.victronenergy.com`, {
         port: 443,
         username: VICTRON_USERNAME,
-        password: VICTRON_PASSWORD,
+        password: `Token ${ VICTRON_API_TOKEN }`,
         rejectUnauthorized: false,
       });
 

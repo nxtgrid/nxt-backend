@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Grid } from '@core/modules/grids/entities/grid.entity';
 import { GridsService } from '@core/modules/grids/grids.service';
-
 import * as mqtt from 'mqtt';
+
+const { VICTRON_USERNAME, VICTRON_API_TOKEN } = process.env;
 
 const clients = [];
 @Injectable()
@@ -41,10 +42,10 @@ export class MqttService {
       if(client) continue;
 
       client = mqtt.connect(string, {
-        // port,
-        // username,
-        // password,
-        // rejectUnauthorized: false,
+        port: 443,
+        username: VICTRON_USERNAME,
+        password: `Token ${ VICTRON_API_TOKEN }`,
+        rejectUnauthorized: false,
       });
 
       client.on('connect', () => {
