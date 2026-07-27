@@ -1,7 +1,11 @@
 # ADR-010: Device-Messaging Service Extraction
 
 **Date:** 2026-07-02
-**Status:** Accepted — execution tracked in `docs/plans/001-device-messaging-service-extraction.md`
+**Status:** Accepted — execution tracked in `docs/plans/001-device-messaging-service-extraction.md`.
+**Amended 2026-07-27** — the extraction repo exists ([`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging));
+decision 1's framework choice is superseded, decision 2's endpoint list is incomplete, decision 4's
+field types are stale, and plan 001's phase order cannot execute as written. See
+"Amendment (2026-07-27)" below.
 
 ---
 
@@ -55,6 +59,10 @@ application and open-source repository. It will **not** remain a `@Global()` mod
 `tiamat`. The extraction follows the same two-pass principle as ADR-008: (a) move with
 minimal changes (behavior-preserving), then (b) generalize and clean the seams.
 
+> **Amended 2026-07-27** — the **framework** is superseded: the service is built on Fastify + Zod
+> with no DI container, not NestJS. The decision to extract into an independently deployable service
+> and open-source repository stands. See Amendment §A and `nxt-device-messaging` ADR-001.
+
 ### 2. Dedicated HTTP endpoints replace in-process coupling
 
 Today the module is coupled to `tiamat` through direct NestJS service injection:
@@ -72,6 +80,10 @@ The extracted service will expose:
 
 The in-process `static subscribers` pub/sub (`device-messages.service.ts:23`) is replaced
 entirely by the outbound webhook/bus mechanism.
+
+> **Amended 2026-07-27** — the endpoint **inventory** above is incomplete: a synchronous token-
+> generation endpoint is missing, and the `DELETE` cancel endpoint wraps a method with no callers.
+> The transport model itself is unaffected. See Amendment §C and §D.
 
 ### 3. Plugin architecture for hardware integrations
 
@@ -97,6 +109,10 @@ should not prompt a redesign of the interface.
 `DeviceManufacturerEnum`/`DeviceProtocolEnum` remain, but are widened to `string` in the
 public contract; plugin implementations may narrow them internally.
 
+> **Amended 2026-07-27** — `network_id` is `number | **null**`, not "an opaque number": baseline
+> commit `db5c2ac` made `grid_id` nullable and added an `unassigned` LoRaWAN queue bucket. Any
+> plugin `bottleneckKey` must handle it. See Amendment §E.
+
 ### 5. Redis/Valkey as the only required infrastructure dependency
 
 Redis (or Valkey) remains the sole infrastructure dependency. No relational DB is introduced.
@@ -110,6 +126,144 @@ The cron-based reaper cycle and the in-memory LoRaWAN up/ack correlator both ass
 process. Distributing them (leader election for crons, Redis-backed correlator) is **deferred
 to a follow-up iteration** once the extraction is complete and there is evidence of multi-instance
 demand. v1 ships as a single-replica service with this constraint documented.
+
+---
+
+## Amendment (2026-07-27) — repo created; framework, phase order, and contract corrections
+
+The extraction repo was created and foundational decisions were taken with the maintainer. Seven
+corrections to this ADR and to plan 001. Authoritative rationale for A and B now lives in the new
+repo's own ADRs; this section records what changed and why, for readers of `nxt-backend`.
+
+### A. Framework: Fastify + Zod, not NestJS (supersedes decision 1's framework choice)
+
+Decision 1 specified "a standalone **NestJS** application." Superseded: the service is built on
+**Fastify** with **Zod**, with **no DI container**, and plugins are **plain objects**. The decision
+*to extract into an independently deployable service and open-source repository* is unaffected.
+
+Rationale in brief — full record in **`nxt-device-messaging` ADR-001**. The module's actual NestJS
+surface is 8 `@Injectable()` classes, one module file, 4 DI constructors, 2 `@Cron()` timers, and
+zero controllers; everything else is framework-free. Plan 001's own task 3.7 already removes
+`@Injectable()` from every adapter and empties the providers array, and the 4 DI constructors are
+exactly what the task 3.2 plugin registry deletes. So the choice was between a NestJS shell around
+framework-free plugins and a Fastify shell around the same plugins — a difference of roughly five
+route handlers, two timers, config loading, and logging. Fastify was chosen because the
+single-file-plugin goal is better served by a plugin layer with no framework types in it, and
+because dependency and build weight are product qualities in a repo third parties deploy.
+
+**Consequence for this repo:** `nxt-backend` ADR-006's NestJS toolchain (webpack for decorator
+metadata, Nx, the shared Dockerfile) does **not** transfer to the extracted service. It is a
+single-application repo on plain Node.
+
+### B. Plan 001's phase order cannot execute (Phase 1 is inverted)
+
+Plan 001 was written 2026-07-02, before the OSS migration's Step 0 (sub-plan 002a) moved the source
+tree into `legacy/`. Its Phase 1 ("Decouple from nxt-backend") edits files at
+`apps/tiamat/src/modules/device-messages/`, which is now
+`legacy/apps/tiamat/src/modules/device-messages/` — a **frozen** tree the roadmap forbids editing.
+Its Phase 1 checkpoint ("confirm the module still boots inside tiamat") is also unverifiable,
+because `legacy/` never boots.
+
+**Corrected order:** the module is copied into the new repo first, and decoupling happens there.
+Plan 001 is re-cut into a per-repo pair accordingly (see G).
+
+Two further staleness corrections for the re-cut:
+
+- Plan 001's external-import table understates the coupling. `@core/types/device-messaging` appears
+  in **8** files (not 3), `@core/types/supabase-types` in **5** (not 1), and
+  `@helpers/number-helpers` in **4** (not 1).
+- `adapters/calin-lorawan/lib/_UNUSED_EXAMPLE_correlate-request-response.redis.ts` is dead code and
+  should not travel.
+
+### C. Decision 2's endpoint list is missing token generation
+
+Decision 2 lists four endpoints plus outbound webhooks. It omits **token generation**, even though
+`deviceTokenService.generate()` is one of five live consumer call sites
+(`meter-interactions.service.ts:222`) and decision 3 already gives plugins an optional token
+generator. Plan 001's Phase 2 has no such endpoint either.
+
+Token generation is **synchronous** — it calls the STS or CALIN token service and returns a token
+string inline; it is not a queued message and does not flow through the delivery pipeline. It
+therefore needs its own endpoint shape, not a variant of `POST /messages`. The exact contract is
+open.
+
+For the record, the real consumer surface is **five** in-process call sites, not the four plan 001
+tabulates: `enqueue`, `subscribe`, `getMessageByMeterInteractionId`, `handle`, and `generate`.
+
+### D. The cancel API in decision 2 is speculative
+
+`DELETE /messages/:correlationId` wraps `cancelOneByMeterInteractionId`, which has **zero callers**
+anywhere in `legacy/` — as does `cancelManyByMeterInteractionIds`, which no plan mentions. Whether
+cancel ships in v1, and whether a batch variant is needed, is an open scope question rather than a
+settled commitment.
+
+### E. Decision 4's field types are stale (`grid_id` is nullable)
+
+Decision 4 maps `grid_id` → `network_id` as "an opaque number". Since baseline commit `db5c2ac`
+("Make meter installs and messaging available for meters without a grid") that is wrong:
+
+- `grid_id` is now `number | null`, where null means the meter is bound to no grid.
+- `redis-repository/keys.ts` gained `LORAWAN_UNASSIGNED_BUCKET`, routing such messages to
+  `queue:lorawan_network:unassigned`.
+- `redis-repository/helpers.ts` omits the field on serialize when nil rather than coercing to `NaN`.
+
+So `network_id` is `number | null`, and any plugin `bottleneckKey` implementation must handle the
+unassigned bucket. Plan 001's task 1.6 (target type) and task 3.3 (example `bottleneckKey`) are both
+wrong as written; the task 3.3 example would route orphan meters to `queue:lorawan_network:null` and
+lose them.
+
+### F. License resolved: MPL-2.0
+
+Plan 001 task 4.4 asks the maintainer to choose between MIT and Apache 2.0. Resolved: the extraction
+repo already ships **MPL-2.0**, byte-identical to this repo's `LICENSE`. Consistent across the
+estate; no decision outstanding.
+
+### G. Documentation ownership split
+
+- **`nxt-device-messaging`** owns *how the service is built*: its own ADR series (numbered from 001
+  — note the collision, always cite cross-repo ADRs by repo), its own plans, its own `AGENTS.md`,
+  a chronological `docs/decisions-log.md`, and the normative consumer contract (OpenAPI plus an
+  integration guide).
+- **`nxt-backend`** keeps *why the extraction happens* (this ADR) and everything that changes on
+  this side: the consumer rewiring, which belongs to the Metering capability import, and the
+  company cutover addendum described in H — which cannot live in an open-source repo because it
+  concerns a private one.
+- Plan 001 is re-cut into a per-repo pair on that boundary. The service build-out moves to the new
+  repo; what remains here is the nxt-backend-side work.
+
+### H. Company cutover: wholesale, and a hard stop-then-start
+
+Confirmed with the maintainer: the company adopts the extracted service **as part of the single
+wholesale OSS cutover** (ADR-012), not before it. No HTTP client is retrofitted into legacy tiamat,
+and `legacy/` is never edited. Consequence: this service's only consumer, ever, is the imported
+`meter-interactions` in the new `apps/api`.
+
+Facts for the cutover sub-plan, none of which ADR-012 currently carries:
+
+- **Device-messaging cutover cannot be blue/green.** ChirpStack posts to exactly one integration
+  URL, so repointing it from tiamat's `/chirpstack/calin` to the new service's ingress is atomic and
+  global; and if old and new both poll a vendor API for the same task they double-process. This is a
+  **hard stop-then-start with a drain** — the mechanics ADR-012 decision 2 assigns to `worker`.
+- **ADR-012's step-4 sequence is missing three items:** the ChirpStack integration URL flip, an
+  in-flight drain of the old Valkey (per decision 5 here, lost Redis state means lost in-flight
+  messages), and provisioning the new service's own Valkey, config artifact, and secrets ahead of
+  the window.
+- **Zero pre-cutover production exposure is a named risk.** Under wholesale cutover, the outbound
+  webhook design — which this ADR's own risk register calls "the single most consequential interface
+  decision" — is first exercised in production inside a window with no rollback past it (ADR-012
+  decision 5). It needs ADR-012 decision 3's rehearsal step explicitly attached.
+- **Open question:** whether the early adopter (roadmap deployment consumer #3) runs CALIN meters and
+  ChirpStack. If they do, they are the natural first production user *before* the company, which
+  would retire most of that risk.
+
+### What is unchanged
+
+Decisions 3 (plugin architecture), 5 (Redis/Valkey as the sole infrastructure dependency, Lua
+scripts travelling with the service), and 6 (single-writer v1, HA deferred) stand as written.
+Decision 2's transport model — HTTP command API plus webhook ingress plus outbound HMAC-signed
+result callbacks — also stands; only its endpoint inventory is incomplete (C, D).
+
+---
 
 ## Consequences
 
@@ -136,8 +290,19 @@ demand. v1 ships as a single-replica service with this constraint documented.
 - The outbound webhook/bus design proves insufficient for a consumer's latency needs.
 
 ## Related
-- **ADR-001** — when to extract adapter abstractions.
+- **ADR-001** — when to extract adapter abstractions; its unimplemented per-adapter configuration
+  recommendation is what the plugin contract must carry.
 - **ADR-004** — capability modularization; repo split criteria (decision 2).
-- **ADR-007** — configuration and wiring mechanism.
+- **ADR-005** — inter-host communication; §11 classifies this service as an integrable extracted
+  service rather than an in-stack peer.
+- **ADR-007** — configuration and wiring mechanism; decision 6 anticipated this config section
+  travelling with the extraction.
 - **ADR-008** — incremental import strategy and two-pass principle.
-- **Execution plan** — `docs/plans/001-device-messaging-service-extraction.md`
+- **ADR-012** — company cutover strategy; see Amendment §H for the device-messaging items it does
+  not yet carry.
+- **Execution plan** — `docs/plans/001-device-messaging-service-extraction.md` (**stale**; being
+  re-cut per Amendment §B and §G).
+- **`nxt-device-messaging` ADR-001** — Fastify + Zod, no DI container; supersedes decision 1's
+  framework choice.
+- **`nxt-device-messaging` ADR-002** — configuration mechanism; adapts ADR-007 for the standalone
+  service.

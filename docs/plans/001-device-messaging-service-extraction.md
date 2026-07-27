@@ -3,7 +3,37 @@
 **Decision:** ADR-010 (`docs/architecture/010-device-messaging-service-extraction.md`)
 **Plan number:** 001
 **Created:** 2026-07-02
-**Status:** Not started
+**Status:** ⚠️ **STALE — do not execute. Being re-cut.**
+
+---
+
+> ## ⚠️ Stop — read this before doing anything in this plan
+>
+> This plan was written **2026-07-02**, before the OSS migration's Step 0 (sub-plan 002a) moved the
+> source tree into `legacy/`. It is stale in ways that will cause real damage if executed literally.
+> **Read ADR-010's "Amendment (2026-07-27)" first.**
+>
+> Known-wrong, at minimum:
+>
+> - **Phase 1 cannot be executed at all.** It edits `apps/tiamat/src/modules/device-messages/`,
+>   which is now `legacy/apps/tiamat/src/modules/device-messages/` — a frozen tree the roadmap
+>   forbids editing. Decoupling happens *after* the copy, in the new repo. Phase 1's checkpoint
+>   ("confirm the module still boots inside tiamat") is unverifiable; `legacy/` never boots.
+> - **Phase 2 assumes NestJS.** The service is Fastify + Zod with no DI container
+>   (`nxt-device-messaging` ADR-001). Tasks 2.1, 2.2 and 2.5 are wrong on framework and validation.
+> - **Task 1.6 and task 3.3 are wrong on `grid_id`.** It is `number | null` since `db5c2ac`, with an
+>   `unassigned` LoRaWAN bucket. Task 3.3's example `bottleneckKey` would route orphan meters to
+>   `queue:lorawan_network:null` and lose them.
+> - **Phase 2 has no token endpoint**, despite `generate()` being a live consumer call site.
+> - **The external-import table understates the coupling** (8 files for
+>   `@core/types/device-messaging`, not 3; 5 for `supabase-types`, not 1; 4 for `number-helpers`,
+>   not 1).
+> - **Task 4.4's license question is resolved** — MPL-2.0, already in place.
+>
+> Current state of the effort lives in the extraction repo's
+> [`docs/decisions-log.md`](https://github.com/nxtgrid/nxt-device-messaging/blob/main/docs/decisions-log.md).
+> This plan will be replaced by a per-repo pair (ADR-010 Amendment §G); it is kept until then as the
+> source of the task inventory, not as instructions.
 
 ---
 
