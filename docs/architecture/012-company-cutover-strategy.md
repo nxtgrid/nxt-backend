@@ -46,7 +46,9 @@ day:
   backend cutover.
 - **Flip-atomic only:** renames/type-changes still referenced by name by the currently-running old
   code. These are the only changes that must happen in lockstep with stopping the old backend and
-  starting the new one.
+  starting the new one. Example: `meter_interaction_type_enum` value `TOP_UP` → `TOP_UP_KWH`
+  (schema deviation register #36) — the OSS baseline already uses `TOP_UP_KWH`; company production
+  still emits/stores `TOP_UP` until the flip-atomic migration and new backend deploy land together.
 
 This minimizes what has to happen inside the actual cutover window to the smallest possible set.
 
