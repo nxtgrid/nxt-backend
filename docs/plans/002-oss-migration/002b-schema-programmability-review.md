@@ -325,7 +325,7 @@ Read-only top-N energy-topup spenders for loch revenue reports. Already has `SET
 | meter_interaction_type_enum | READ_POWER_LIMIT | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
 | meter_interaction_type_enum | READ_VOLTAGE | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
 | meter_interaction_type_enum | SET_POWER_LIMIT | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
-| meter_interaction_type_enum | TOP_UP | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
+| meter_interaction_type_enum | TOP_UP_KWH | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
 | meter_interaction_type_enum | TURN_ON | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
 | meter_interaction_type_enum | TURN_OFF | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |
 | meter_interaction_type_enum | READ_POWER | (2) Metering | keep |  |  | chain grows to 19 values (20251110 → 20260428) |

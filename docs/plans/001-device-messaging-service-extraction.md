@@ -309,7 +309,7 @@ Copy (do not delete from source) the needed identifiers into the module:
 // These are typed against the known CALIN command strings; future plugins may define
 // their own predicates internally.
 export const TOKEN_INTERACTION_TYPES = [
-  'DELIVER_TOKEN', 'TOP_UP', 'CLEAR_CREDIT', 'SET_POWER_LIMIT', 'CLEAR_TAMPER',
+  'DELIVER_TOKEN', 'TOP_UP_KWH', 'CLEAR_CREDIT', 'SET_POWER_LIMIT', 'CLEAR_TAMPER',
 ] as const;
 export type TokenInteractionType = typeof TOKEN_INTERACTION_TYPES[number];
 export const isTokenInteraction = (t: string): t is TokenInteractionType =>
@@ -321,7 +321,7 @@ export const isPhaseSpecificReadInteraction = (t: string): t is PhaseSpecificRea
   (PHASE_SPECIFIC_READ_TYPES as readonly string[]).includes(t);
 
 // Token generation command type (used by generate-token.dto.ts)
-export type GenerateTokenTypes = 'TOP_UP' | 'SET_POWER_LIMIT' | 'CLEAR_CREDIT' | 'CLEAR_TAMPER';
+export type GenerateTokenTypes = 'TOP_UP_KWH' | 'SET_POWER_LIMIT' | 'CLEAR_CREDIT' | 'CLEAR_TAMPER';
 ```
 > Verify the exact string values against the source in `meter-interaction-type-helpers`
 > before adding them — read that file first.

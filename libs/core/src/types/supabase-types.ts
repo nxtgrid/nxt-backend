@@ -2840,7 +2840,7 @@ export type Database = {
         | 'READ_POWER_LIMIT'
         | 'READ_VOLTAGE'
         | 'SET_POWER_LIMIT'
-        | 'TOP_UP'
+        | 'TOP_UP_KWH'
         | 'TURN_ON'
         | 'TURN_OFF'
         | 'READ_POWER'
@@ -3134,7 +3134,7 @@ export const Constants = {
         'READ_POWER_LIMIT',
         'READ_VOLTAGE',
         'SET_POWER_LIMIT',
-        'TOP_UP',
+        'TOP_UP_KWH',
         'TURN_ON',
         'TURN_OFF',
         'READ_POWER',

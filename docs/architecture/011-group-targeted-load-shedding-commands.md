@@ -214,7 +214,7 @@ this ADR does not change it — it is kept as-is (tariff modeling is undecided) 
   reintroducing hardcoded capability assumptions; revisit if this proves to be a frequent
   operator error in practice.
 - `meter_interaction_type_enum` reuse means `command_type` is not curated at the schema/type level —
-  the UI is the only thing preventing nonsensical batch commands (e.g. `TOP_UP`, `JOIN_NETWORK`) from
+  the UI is the only thing preventing nonsensical batch commands (e.g. `TOP_UP_KWH`, `JOIN_NETWORK`) from
   being scheduled. Acceptable given `meter_command_batches` already trusted its callers similarly.
 
 ### Explicitly out of scope (tracked separately, not blocking this ADR)

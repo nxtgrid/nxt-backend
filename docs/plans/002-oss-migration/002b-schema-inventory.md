@@ -110,7 +110,7 @@ Auth-schema triggers on `auth.users` are listed at the end — created by the mi
 | meter_commissioning_status_enum | enum | public | keep | (2) Metering | values: PENDING, PROCESSING, SUCCESSFUL, FAILED |
 | meter_credit_transfer_status_enum | enum | public | exclude |  | values: PENDING, PROCESSING, SUCCESSFUL, FAILED; register #7 |
 | meter_interaction_status_enum | enum | public | keep | (2) Metering | values: QUEUED, ABORTED, PROCESSING, … |
-| meter_interaction_type_enum | enum | public | keep | (2) Metering | values: READ_CREDIT, TOP_UP, TURN_ON, … |
+| meter_interaction_type_enum | enum | public | keep | (2) Metering | values: READ_CREDIT, TOP_UP_KWH, TURN_ON, … |
 | meter_phase_enum | enum | public | keep | (2) Metering | values: SINGLE_PHASE, THREE_PHASE |
 | meter_type_enum | enum | public | keep | (2) Metering | values: HPS, FS |
 | mhi_operation_enum | enum | public | keep | (2) Metering | values: ADD, REMOVE |

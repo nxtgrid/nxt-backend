@@ -427,7 +427,7 @@ CREATE TYPE public.meter_interaction_type_enum AS ENUM (
     'READ_POWER_LIMIT',
     'READ_VOLTAGE',
     'SET_POWER_LIMIT',
-    'TOP_UP',
+    'TOP_UP_KWH',
     'TURN_ON',
     'TURN_OFF',
     'READ_POWER',

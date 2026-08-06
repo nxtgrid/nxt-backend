@@ -24,7 +24,7 @@ The shape of this problem is *not* "make a creative judgment call"; it is "diff 
 Tiamat manages communication with smart electricity meters from CALIN, currently over LoRa, LoRaWAN, and the CALIN HTTP API (V1/V2). The relevant layers, bottom-up:
 
 1. **`device-messages`** — pure messaging; sends commands, parses responses, retries, owns the Redis queue pipeline.
-2. **`meter-interactions`** — *intent* of what should happen at the meter (TOP_UP, TURN_ON, TURN_OFF, SET_POWER_LIMIT, READ_*, etc.) backed by the `meter_interactions` Postgres table.
+2. **`meter-interactions`** — *intent* of what should happen at the meter (TOP_UP_KWH, TURN_ON, TURN_OFF, SET_POWER_LIMIT, READ_*, etc.) backed by the `meter_interactions` Postgres table.
 3. **`directive-batches` / `directive-batch-executions`** — scheduled batch operations that fan out into many `meter_interactions` (e.g., turn all ~600 meters of a grid on/off, set a power limit, run a scan).
 
 A `meter_interaction` lives through a status lifecycle:
@@ -240,7 +240,7 @@ const SUPERSESSION_POLICIES: Record<MeterInteractionTypeEnum, SupersessionPolicy
   TURN_ON:         { supersedes: ['TURN_ON', 'TURN_OFF'],     scope: 'meter', preserveSameBatch: true },
   TURN_OFF:        { supersedes: ['TURN_ON', 'TURN_OFF'],     scope: 'meter', preserveSameBatch: true },
   SET_POWER_LIMIT: { supersedes: ['SET_POWER_LIMIT'],         scope: 'meter+field', preserveSameBatch: true },
-  TOP_UP:          null,    // never supersede pending top-ups, they each carry value
+  TOP_UP_KWH:      null,    // never supersede pending top-ups, they each carry value
   CLEAR_CREDIT:    null,    // explicit, intentional
   READ_POWER:      null,    // reads do not supersede each other unless dedupe (see below)
   // …

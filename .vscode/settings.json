@@ -6,6 +6,7 @@
     "libs/*/migration": true,
     "supabase/migrations": true
   },
+  "search.useIgnoreFiles": true,
   "eslint.format.enable": true,
   "[javascript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
