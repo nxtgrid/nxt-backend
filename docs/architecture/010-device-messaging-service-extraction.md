@@ -6,6 +6,9 @@
 decision 1's framework choice is superseded, decision 2's endpoint list is incomplete, decision 4's
 field types are stale, and plan 001's phase order cannot execute as written. See
 "Amendment (2026-07-27)" below.
+**Amended 2026-08-25** — NXT suite consumer is HTTP + HMAC webhook to that service when
+Metering is enabled (no in-process embed). Sidecar is opt-in with that capability. Wire
+types: `@nxtgrid/device-messaging-contract`. See Amendment §I.
 
 ---
 
@@ -225,9 +228,8 @@ estate; no decision outstanding.
   a chronological `docs/decisions-log.md`, and the normative consumer contract (OpenAPI plus an
   integration guide).
 - **`nxt-backend`** keeps *why the extraction happens* (this ADR) and everything that changes on
-  this side: the consumer rewiring, which belongs to the Metering capability import, and the
-  company cutover addendum described in H — which cannot live in an open-source repo because it
-  concerns a private one.
+  this side: the consumer rewiring (Metering import), the App Platform sidecar runbook
+  (`docs/deployment/digital-ocean-buildpack.md`), and the company cutover addendum in H.
 - Plan 001 is re-cut into a per-repo pair on that boundary. The service build-out moves to the new
   repo; what remains here is the nxt-backend-side work.
 
@@ -238,16 +240,15 @@ wholesale OSS cutover** (ADR-012), not before it. No HTTP client is retrofitted 
 and `legacy/` is never edited. Consequence: this service's only consumer, ever, is the imported
 `meter-interactions` in the new `apps/api`.
 
-Facts for the cutover sub-plan, none of which ADR-012 currently carries:
+Facts for the cutover sub-plan (ADR-012 illustrative step 4 carries the operational items as of
+2026-08-25):
 
 - **Device-messaging cutover cannot be blue/green.** ChirpStack posts to exactly one integration
   URL, so repointing it from tiamat's `/chirpstack/calin` to the new service's ingress is atomic and
   global; and if old and new both poll a vendor API for the same task they double-process. This is a
   **hard stop-then-start with a drain** — the mechanics ADR-012 decision 2 assigns to `worker`.
-- **ADR-012's step-4 sequence is missing three items:** the ChirpStack integration URL flip, an
-  in-flight drain of the old Valkey (per decision 5 here, lost Redis state means lost in-flight
-  messages), and provisioning the new service's own Valkey, config artifact, and secrets ahead of
-  the window.
+- **ADR-012's step-4 sequence** now carries those three items (amendment 2026-08-25): ChirpStack
+  URL flip, old-Valkey drain, new sidecar + Valkey provisioned ahead of the window.
 - **Zero pre-cutover production exposure is a named risk.** Under wholesale cutover, the outbound
   webhook design — which this ADR's own risk register calls "the single most consequential interface
   decision" — is first exercised in production inside a window with no rollback past it (ADR-012
@@ -255,6 +256,44 @@ Facts for the cutover sub-plan, none of which ADR-012 currently carries:
 - **Open question:** whether the early adopter (roadmap deployment consumer #3) runs CALIN meters and
   ChirpStack. If they do, they are the natural first production user *before* the company, which
   would retire most of that risk.
+
+### I. NXT suite consumer and deploy (2026-08-25)
+
+Metering is an **opt-in capability** (ADR-007 Tier-1). Device-messaging is that
+capability’s delivery backend, not a platform-wide host. If Metering is off, `api` /
+`worker` do not instantiate Metering modules, do not call the HTTP API, and the App
+Platform app does not need the GHCR component or `DEVICE_MESSAGING_*` env.
+
+When Metering **is** enabled, this suite talks to device-messaging **over HTTP**. There
+is no in-process embed. The only consumer is `meter-interactions` calling the command
+API and receiving HMAC-signed webhooks. (Metering is not imported yet; that code does
+not exist in `apps/` today.)
+
+**Do not use this ADR as the route list.** Decision 2’s `POST /messages` inventory is stale.
+Normative paths, auth, and webhook HMAC live in
+[`nxt-device-messaging` ADR-003](https://github.com/nxtgrid/nxt-device-messaging/blob/main/docs/architecture/003-public-http-contract.md),
+[`docs/guides/integrating.md`](https://github.com/nxtgrid/nxt-device-messaging/blob/main/docs/guides/integrating.md),
+and the running service’s `/swagger`. There is no message-bus / NATS adapter in v1.
+
+TypeScript/Zod for those routes and the webhook body:
+[`@nxtgrid/device-messaging-contract`](https://www.npmjs.com/package/@nxtgrid/device-messaging-contract)
+(peer `zod`). nxt-backend wraps HTTP locally; a typed fetch client is a later Metering slice,
+not a second way to run the engine.
+
+**Deploy (ADR-005 §11, ADR-006 §8), Metering on only:** same App Platform app as
+`api`/`worker`; image `ghcr.io/nxtgrid/nxt-device-messaging:<tag>`; **replicas 1**;
+**own** Valkey; `api` uses the **private** URL. Runbook:
+[`docs/deployment/digital-ocean-buildpack.md`](../deployment/digital-ocean-buildpack.md).
+Repo: [nxt-device-messaging](https://github.com/nxtgrid/nxt-device-messaging).
+
+**Wiring (Metering enabled — ADR-007):** secrets in env, URL in config/env:
+
+- `DEVICE_MESSAGING_BASE_URL` — private component URL
+- `DEVICE_MESSAGING_API_KEY` — Bearer toward device-messaging
+- `DEVICE_MESSAGING_WEBHOOK_SECRET` — same value as that service’s webhook secret
+
+If Metering is on and the URL is missing, fail boot (or degrade that capability).
+Do not silently no-op enqueue. If Metering is off, do not require these vars.
 
 ### What is unchanged
 
@@ -294,15 +333,18 @@ result callbacks — also stands; only its endpoint inventory is incomplete (C, 
   recommendation is what the plugin contract must carry.
 - **ADR-004** — capability modularization; repo split criteria (decision 2).
 - **ADR-005** — inter-host communication; §11 classifies this service as an integrable extracted
-  service rather than an in-stack peer.
+  service rather than an in-stack peer; 2026-08-25 amendment is the same-app sidecar default.
+- **ADR-006** — §8 App Platform components; device-messaging is GHCR, not `nx build`.
 - **ADR-007** — configuration and wiring mechanism; decision 6 anticipated this config section
-  travelling with the extraction.
+  travelling with the extraction; Metering env names in Amendment §I.
 - **ADR-008** — incremental import strategy and two-pass principle.
-- **ADR-012** — company cutover strategy; see Amendment §H for the device-messaging items it does
-  not yet carry.
+- **ADR-012** — company cutover; Amendment §H constraints; 2026-08-25 addendum on illustrative
+  step 4 (sidecar, Valkey drain, ChirpStack flip).
 - **Execution plan** — `docs/plans/001-device-messaging-service-extraction.md` (**stale**; being
   re-cut per Amendment §B and §G).
 - **`nxt-device-messaging` ADR-001** — Fastify + Zod, no DI container; supersedes decision 1's
   framework choice.
 - **`nxt-device-messaging` ADR-002** — configuration mechanism; adapts ADR-007 for the standalone
   service.
+- **`nxt-device-messaging` ADR-003** — normative HTTP/webhook paths (not decision 2 in this file).
+- **`@nxtgrid/device-messaging-contract`** — adopter TS/Zod artifact of that wire.

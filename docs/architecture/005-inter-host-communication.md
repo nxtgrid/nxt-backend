@@ -3,15 +3,23 @@
 **Date:** 2026-06-26 (decided 2026-07-17)
 **Status:** Accepted — explicit prerequisite of authoring **002e** (Energy Production Monitoring).
 002d (Foundation) completed 2026-07-17 without needing this lock.
+**Amended 2026-08-25** — when Metering is on, App Platform adds device-messaging as a
+same-app sidecar (GHCR). It remains an integrable extracted service (§11), not a third Nx host.
 
 ---
 
 ## Context
 
 ADR-004 defines a modular monolith: capability modules wired onto thin runtime hosts. The default
-deployable footprint is **`api`** (HTTP-facing; tiamat + folded-in talos) and **`worker`**
+**Nx** deployable footprint is **`api`** (HTTP-facing; tiamat + folded-in talos) and **`worker`**
 (background/collector domains; config-driven composition along capability seams). A separate
-deployable is justified only by a divergent runtime profile — never by code tidiness.
+Nx host is justified only by a divergent runtime profile — never by code tidiness.
+
+The NXT suite App Platform app runs
+[`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging) as a **third
+component only when Metering is enabled** (ADR-007 Tier-1). That is how this suite
+delivers meter commands. Deployments that leave Metering off stay at `api` + `worker`.
+The sidecar is not an in-stack peer and not a `worker` clone (§11).
 
 The OSS migration roadmap (`docs/plans/002-oss-migration.md`) accepts this ADR as a prerequisite of
 Production Monitoring import (**002e**): that is the first sub-plan that gives `worker` a real
@@ -187,14 +195,31 @@ more like a delivery company any adopter can hire:
 - Interactions with third-party platform components (Chirpstack, STS token generator, …) are that
   service’s outbound integrations, not a second nxt host mesh.
 
-Endpoint and webhook details remain owned by **ADR-010**. This ADR only classifies the
-relationship so imports do not pretend device-messaging is “just another worker.”
+Endpoint and webhook details remain owned by **ADR-010** and by
+[`nxt-device-messaging` ADR-003](https://github.com/nxtgrid/nxt-device-messaging/blob/main/docs/architecture/003-public-http-contract.md).
+This ADR only classifies the relationship so imports do not pretend device-messaging is
+“just another worker.”
+
+**NXT suite default when Metering is on (amendment 2026-08-25).** Metering is an
+opt-in capability (ADR-007). If it is off, there is no device-messaging component
+and `api` does not call that HTTP API.
+
+When it **is** on, device-messaging is a **same-app sidecar**: pull
+`ghcr.io/nxtgrid/nxt-device-messaging:<tag>`, **one replica**, **dedicated** Valkey.
+`api` calls the **private** URL (`${device-messaging.PRIVATE_URL}` / port **3100**), not
+the public `*.ondigitalocean.app` hostname. ChirpStack (usually outside the app) uses the
+**public** host for `POST /ingress/:pluginId`. The webhook back to `api` should also use
+`api`’s private URL; HMAC is still required. Runbook:
+[`docs/deployment/digital-ocean-buildpack.md`](../deployment/digital-ocean-buildpack.md).
+TypeScript/Zod: `@nxtgrid/device-messaging-contract`. Local analogue: `pnpm dev` in
+`../nxt-device-messaging` and `DEVICE_MESSAGING_BASE_URL=http://127.0.0.1:3100`.
 
 ## Consequences
 
 ### Positive
 
-- Lean self-host default: `api` + `worker` + DBs; no mandatory broker or location-transparent RPC.
+- Lean self-host default: `api` + `worker` + DBs, plus device-messaging as a hired sidecar
+  when meters are in play; no mandatory broker or location-transparent RPC.
 - Most legacy mesh edges disappear (same-host in-process) or become DB dual-access / job tables.
 - Residual sync paths stay simple (HTTP + ADR-014) and fit DO VPC and docker-compose private
   networks alike.
@@ -218,7 +243,8 @@ relationship so imports do not pretend device-messaging is “just another worke
 
 - **ADR-004** — hosts, decomposition principle, lean default footprint, capability map.
 - **ADR-007** — per-deployment config; where `api` base URL / machine credentials are supplied.
-- **ADR-010** — device-messaging extraction; HTTP API + webhook callbacks; private Redis.
+- **ADR-010** — device-messaging extraction; HTTP API + webhook callbacks; private Redis;
+  NXT suite sidecar topology (amendment 2026-08-25).
 - **ADR-012** — cutover notes `api`/`worker` flip asymmetry; database as primary integration point.
 - **ADR-013** — capability-owned behavior over shared entities (write/ownership companion).
 - **ADR-014** — machine credentials, scopes, route allowlist for residual HTTP.

@@ -1,7 +1,9 @@
 # ADR-006: Monorepo Tooling & CI/CD
 
 **Date:** 2026-07-07
-**Status:** Accepted (initial baseline; several items explicitly deferred — see "Deferred" section)
+**Status:** Accepted (initial baseline; several items explicitly deferred — see "Deferred" section).
+**Amended 2026-08-25** — §8: when Metering is on, App Platform includes a `device-messaging`
+component from GHCR (not an Nx build of this repo).
 
 ---
 
@@ -203,6 +205,14 @@ Expected DO component configuration (buildpack — full workspace checkout, larg
 | `api` | `corepack enable && pnpm install --frozen-lockfile && nx sync && nx build api` | `node apps/api/dist/main.js` |
 | `worker` | `corepack enable && pnpm install --frozen-lockfile && nx sync && nx build worker` | `node apps/worker/dist/main.js` |
 
+**Device-messaging is not an Nx host.** When Metering is **enabled** (ADR-007), add it as
+a third App Platform component from the published image
+`ghcr.io/nxtgrid/nxt-device-messaging:vX.Y.Z` (HTTP **3100**, replicas **1**, own
+Valkey). If Metering is off, omit it. Do not use this repo’s buildpack or
+`Dockerfile` for it.
+Runbook: [`docs/deployment/digital-ocean-buildpack.md`](../deployment/digital-ocean-buildpack.md).
+Service contract: [`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging).
+
 **Known tradeoff.** DO's branch-based builder has no Nx-graph awareness; it rebuilds broadly on
 every push. The `affected` benefit from decision 5 applies to **CI validation only** (PR checks),
 not to deploys. This tradeoff is accepted for simplicity at this stage.
@@ -307,7 +317,8 @@ platform, it is filed as a bug against the scaffold — not documented as an exp
 - pnpm strict linking eliminates phantom dependencies; `pnpm-lock.yaml` committed = reproducible
   builds everywhere.
 - `nx affected` in CI eliminates redundant rebuilds at the validation level from day one.
-- Two-host model (`api` + `worker`) is lean, portable, and directly mirrors the target architecture.
+- Two Nx hosts (`api` + `worker`); when Metering is enabled, a hired device-messaging
+  sidecar on App Platform. Lean, portable, matches the target architecture (ADR-005 §11).
 - Dockerfile kept means the image-based deploy path is always one decision away, not a rearchitecture.
 - Schema type-drift guard (pinned Supabase CLI) makes `supabase-types.ts` provably a function of
   the migrations at the same git ref.
@@ -361,6 +372,7 @@ platform, it is filed as a bug against the scaffold — not documented as an exp
 ## Related
 
 - **ADR-004** — monorepo decision, type-drift guard, two-host model, capability flags.
+- **ADR-005** — inter-host policy; device-messaging is an extracted sidecar, not a third Nx app.
 - **ADR-007** — config wiring (Tier-1 flags that drive worker composition at boot).
 - **ADR-008** — re-scaffold strategy; this ADR defines the scaffold that Phase 1 proves.
 - **ADR-009** — migration governance; the schema CI lane and apply pipeline specified there.

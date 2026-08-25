@@ -38,6 +38,12 @@ Pre-commit: ESLint on staged `.ts`, then `nx affected -t typecheck --uncommitted
   - Remote monitoring of production and distribution side
   - Remote interaction with smart electricity meters
 - We currently use CALIN meters but plan to support other brands
+- Meter command delivery (only if **Metering** is enabled in config, ADR-007): HTTP + HMAC
+  webhook to [`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging)
+  (`../nxt-device-messaging`). Same-app App Platform sidecar when that flag is on
+  (`docs/deployment/digital-ocean-buildpack.md`). Wire types:
+  `@nxtgrid/device-messaging-contract`. Metering is not imported yet; without the flag,
+  this host does not call that service.
 - Authentication via Supabase Auth
 - Primary database: Supabase (PostgreSQL). Separate timescale database for time-series data
 - Code is organized in an Nx monorepo with apps and libs
@@ -51,6 +57,9 @@ Repositories are located one directory up from nxt-backend:
 - `../eos` — Client dashboard
 - `../niffler` — Payments app
 - `../sphinx` — Technician app for meter/pole assignment
+
+**Sibling service (not a frontend):** `../nxt-device-messaging` — command delivery when
+Metering is on. ADRs 005 §11, 006 §8, 010 §I.
 
 **Architecture:** Vue 3 + Vite + Pinia (state management)
 
@@ -80,7 +89,7 @@ changes, or work clearly outside the domains below.
 
 | Domain | ADR(s) |
 |--------|--------|
-| Device messaging, push/pull, CALIN, extraction | 001, 010 |
+| Device messaging, push/pull, CALIN, extraction, suite sidecar | 001, 005 §11, 006 §8, 010 |
 | Meter state management (overview) | 002 |
 | Meter state — reconciliation controller | 002a |
 | Meter state — device shadows | 002b1 |

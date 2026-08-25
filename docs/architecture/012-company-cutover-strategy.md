@@ -2,7 +2,8 @@
 
 **Date:** 2026-07-10
 **Status:** Accepted (strategy-level); detailed runbook deferred to the just-in-time "Parity
-verification & company cutover" sub-plan (see `docs/plans/002-oss-migration.md`)
+verification & company cutover" sub-plan (see `docs/plans/002-oss-migration.md`).
+**Amended 2026-08-25** — illustrative step 4 includes the device-messaging sidecar (ADR-010 §H).
 
 ---
 
@@ -106,6 +107,17 @@ sub-plans describe reality rather than speculation.
    decision 5) → deploy new `api`/`worker` against the same production DB → flip `VITE_API_URL`
    (one point, covers all 5 frontends) → activate pre-staged Grafana/Make.com updates → smoke test
    → resume traffic.
+
+   **Device-messaging in that window (ADR-010 §H; cannot be blue/green):** ChirpStack posts to
+   exactly one integration URL. Provision ahead of the window: the App Platform
+   `device-messaging` component
+   (`ghcr.io/nxtgrid/nxt-device-messaging:<tag>`, replicas 1), its **own** Valkey, config
+   artifact, and secrets
+   ([`docs/deployment/digital-ocean-buildpack.md`](../deployment/digital-ocean-buildpack.md)).
+   Inside the window: drain in-flight work on the **old** Valkey, then flip ChirpStack to
+   `POST /ingress/<pluginId>` on the **public** device-messaging host (today
+   `calin-chirpstack`). Do not poll the same vendor task from old tiamat and the new service
+   at once.
 5. Post-cutover: bake period with elevated monitoring, then decommission old infra, retire the
    private repo (ADR-008 exit condition), close out the roadmap. (ADR-005 inter-host policy was
    locked 2026-07-17 — flip coordination stays DB-primary with residual HTTP under that ADR.)
@@ -159,9 +171,10 @@ sub-plans describe reality rather than speculation.
 - **ADR-004** — target architecture; the `api`/`worker` host consolidation this ADR's flip mechanics
   depend on.
 - **ADR-005** — inter-host communication (Accepted); shared DBs + residual HTTP policy for
-  `api`/`worker` during and after cutover.
+  `api`/`worker` during and after cutover; device-messaging sidecar (amendment 2026-08-25).
 - **ADR-008** — migration strategy; the exit condition this ADR operationalizes.
 - **ADR-009** — migration deployment & governance; the safety rails (PITR, forward-only) this ADR
   builds on.
+- **ADR-010** — device-messaging extraction; §H cutover constraints; §I suite sidecar.
 - **`docs/plans/002-oss-migration.md`** — roadmap; sub-plan index entry for the eventual detailed
   runbook.

@@ -11,6 +11,13 @@ OSS migration (auth, API keys, accounts/members/organizations, user-admin, grids
 payments, notifications, field ops, automation) are **still being imported**; do not treat this tip
 as a full replacement for the legacy multi-app stack.
 
+When the **Metering** capability is enabled (ADR-007; not imported yet), meter commands go
+through [`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging) (sibling
+`../nxt-device-messaging`): HTTP + webhook, same App Platform app, GHCR image. Types:
+[`@nxtgrid/device-messaging-contract`](https://www.npmjs.com/package/@nxtgrid/device-messaging-contract).
+Suite deploy: [`docs/deployment/digital-ocean-buildpack.md`](docs/deployment/digital-ocean-buildpack.md).
+Without Metering, `api` / `worker` do not use that service.
+
 - Migration roadmap: [`docs/plans/002-oss-migration.md`](docs/plans/002-oss-migration.md)
 - Architecture ADRs: [`docs/architecture/`](docs/architecture/)
 - Agent / maintainer commands: [`AGENTS.md`](AGENTS.md)
