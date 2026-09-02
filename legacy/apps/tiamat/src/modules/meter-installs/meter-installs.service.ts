@@ -5,7 +5,7 @@ import { partition } from 'ramda';
 
 import { CalinLorawanInstallService } from './adapters/calin-lorawan/_install.service';
 import { CalinApiV1InstallService } from './adapters/calin-api-v1/_install.service';
-
+// Types lived in device-messages; ported with nxt-device-messaging / skyfox client.
 import { DeviceManufacturerEnum, DeviceProtocolEnum, NetworkServerImplementation } from '../device-messages/lib/types';
 import { CommunicationProtocolEnum, MeterCommissioningStatusEnum, MeterInteractionStatusEnum, MeterInteractionTypeEnum, MeterPhaseEnum } from '@core/types/supabase-types';
 import { CreateMeterInteractionDto } from '../meter-interactions/dto/create-meter-interaction.dto';

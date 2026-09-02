@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InteractionContext, MeterForInteractionHandling } from './meter-interactions.service';
 import { MeterInteractionStatusEnum, MeterInteractionTypeEnum } from '@core/types/supabase-types';
+// Types lived in device-messages; ported with nxt-device-messaging / skyfox client.
 import { DeviceMessageDeliveryStatus, FailureReason } from '../device-messages/lib/types';
 import { GridDigitalTwinService } from './grid-digital-twin.service';
 import { isMeterInteractionStatusToAdjudicate } from './lib/meter-interaction-status-helpers';

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '@core/modules/supabase.module';
 import { CalinLorawanInstallService } from './adapters/calin-lorawan/_install.service';
 import { CalinApiV1InstallService } from './adapters/calin-api-v1/_install.service';
+// Types lived in device-messages; ported with nxt-device-messaging / skyfox client.
 import { DeviceManufacturerEnum, DeviceProtocolEnum, NetworkServerImplementation } from '../device-messages/lib/types';
 import { getManufacturerAndProtocol } from '../meter-interactions/lib/manufacturer-protocol';
 import { CommunicationProtocolEnum } from '@core/types/supabase-types';

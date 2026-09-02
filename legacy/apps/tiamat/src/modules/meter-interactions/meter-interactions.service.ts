@@ -7,8 +7,9 @@ import { InteractionGatekeeperService } from './interaction-gatekeeper.service';
 import { InteractionAfterEffectsService } from './interaction-after-effects.service';
 import { GridDigitalTwinService } from './grid-digital-twin.service';
 import { SupabaseService } from '@core/modules/supabase.module';
-import { DeviceMessageOutgoingService } from '../device-messages/outgoing.service';
-import { DeviceTokenService } from '../device-messages/token.service';
+// device-messages (in-process Redis pipeline) was deleted from legacy.
+// Ported to nxt-device-messaging; skyfox talks to it via device-messaging-client.
+// Types below still name the old module so the seams stay visible.
 
 import { NxtSupabaseUser } from '../auth/nxt-supabase-user';
 import { CommunicationProtocolEnum, MeterInteractionStatusEnum, MeterInteractionTypeEnum, MeterPhaseEnum, UpdateMeterInteraction } from '@core/types/supabase-types';
@@ -53,12 +54,14 @@ export class MeterInteractionsService implements OnModuleInit {
     private readonly interactionAfterEffectsService: InteractionAfterEffectsService,
     private readonly gridDigitalTwinService: GridDigitalTwinService,
     private readonly supabaseService: SupabaseService,
-    private readonly deviceMessageOutgoingService: DeviceMessageOutgoingService,
-    private readonly deviceTokenService: DeviceTokenService,
+    // subscribe / enqueue / token / getDeliveryStatus: DeviceMessageOutgoingService
+    // + DeviceTokenService. See comments at those call sites.
   ) {}
 
   async onModuleInit() {
-    this.deviceMessageOutgoingService.subscribe(this._onDeviceMessageEvent.bind(this));
+    // Subscribe: device-messages in-process pubsub → `_onDeviceMessageEvent`.
+    // Ported: nxt-device-messaging HMAC webhook → skyfox DeviceMessagingClientService.publish.
+    // this.deviceMessageOutgoingService.subscribe(this._onDeviceMessageEvent.bind(this));
     this.gridDigitalTwinService.onTransition(
       transitions => this.reconcileSuspendedInteractions(transitions.map(transition => transition.gridId)),
     );
@@ -218,9 +221,10 @@ export class MeterInteractionsService implements OnModuleInit {
       };
       if(transactive_kwh) tokenDto.payload = { kwh: transactive_kwh };
       else if(isNotNil(target_power_limit)) tokenDto.payload = { powerLimit: target_power_limit };
-      // @TODO :: Do token retries too
-      const token = await this.deviceTokenService.generate(tokenDto);
-      return { token };
+      // Token mint: device-messages DeviceTokenService.generate.
+      // Ported: nxt-device-messaging POST /token/generate (skyfox DeviceMessagingClientService.generateToken).
+      // const token = await this.deviceTokenService.generate(tokenDto);
+      // return { token };
     }
     catch(err) {
       console.error('[METER INTERACTIONS] Error fetching token, failing interaction |', err.message);
@@ -267,25 +271,22 @@ export class MeterInteractionsService implements OnModuleInit {
         ...(payload_data && { payload: payload_data }),
       };
 
-      this.deviceMessageOutgoingService.enqueue({
-        message_type: meter_interaction_type,
-        priority,
-
-        ...(isNotEmpty(request_data) && { request_data }),
-        ...(phase && { phase }),
-
-        grid_id: meter.grid_id,
-        meter_interaction_id: id,
-
-        device: {
-          type: 'ELECTRICITY_METER',
-          external_reference: meter.external_reference,
-          ...getManufacturerAndProtocol(meter.communication_protocol),
-          gateway: {
-            id: meter.dcu_id,
-          },
-        },
-      });
+      // Enqueue: device-messages Redis pipeline (outgoing.enqueue).
+      // Ported: nxt-device-messaging POST /message/enqueue (skyfox DeviceMessagingClientService.enqueue).
+      // this.deviceMessageOutgoingService.enqueue({
+      //   message_type: meter_interaction_type,
+      //   priority,
+      //   ...(isNotEmpty(request_data) && { request_data }),
+      //   ...(phase && { phase }),
+      //   grid_id: meter.grid_id,
+      //   meter_interaction_id: id,
+      //   device: {
+      //     type: 'ELECTRICITY_METER',
+      //     external_reference: meter.external_reference,
+      //     ...getManufacturerAndProtocol(meter.communication_protocol),
+      //     gateway: { id: meter.dcu_id },
+      //   },
+      // });
     }
   }
 
@@ -586,22 +587,21 @@ export class MeterInteractionsService implements OnModuleInit {
   /**
    * Get the delivery status of a meter interaction that is currently being delivered.
    *
-   * When a meter interaction is enqueued for delivery, it exists in Redis until
-   * delivery completes (success or permanent failure). This method checks Redis
-   * for the current delivery status.
+   * Live snapshot was Redis via device-messages getMessageByMeterInteractionId.
+   * Ported: nxt-device-messaging GET /message/:correlationId (skyfox getByMeterInteractionId).
    *
    * @param meterInteractionId - The ID of the meter interaction to check
    * @returns Delivery status DTO or null if not currently delivering
    */
   public async getDeliveryStatus(meterInteractionId: number): Promise<MeterInteractionDeliveryStatusDto | null> {
-    const message = await this.deviceMessageOutgoingService.getMessageByMeterInteractionId(meterInteractionId);
-
-    if (!message) return null;
-
-    return {
-      delivery_status: message.delivery_status,
-      delivery_failure_history: message.failure_history,
-    };
+    void meterInteractionId;
+    // const message = await this.deviceMessageOutgoingService.getMessageByMeterInteractionId(meterInteractionId);
+    // if (!message) return null;
+    // return {
+    //   delivery_status: message.delivery_status,
+    //   delivery_failure_history: message.failure_history,
+    // };
+    return null;
   }
 
   private _messageStatusToInteractionStatus(deliveryStatus: DeviceMessageDeliveryStatus, executionStatus?: MessageResponseStatus): MeterInteractionStatusEnum {
@@ -617,6 +617,10 @@ export class MeterInteractionsService implements OnModuleInit {
     }
   }
 
+  /**
+   * Delivery-event handler. Was registered via device-messages `subscribe()`.
+   * Ported: sidecar webhook maps to this same shape, then skyfox publishes it.
+   */
   private async _onDeviceMessageEvent(message: DeviceMessage) {
     const { meter_interaction_id, delivery_status, response, phase } = message;
 

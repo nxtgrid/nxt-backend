@@ -8,12 +8,11 @@ The primary REST + WebSocket API for the NXT backend platform. All frontend dash
 
 ## Responsibilities
 
-- Remote meter interactions and device message pipeline
+- Remote meter interactions (command delivery is nxt-device-messaging)
 - Payment orders, wallets, and payouts
 - User and organization management
 - Real-time updates to connected frontends via Socket.IO
-- LoRaWAN webhook bridge to the device messaging pipeline
-- Integration touchpoints for Jira, Flutterwave, SendGrid, Telegram, Africa's Talking, ChirpStack
+- Integration touchpoints for Jira, Flutterwave, SendGrid, Telegram, Africa's Talking
 
 ---
 
@@ -27,11 +26,10 @@ The primary REST + WebSocket API for the NXT backend platform. All frontend dash
 | `api-keys` | API key issuance and validation for machine-to-machine integrations. |
 | `auth` | Supabase-based authentication guard; Grafana token endpoint. |
 | `autopilot` | Automation logic for triggering grid actions based on configurable conditions. |
-| `chirpstack` | Receives LoRaWAN webhooks from ChirpStack and routes them into the device messaging pipeline. |
+| `chirpstack` | CALIN ingress ported to nxt-device-messaging. |
 | `connections` | Grid connection records (customers connected to a grid). |
 | `data-analytics` | Reporting and analytics endpoints for grid performance data. |
 | `dcus` | Distribution control units — inventory, grid assignment, bulk state updates. |
-| `device-messages` | Core meter/device message pipeline: handles incoming pushes (webhooks) and outgoing pull commands, with queue-based delivery and retry logic. |
 | `directive-batches` | Groups of remote commands to be sent to hardware. |
 | `directive-batch-executions` | Execution tracking for directive batches. |
 | `download` | Prepares and streams file downloads for grid and asset data. |
@@ -126,10 +124,6 @@ Copy `.env.example` to `.env` and fill in all values before running.
 | `TALOS_API` | Internal Talos service base URL. |
 | `YETI_API` | Internal Yeti service base URL. |
 | `LOCH_API` | Internal Loch service base URL. |
-| `HERMES_HOST` | Hermes service host. |
-| `HERMES_PORT` | Hermes service port. |
-| `HERMES_USERNAME` | Hermes service username. |
-| `HERMES_PASSWORD` | Hermes service password. |
 | `AYRTON_ACCOUNT_CONFIRM_URL` | Frontend URL for account confirmation emails. |
 | `AYRTON_PASSWORD_RESET_URL` | Frontend URL for password reset emails. |
 | `SENTRY_DSN` | Sentry DSN for error reporting. |

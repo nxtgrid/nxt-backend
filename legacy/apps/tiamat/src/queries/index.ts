@@ -54,19 +54,6 @@ export type {
   ExchangeRateSnapshotParams,
 } from './sql/timescale/payouts/find-exchange-rate.types';
 
-// Device Messages (Lua Scripts)
-export type {
-  FetchNextMessageResult,
-  FetchNextMessageKeys,
-  FetchNextMessageArgv,
-} from './lua/device-messages/fetch-next-message-in-queue.types';
-
-export type {
-  MoveMessageResult,
-  MoveMessageKeys,
-  MoveMessageArgv,
-} from './lua/device-messages/move-message-between-queues.types';
-
 // -----------------------------------------------------------------------------
 // RAW QUERIES
 // -----------------------------------------------------------------------------
@@ -139,23 +126,6 @@ export const RAW_QUERIES = {
          */
         findExchangeRate: loadQuery('sql/timescale/payouts/find-exchange-rate.sql'),
       },
-    },
-  },
-  lua: {
-    deviceMessages: {
-      /**
-       * Atomically fetches highest priority message from source queue, moves to destination,
-       * updates status, and returns message data. Prevents race conditions.
-       * @returns {FetchNextMessageResult} [messageId, fields[]] or null if queue empty
-       */
-      fetchNextMessageInQueue: loadQuery('lua/device-messages/fetch-next-message-in-queue.lua'),
-      /**
-       * Atomically moves a message between queues with a stale-message guard.
-       * Only proceeds if the message is present in the source queue (ZREM gate).
-       * Prevents phantom hash creation from late-arriving API responses.
-       * @returns {MoveMessageResult} 0 if message not in source queue, 1 if moved
-       */
-      moveMessageBetweenQueues: loadQuery('lua/device-messages/move-message-between-queues.lua'),
     },
   },
 };

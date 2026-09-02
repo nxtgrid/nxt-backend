@@ -1,4 +1,5 @@
 import { CommunicationProtocolEnum } from '@core/types/supabase-types';
+// Types lived in device-messages; ported with nxt-device-messaging / skyfox client.
 import { DeviceManufacturerEnum, DeviceProtocolEnum } from '@tiamat/modules/device-messages/lib/types';
 
 export const getManufacturerAndProtocol =

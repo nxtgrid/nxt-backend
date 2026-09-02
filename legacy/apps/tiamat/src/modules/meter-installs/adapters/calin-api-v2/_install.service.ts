@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { MeterForNsDeregistration, MeterForNsRegistration } from '../../dto/meter-for-ns-registration.dto';
-import { CalinApiV2CreateTaskResponse, CalinApiV2Error, CalinApiV2TaskDataResponse, sendCalinApiV2Request } from '@tiamat/modules/device-messages/adapters/calin-api-v2/lib/repo';
+// CALIN V2 HTTP client lived in device-messages/adapters/calin-api-v2/lib/repo
+// (sendCalinApiV2Request). Ported with nxt-device-messaging; skyfox installs
+// still import that leftover client.
 
 const { CALIN_V2_CUSTOMER_ID, CALIN_V2_COMPANY_NAME } = process.env;
 

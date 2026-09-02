@@ -1,3 +1,4 @@
+// Types lived in device-messages; ported with nxt-device-messaging / skyfox client.
 import { DeviceMessageDeliveryStatus, FailureReason } from '../../device-messages/lib/types';
 
 /**

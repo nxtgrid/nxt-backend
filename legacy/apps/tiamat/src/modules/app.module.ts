@@ -40,7 +40,6 @@ import { SendgridModule } from './sendgrid/sendgrid.module';
 import { PdFlowsModule } from './pd-flows/pd-flows.module';
 import { PdActionsModule } from './pd-actions/pd-actions.module';
 import { ChirpstackModule } from './chirpstack/chirpstack.module';
-import { DeviceMessagesModule } from './device-messages/device-messages.module';
 import { MeterInteractionsModule } from './meter-interactions/meter-interactions.module';
 import { MeterInstallsModule } from './meter-installs/meter-installs.module';
 import { DataAnalyticsModule } from './data-analytics/data-analytics.module';
@@ -55,7 +54,6 @@ const modules = process.env.IS_HIBERNATED === 'true' ? [] : [
   CoreEnergyTrackingModule,
   CoreSpendingModule,
   SoftwareDevAlertModule,
-  DeviceMessagesModule,
   MeterInteractionsModule,
   MeterInstallsModule,
   DataAnalyticsModule,

@@ -9,6 +9,7 @@ import { TelegramService } from '../telegram/telegram.service';
 import { WebsocketService } from '../websocket/websocket.service';
 import { Json, MeterInteractionStatusEnum, MeterInteractionTypeEnum, UpdateMeter } from '@core/types/supabase-types';
 import { kwhToMonetaryBalance } from './lib/kwh-to-monetary-balance';
+// Types lived in device-messages; ported with nxt-device-messaging / skyfox client.
 import { GatewayInfo } from '../device-messages/lib/types';
 import { FullMeterInteractionForAfterEffects, meterInteractionForAfterEffectsQuery } from './lib/supabase';
 import { pendingStatuses } from './lib/meter-interaction-status-helpers';
