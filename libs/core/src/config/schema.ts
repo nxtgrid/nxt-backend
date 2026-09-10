@@ -12,10 +12,19 @@ const publicConfigSchema = z.object({
 }).strict();
 
 /**
- * Category (A) Tier-1/Tier-2 flags. Grows with capability imports — do not speculate ahead.
- * Empty until the first real Tier-1 capability lands (demo scaffolding removed in 002d Task 4).
+ * Metering is on/off only. Plugin selection is the device row, not config
+ * (`deviceAdapters` belongs to the sidecar). Missing key = off.
  */
-const capabilitiesSchema = z.object({}).strict();
+const meteringCapabilitySchema = z.object({
+  enabled: z.boolean(),
+}).strict();
+
+/**
+ * Category (A) Tier-1/Tier-2 flags. Grows with capability imports — do not speculate ahead.
+ */
+const capabilitiesSchema = z.object({
+  metering: meteringCapabilitySchema.optional(),
+}).strict();
 
 /** Category (A) Tier-3 optional augmentations. Grows with capability imports. */
 const integrationsSchema = z.object({}).strict();

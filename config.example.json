@@ -3,6 +3,8 @@
   "public": {
     "platformName": "Acme Mini-Grid"
   },
-  "capabilities": {},
+  "capabilities": {
+    "metering": { "enabled": true }
+  },
   "integrations": {}
 }

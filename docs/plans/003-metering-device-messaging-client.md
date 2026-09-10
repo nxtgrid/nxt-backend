@@ -3,7 +3,7 @@
 **Decision:** ADR-010 (`docs/architecture/010-device-messaging-service-extraction.md`), Amendment §I
 **Plan number:** 003
 **Created:** 2026-09-08
-**Status:** 🟡 **Tasks cut.** Decisions D1–D16 settled. Skeleton first (T1–T3), then meat (T4–T6). No code yet. T1 is next.
+**Status:** 🟡 **T1 in review.** Decisions D1–D16 settled. Skeleton first (T1–T3), then meat (T4–T6).
 
 ---
 
@@ -443,8 +443,10 @@ and prepends `failure_history` on every POST — a retried ack would double-appl
 ### D15. Metering config is on/off; pluginId from the device row; `/health` stays local (partial Q7)
 
 **Config.** `capabilities.metering` in `libs/core/src/config/schema.ts` is `{ enabled: boolean }`,
-optional. Missing key = off. `config.default.json` / `config.example.json` stay
-`capabilities: {}`. D8's CI parse check starts to earn its keep when this subtree exists.
+optional. Missing key = off. `config.default.json` stays `capabilities: {}` (everything-off).
+`config.example.json` shows `{ "metering": { "enabled": true } }` — that is what the example
+artifact is for (ADR-007: documented, all current fields). D8's parse check starts to earn
+its keep when this subtree exists.
 
 Do not add `deviceAdapters` (or any provider list) under Metering. ADR-007 decision 5's
 illustrative `"deviceAdapters": [ { "adapter": "calin-api-v2" }, … ]` is leftover from
@@ -586,7 +588,7 @@ deploy runbook (already written), cancel, provisioning, meter-interactions produ
 
 `capabilities.metering` in `libs/core/src/config/schema.ts` is
 `{ enabled: boolean }`, optional, `.strict()`. Missing key = off.
-`config.default.json` / `config.example.json` stay `capabilities: {}`.
+`config.default.json` stays `capabilities: {}`. `config.example.json` shows Metering on.
 
 Add a core test that both committed artifacts still parse against `nxtConfigSchema`, that
 `{ metering: { enabled: true } }` parses, and that leftover `deviceAdapters` is rejected.
@@ -697,3 +699,6 @@ skyfox `correlation-id.ts` into the client. Ready to cut tasks. No code written.
 + AppModule spread, T3 client shell imported by that module; then meat T4 ACL, T5 outbound
 HTTP, T6 webhook. D13 snippet amended: AppModule spreads `[MeterInteractionsModule]` only;
 Nest walks the import graph. D11 matches. No code written.
+
+**2026-09-10 (cont.)** — T1. Maintainer: `config.example.json` shows how to turn Metering
+on; default stays off. D15/T1 amended. Schema + parse tests landed; stop for review.
