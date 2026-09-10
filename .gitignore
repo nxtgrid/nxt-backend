@@ -56,3 +56,6 @@ legacy/supabase/.branches/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local testing files
+config.testing.json

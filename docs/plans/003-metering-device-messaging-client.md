@@ -3,7 +3,7 @@
 **Decision:** ADR-010 (`docs/architecture/010-device-messaging-service-extraction.md`), Amendment §I
 **Plan number:** 003
 **Created:** 2026-09-08
-**Status:** 🟡 **T2 in review.** Decisions D1–D16 settled. Skeleton first (T1–T3), then meat (T4–T6). T1 accepted.
+**Status:** 🟡 **T3 in review.** Decisions D1–D16 settled. Skeleton first (T1–T3), then meat (T4–T6). T1–T2 accepted.
 
 ---
 
@@ -708,3 +708,14 @@ on; default stays off. D15/T1 amended. Schema + parse tests landed; stop for rev
 `capabilities.metering?.enabled` via `getConfig()`. Not `@Global()` (skyfox is; this
 host's Foundation modules are not). Service exported, no controller, worker untouched.
 Stop for review.
+
+**2026-09-10 (cont.)** — T3. Sibling `device-messaging-client/` module + service.
+Constructor `requireEnv`s the three `DEVICE_MESSAGING_*` vars (not stored yet —
+`noUnusedLocals` until T5/T6 read them). `registerHandler` is an in-memory list;
+`enqueue` / `get` / `generateToken` throw. `MeterInteractionsModule` imports the
+client (not re-exported; not listed in AppModule). Lean shell `onModuleInit`s a
+no-op. No webhook controller. Not `@Global()`. Stop for review.
+
+**2026-09-10 (cont.)** — T3 follow-up. `@nxtgrid/device-messaging-contract@0.1.2` on
+`api`; type-only re-export in `device-messaging-client/lib/contract.ts` so the
+wire types are hoverable. No schemas, no to-wire/from-wire — T4 still owns the ACL.

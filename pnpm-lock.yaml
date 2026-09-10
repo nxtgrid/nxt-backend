@@ -125,6 +125,9 @@ importers:
       '@nxt/core':
         specifier: workspace:*
         version: link:../../libs/core
+      '@nxtgrid/device-messaging-contract':
+        specifier: 0.1.2
+        version: 0.1.2(zod@4.4.3)
       '@supabase/supabase-js':
         specifier: ^2.110.5
         version: 2.110.5
@@ -1571,6 +1574,12 @@ packages:
 
   '@nx/workspace@23.0.2':
     resolution: {integrity: sha512-7As52HT7l7ypwukR0cKZIDZ771O0hYTDwkfJmzWPHl3YghiROnK3/Xlh/84ITo+4gtCMORUyZXZgQfOi8136ug==}
+
+  '@nxtgrid/device-messaging-contract@0.1.2':
+    resolution: {integrity: sha512-tkGebZ4iX8QrkP/vrnYpiuDORCOnECxx/JS0MBtyhvXZCBKlwxF/mPhXVUke6j6+nY/HnuIlvfgHUb2YWFV1KA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      zod: ^4.4.3
 
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
@@ -3269,6 +3278,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -8011,6 +8021,10 @@ snapshots:
     transitivePeerDependencies:
       - '@swc-node/register'
       - '@swc/core'
+
+  '@nxtgrid/device-messaging-contract@0.1.2(zod@4.4.3)':
+    dependencies:
+      zod: 4.4.3
 
   '@paralleldrive/cuid2@2.3.1':
     dependencies:
