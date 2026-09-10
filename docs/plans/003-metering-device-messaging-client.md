@@ -3,7 +3,7 @@
 **Decision:** ADR-010 (`docs/architecture/010-device-messaging-service-extraction.md`), Amendment §I
 **Plan number:** 003
 **Created:** 2026-09-08
-**Status:** 🟡 **T1 in review.** Decisions D1–D16 settled. Skeleton first (T1–T3), then meat (T4–T6).
+**Status:** 🟡 **T2 in review.** Decisions D1–D16 settled. Skeleton first (T1–T3), then meat (T4–T6). T1 accepted.
 
 ---
 
@@ -702,3 +702,9 @@ Nest walks the import graph. D11 matches. No code written.
 
 **2026-09-10 (cont.)** — T1. Maintainer: `config.example.json` shows how to turn Metering
 on; default stays off. D15/T1 amended. Schema + parse tests landed; stop for review.
+
+**2026-09-10 (cont.)** — T2. `MeterInteractionsModule` + empty service under
+`apps/api/src/modules/metering/meter-interactions/`. AppModule spreads it behind
+`capabilities.metering?.enabled` via `getConfig()`. Not `@Global()` (skyfox is; this
+host's Foundation modules are not). Service exported, no controller, worker untouched.
+Stop for review.
