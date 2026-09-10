@@ -8,3 +8,5 @@ Can we make an informed decision whether/where to translate API I/O for `nxt-dev
 ## Learning from Skyfox's device-messaging-client
 Skyfox now has a (rather elaborate) client wrapper for `nxt-device-messaging`.
 Can we learn (copy) from that so we don't have to build from scratch?
+
+## Zod validation in nxt-backend?

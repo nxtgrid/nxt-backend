@@ -1,7 +1,23 @@
 # ADR-001: PUSH/PULL Pattern Divergence in Device Messaging
 
 **Date:** 2026-03-16
-**Status:** Observed (not yet acted on)
+**Status:** ❌ **Superseded (2026-09-08) — historical record only.**
+
+> **Do not read this ADR for guidance, and do not treat it as a constraint on new work.**
+> Its subject — the in-process device messaging pipeline and its PUSH/PULL adapters — no longer
+> exists in this repository. Read it only when you specifically need the historical reasoning
+> behind the split.
+>
+> **Where the question went:** the pipeline was extracted to
+> [`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging) per **ADR-010**. Its
+> former adapters are now plugins in that service.
+>
+> **Where it was answered:** in the sidecar's own ADRs, as a blend of Options 1 and 3 below.
+> Option 3 (strategy) became the plugin SPI — a discriminated union on `deliveryPattern`
+> (`PUSH` / `PULL` / `NONE`) in `src/plugins/plugin.interface.ts`. Option 1 (adapter-level
+> configuration) became named admission in that repo's ADR-006: plugins declare `spacing` or
+> `concurrency` and the engine executes it. The divergence this ADR observed is therefore
+> resolved, not pending.
 
 ## Context
 
@@ -52,10 +68,12 @@ The shared pipeline stays shared (retry logic, pub/sub, queue primitives), but a
 
 If the patterns continue to diverge (e.g., a third protocol with yet different characteristics), escalate to option 3 or 4.
 
-## Trigger
+## Trigger (void)
 
-Revisit this ADR when:
+The triggers below are **retired** — they fire against a pipeline this repo no longer contains.
+Adding a protocol or manufacturer is now a plugin change in `nxt-device-messaging`, governed by that
+repo's ADRs. Kept for the historical record only:
 
-- Adding a third communication protocol/manufacturer
-- Adding adapter-specific features that require more branching in the shared pipeline
-- The `queueType` string-matching pattern spreads to more decision points
+- ~~Adding a third communication protocol/manufacturer~~
+- ~~Adding adapter-specific features that require more branching in the shared pipeline~~
+- ~~The `queueType` string-matching pattern spreads to more decision points~~

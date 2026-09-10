@@ -76,8 +76,13 @@ Frontend expects consistent API response formats and error structures.
 
 ## Architecture Decision Records
 
-ADRs live in `docs/architecture/` as numbered files (e.g. `001-push-pull-pattern-divergence.md`).
+ADRs live in `docs/architecture/` as numbered files (e.g. `007-configuration-and-wiring-mechanism.md`).
 **Do not read all ADRs at session start or preemptively.** Use the index below to decide what to load.
+
+**Superseded ADRs are not in the index and must not be read for guidance.** An ADR whose Status says
+Superseded is a historical record; open it only if the task explicitly asks for the historical
+reasoning. Currently superseded: **001** (PUSH/PULL divergence — resolved by the ADR-010 extraction
+and answered in `nxt-device-messaging`'s own ADRs).
 
 ### When to read ADRs
 
@@ -89,7 +94,7 @@ changes, or work clearly outside the domains below.
 
 | Domain | ADR(s) |
 |--------|--------|
-| Device messaging, push/pull, CALIN, extraction, suite sidecar | 001, 005 §11, 006 §8, 010 |
+| Device messaging, CALIN, extraction, suite sidecar | 005 §11, 006 §8, 010 |
 | Meter state management (overview) | 002 |
 | Meter state — reconciliation controller | 002a |
 | Meter state — device shadows | 002b1 |

@@ -49,10 +49,22 @@ reserved for artifacts with a genuinely independent release cadence.
   effect of `git push`** by default. Deployment governance (and the rejected separate-migrations-repo
   option) is decided in ADR-009.
 
-### 4. Modular monolith with capability-based, ports-and-adapters architecture
+### 4. Modular monolith of opt-in capability modules
 A lean, always-on **platform core** plus **capability modules** (vertical/functional domains) wired
-onto **thin runtime hosts** (horizontal/operational). Capabilities expose **ports**; concrete vendor
-**adapters** implement them and are selected by config. (Aligned with ADR-001's adapter-config direction.)
+onto **thin runtime hosts** (horizontal/operational). An operator **opts in** to the capability
+modules they want. Where a capability integrates with an interchangeable third party, it defines an
+**adapter** per vendor and config selects which one is used (e.g. Flutterwave for payments,
+SendGrid for notifications).
+
+An adapter is only warranted where vendors are genuinely interchangeable *within this repo*. A
+capability with a single downstream that cannot grow by adding vendors does not get one — see
+Decision 8 on device messaging, and this ADR's trigger on the second adapter.
+
+> **Amended 2026-09-08.** This decision previously read *"Capabilities expose **ports**; concrete
+> vendor **adapters** implement them and are selected by config,"* citing ADR-001. Reworded because
+> "port" added a layer of vocabulary the estate does not actually use, and the one place a port was
+> concretely promised (device messaging, Decision 8) has since left the repo. ADR-001 is superseded
+> and is no longer a reference for this decision.
 
 ### 5. Capability map (derived from current modules)
 - **Platform core (always on):** auth, api-keys, organizations, members, accounts, agents, grids,
@@ -100,12 +112,20 @@ platform core. Production is the clean island (depends only on platform core).
 
 ### 6. Three-tier feature-flag model
 - **Tier 1 — Capability** on/off.
-- **Tier 2 — Provider** per capability port (adapter selection, or "none-yet").
+- **Tier 2 — Provider** per capability integration point (adapter selection, or "none-yet"). Only
+  applies where a capability actually has interchangeable vendor adapters; capabilities with a
+  single mandatory downstream have nothing to select (Decision 4).
 - **Tier 3 — Integration** optional augmentations (Make.com, FlowXO, JIRA, Telegram, Sentry/Loki).
 
-Honesty rules: **required ports** with no adapter → capability runs in a safe/manual mode (does not
-crash); **optional integrations** absent → silently skipped. Inter-capability links (e.g. payments and
-metering) are **soft pairings with graceful degradation**, not hard boot-time requirements.
+Honesty rules: a **required integration point** with a vendor choice but no adapter configured →
+capability runs in a safe/manual mode (does not crash); **optional integrations** absent → silently
+skipped. Inter-capability links (e.g. payments and metering) are **soft pairings with graceful
+degradation**, not hard boot-time requirements.
+
+> **Clarified 2026-09-08.** Safe/manual mode applies where an adapter is *selectable*. It does not
+> apply to a capability's single mandatory downstream: if such a dependency is unconfigured the
+> capability **fails boot** rather than degrading, because a silent no-op would look like a working
+> system. See ADR-010 §I for the device-messaging case.
 
 ### 7. Configuration scope is per-deployment
 All flags (capability, provider selection, integration) are **static per-deployment configuration**
@@ -119,8 +139,12 @@ are a niche secondary feature for specific deployments, not part of the baseline
 - Worker composition is **config-driven along capability seams** (a host loads the enabled capabilities'
   contributions); operators may run one combined worker or split workers as needed.
 - `talos` is deprecated and folded into the metering capability.
-- `device-messages` stays an in-process module behind a port boundary, extractable to its own process
-  only when ADR-001's triggers fire.
+- ~~`device-messages` stays an in-process module behind a port boundary, extractable to its own
+  process only when ADR-001's triggers fire.~~ **Superseded 2026-09-08 by ADR-010.** The extraction
+  happened: device messaging is now the standalone `nxt-device-messaging` service, and what remains
+  here is a client that speaks to it over HTTP. Vendor variability (CALIN, ChirpStack, …) lives in
+  that service's plugins, so this repo has one downstream and no adapter to select — it is not
+  behind a port boundary and does not need one. ADR-001, cited here, is itself superseded.
 - Principle: **a separate deployable is justified only by a divergent runtime profile** (independent
   scaling, failure isolation, incompatible execution model) — never by code tidiness. Capability flags
   are the on/off axis; hosts are the where-it-runs axis; the two are orthogonal.
@@ -146,8 +170,8 @@ a capability is off* (keep) vs *deprecated/historical-only* (exclude from baseli
 
 ### Negative / Risks
 - Requires a disciplined migration from `db pull` dumps to authored forward migrations.
-- The lean-core refactor is a transitional effort: each candidate capability/adapter must be extracted
-  behind a port, which touches many modules.
+- The lean-core refactor is a transitional effort: each candidate capability must be extracted behind
+  a clean module boundary, which touches many modules.
 - A single combined worker shares one Node event loop; heavy aggregation must be pushed to the DB
   (TimescaleDB continuous aggregates) or split to a dedicated worker under load.
 - Existing dual-ORM usage (legacy TypeORM + Supabase client on the primary DB) complicates module
@@ -179,7 +203,7 @@ Mechanism-level decisions that this ADR intentionally left to separate documents
 
 ## Triggers (revisit this ADR when)
 - A capability needs to differ per organization within one deployment (would reopen Decision 7).
-- A second real adapter appears for a port (validates/forces the Tier-2 abstraction; cf. ADR-001).
+- A second real adapter appears at an integration point (validates/forces the Tier-2 abstraction).
 - A capability's runtime profile diverges enough to warrant its own deployable (cf. Decision 8).
 - The OSS baseline schema deviation register adds or removes objects that affect capability
   boundaries (keep the capability map aligned — see Decision 5 amendment, register #12).

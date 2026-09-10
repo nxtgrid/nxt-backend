@@ -3,7 +3,11 @@
 **Decision:** ADR-010 (`docs/architecture/010-device-messaging-service-extraction.md`)
 **Plan number:** 001
 **Created:** 2026-07-02
-**Status:** ⚠️ **STALE — do not execute. Being re-cut.**
+**Status:** ⚠️ **STALE — do not execute. Re-cut per ADR-010 §G.**
+**Superseded by:** the service build-out moved to
+[`nxt-device-messaging`](https://github.com/nxtgrid/nxt-device-messaging); the nxt-backend-side work
+is `docs/plans/003-metering-device-messaging-client.md`. This file is kept for history only and is
+not rewritten.
 
 ---
 
